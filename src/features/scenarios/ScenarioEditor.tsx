@@ -44,24 +44,24 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="space-y-1.5">
-          <Label htmlFor="scenario-name" className="text-xs font-medium">
+          <Label htmlFor="scenario-name" className="text-sm lg:text-xs font-medium">
             Name
           </Label>
           <Input
             id="scenario-name"
-            className="h-8 text-sm"
+            className="h-10 lg:h-8 text-sm"
             value={p.name}
             onChange={(e) => set({ name: e.target.value })}
           />
         </div>
 
         <section className="space-y-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             ETF & data
           </h3>
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
-              <Label htmlFor="etf" className="text-xs font-medium">
+              <Label htmlFor="etf" className="text-sm lg:text-xs font-medium">
                 Index
               </Label>
               <HelpTooltip
@@ -77,12 +77,12 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
                 set({ etfId, fromYear: firstYear(d), toYear: lastYear(d) });
               }}
             >
-              <SelectTrigger id="etf" className="h-8 w-full text-xs">
+              <SelectTrigger id="etf" className="h-10 lg:h-8 w-full text-sm lg:text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {Object.values(datasets).map((d) => (
-                  <SelectItem key={d.id} value={d.id} className="text-xs">
+                  <SelectItem key={d.id} value={d.id} className="text-sm lg:text-xs">
                     {d.name}
                   </SelectItem>
                 ))}
@@ -91,13 +91,13 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
-              <Label className="text-xs font-medium">Historical period</Label>
+              <Label className="text-sm lg:text-xs font-medium">Historical period</Label>
               <HelpTooltip
                 label="Historical period"
                 help="Only months inside this period are used to generate paths."
                 recommendation="The full period: more market regimes make the distribution more robust."
               />
-              <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+              <span className="ml-auto text-sm lg:text-xs tabular-nums text-muted-foreground">
                 {from}–{to}
               </span>
             </div>
@@ -117,7 +117,7 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
           const fields = group.fields.filter((f) => !f.visible || f.visible(p));
           return (
             <section key={group.title} className="space-y-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {group.title}
               </h3>
               {fields.map((field) => (

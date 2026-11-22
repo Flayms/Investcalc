@@ -18,8 +18,12 @@ import type { Analysis } from "@/simulation/protocol";
 type Props = { scenario: Scenario; analysis?: Analysis; loading: boolean };
 
 function Status({ loading, error }: { loading: boolean; error?: string }) {
-  if (error) return <p className="text-xs text-amber-800">{error}</p>;
-  return <p className="text-xs text-muted-foreground">{loading ? "Analysing…" : "No data."}</p>;
+  if (error) return <p className="text-sm lg:text-xs text-amber-800">{error}</p>;
+  return (
+    <p className="text-sm lg:text-xs text-muted-foreground">
+      {loading ? "Analysing…" : "No data."}
+    </p>
+  );
 }
 
 export function LeverageExplorer({ scenario, analysis, loading }: Props) {
@@ -29,7 +33,7 @@ export function LeverageExplorer({ scenario, analysis, loading }: Props) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Leverage explorer</CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-sm lg:text-xs">
           “{scenario.params.name}” fully in a leveraged ETF with factor 1×–3×, same paths, after
           taxes. Median (solid), P10 / P90 (dashed), log scale, up to 1,000 paths.
         </CardDescription>
@@ -48,7 +52,7 @@ export function LeverageExplorer({ scenario, analysis, loading }: Props) {
                 )
               </span>
             </p>
-            <ChartContainer config={{}} className="aspect-auto h-56 w-full">
+            <ChartContainer config={{}} className="aspect-auto h-56 w-full text-sm lg:text-xs">
               <LineChart data={sweep.points} margin={{ left: 8, right: 16, top: 8 }}>
                 <CartesianGrid vertical={false} strokeOpacity={0.5} />
                 <XAxis
@@ -104,7 +108,7 @@ export function LeverageExplorer({ scenario, analysis, loading }: Props) {
                 />
               </LineChart>
             </ChartContainer>
-            <p className="mt-2 text-[11px] text-muted-foreground">
+            <p className="mt-2 text-xs lg:text-[11px] text-muted-foreground">
               A higher median usually comes with a much lower P10: check the downside before picking
               the factor.
             </p>
@@ -121,7 +125,7 @@ export function FactorImpactCard({ scenario, analysis, loading }: Props) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">What each factor costs</CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-sm lg:text-xs">
           How much higher the median final value of “{scenario.params.name}” would be without each
           factor (up to 1,000 paths).
         </CardDescription>
@@ -135,7 +139,7 @@ export function FactorImpactCard({ scenario, analysis, loading }: Props) {
               Median final value:{" "}
               <span className="font-semibold">{formatEuro(impact.baseline)}</span>
             </p>
-            <ChartContainer config={{}} className="aspect-auto h-56 w-full">
+            <ChartContainer config={{}} className="aspect-auto h-56 w-full text-sm lg:text-xs">
               <BarChart data={impact.factors} layout="vertical" margin={{ left: 8, right: 24 }}>
                 <CartesianGrid horizontal={false} strokeOpacity={0.5} />
                 <XAxis
@@ -147,7 +151,7 @@ export function FactorImpactCard({ scenario, analysis, loading }: Props) {
                 <YAxis
                   type="category"
                   dataKey="label"
-                  width={130}
+                  width={120}
                   tickLine={false}
                   axisLine={false}
                 />

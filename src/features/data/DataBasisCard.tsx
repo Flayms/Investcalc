@@ -15,13 +15,41 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Data basis</CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-sm lg:text-xs">
           Monthly total returns (dividends reinvested) in USD. Short rate (SOFR proxy): 3-month US
           T-bill (FRED TB3MS), before 1934 the long-term rate.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Table className="text-xs">
+        <div className="space-y-3 md:hidden">
+          {Object.values(datasets).map((d) => {
+            const s = datasetStats(d);
+            return (
+              <article key={d.id} className="rounded-lg border p-3 text-sm">
+                <h3 className="font-medium">{d.name}</h3>
+                <p className="text-muted-foreground">{d.description}</p>
+                <dl className="my-2 grid grid-cols-3 gap-x-3">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Period</dt>
+                    <dd className="tabular-nums">
+                      {s.from.slice(0, 4)}–{s.to.slice(0, 4)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">CAGR</dt>
+                    <dd className="tabular-nums">{formatPercent(s.cagr)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Volatility</dt>
+                    <dd className="tabular-nums">{formatPercent(s.volatility)}</dd>
+                  </div>
+                </dl>
+                <p className="text-xs text-muted-foreground">{d.source}</p>
+              </article>
+            );
+          })}
+        </div>
+        <Table className="hidden md:table text-sm lg:text-xs">
           <TableHeader>
             <TableRow>
               <TableHead>Index</TableHead>
@@ -59,7 +87,7 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
             })}
           </TableBody>
         </Table>
-        <div className="grid gap-4 text-xs text-muted-foreground md:grid-cols-2">
+        <div className="grid gap-4 text-sm lg:text-xs text-muted-foreground md:grid-cols-2">
           <div>
             <h3 className="mb-1 font-semibold text-foreground">How paths are generated</h3>
             <p>
