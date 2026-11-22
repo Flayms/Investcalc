@@ -1,4 +1,4 @@
-import { CopyIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { CopyIcon, EyeIcon, EyeOffIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MAX_SCENARIOS, type Scenario, scenarioColor } from "@/features/scenarios/scenario";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ type Props = {
   scenarios: Scenario[];
   selectedKey: string;
   onSelect: (key: string) => void;
+  onToggleVisible: (key: string) => void;
   onAdd: () => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -16,6 +17,7 @@ export function ScenarioBar({
   scenarios,
   selectedKey,
   onSelect,
+  onToggleVisible,
   onAdd,
   onDuplicate,
   onRemove,
@@ -24,28 +26,57 @@ export function ScenarioBar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div role="tablist" aria-label="Scenarios" className="flex flex-wrap gap-2">
-        {scenarios.map((s) => (
-          <button
-            key={s.key}
-            type="button"
-            role="tab"
-            aria-selected={s.key === selectedKey}
-            onClick={() => onSelect(s.key)}
-            className={cn(
-              "flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors",
-              s.key === selectedKey
-                ? "border-foreground/40 bg-card shadow-sm"
-                : "border-transparent bg-muted hover:bg-card",
-            )}
-          >
-            <span
-              className="size-2.5 rounded-full"
-              style={{ background: scenarioColor(s) }}
-              aria-hidden
-            />
-            {s.params.name}
-          </button>
-        ))}
+        {scenarios.map((s) => {
+          const selected = s.key === selectedKey;
+          const visible = !s.hidden;
+          return (
+            <div
+              key={s.key}
+              role="presentation"
+              className={cn(
+                "flex items-center rounded-md border text-sm transition-colors",
+                selected
+                  ? "border-foreground/40 bg-card shadow-sm"
+                  : "border-transparent bg-muted hover:bg-card",
+              )}
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => onSelect(s.key)}
+                className={cn(
+                  "flex items-center gap-2 py-1.5 pr-1 pl-3",
+                  !visible && "text-muted-foreground line-through decoration-1",
+                )}
+              >
+                <span
+                  className="size-2.5 rounded-full border-2"
+                  style={{
+                    borderColor: scenarioColor(s),
+                    background: visible ? scenarioColor(s) : "transparent",
+                  }}
+                  aria-hidden
+                />
+                {s.params.name}
+              </button>
+              <button
+                type="button"
+                aria-label={`Show ${s.params.name}`}
+                aria-pressed={visible}
+                title={visible ? "Hide from chart and table" : "Show in chart and table"}
+                onClick={() => onToggleVisible(s.key)}
+                className="mr-1 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                {visible ? (
+                  <EyeIcon className="size-3.5" aria-hidden />
+                ) : (
+                  <EyeOffIcon className="size-3.5" aria-hidden />
+                )}
+              </button>
+            </div>
+          );
+        })}
       </div>
       <div className="ml-auto flex gap-1">
         <Button size="sm" variant="outline" onClick={onAdd} disabled={full}>

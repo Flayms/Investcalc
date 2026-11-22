@@ -56,7 +56,13 @@ export const toParams = (choices: ScenarioChoices, shared: SharedSettings): Scen
   ...shared,
 });
 
-export type Scenario<P = ScenarioChoices> = { key: string; colorIndex: number; params: P };
+export type Scenario<P = ScenarioChoices> = {
+  key: string;
+  colorIndex: number;
+  params: P;
+  /** Hidden scenarios are kept but neither simulated nor shown in the results (REQ-004-01). */
+  hidden?: boolean;
+};
 /** A scenario merged with the shared settings, ready to simulate. */
 export type ResolvedScenario = Scenario<ScenarioParams>;
 

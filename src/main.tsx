@@ -4,8 +4,9 @@ import { createRoot } from "react-dom/client";
 import { App } from "@/App";
 import { Toaster } from "@/components/ui/sonner";
 import "@fontsource/caveat/700.css";
-import "@fontsource/atkinson-hyperlegible/400.css";
-import "@fontsource/atkinson-hyperlegible/700.css";
+import "@fontsource/nunito/400.css";
+import "@fontsource/nunito/600.css";
+import "@fontsource/nunito/700.css";
 import "@/index.css";
 
 const queryClient = new QueryClient();
