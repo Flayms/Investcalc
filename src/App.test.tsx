@@ -285,3 +285,69 @@ test("REQ-004-03 hidden scenarios stay hidden after a reload", async () => {
     "true",
   );
 });
+
+const tabNames = () =>
+  within(screen.getByRole("tablist", { name: "Scenarios" }))
+    .getAllByRole("tab")
+    .map((t) => t.textContent);
+
+test("REQ-005-01 dragging a tab onto another moves it there", async () => {
+  renderApp();
+  const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
+  const third = within(tabs).getByRole("tab", { name: /2× with 10-month SMA/ });
+  const first = within(tabs).getByRole("tab", { name: /1× buy and hold/ });
+  const dataTransfer = { setData: () => {}, getData: () => "", effectAllowed: "", dropEffect: "" };
+  fireEvent.dragStart(third, { dataTransfer });
+  fireEvent.dragOver(first, { dataTransfer });
+  fireEvent.drop(first, { dataTransfer });
+  fireEvent.dragEnd(third, { dataTransfer });
+  expect(tabNames()).toEqual(["2× with 10-month SMA", "1× buy and hold", "2× buy and hold"]);
+});
+
+test("REQ-005-02 move buttons swap the selected scenario with its neighbour", async () => {
+  renderApp();
+  const left = await screen.findByRole("button", { name: "Move left" });
+  const right = screen.getByRole("button", { name: "Move right" });
+  expect(left).toBeDisabled();
+  fireEvent.click(right);
+  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
+  const tabs = screen.getByRole("tablist", { name: "Scenarios" });
+  expect(within(tabs).getByRole("tab", { selected: true })).toHaveTextContent("1× buy and hold");
+  fireEvent.click(right);
+  expect(right).toBeDisabled();
+  fireEvent.click(left);
+  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
+});
+
+test("REQ-005-03 legend and results table follow the scenario order", async () => {
+  const { client } = resolvingClient();
+  renderApp(client);
+  const legend = await screen.findByRole("list", { name: "Legend" });
+  await within(legend).findByText("2× buy and hold");
+  fireEvent.click(screen.getByRole("button", { name: "Move right" }));
+  await vi.waitFor(() =>
+    expect(
+      within(legend)
+        .getAllByRole("listitem")
+        .slice(0, 3)
+        .map((li) => li.textContent),
+    ).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]),
+  );
+  const card = await resultsCard();
+  await vi.waitFor(() =>
+    expect(
+      within(card)
+        .getAllByRole("article")
+        .map((a) => within(a).getByRole("heading").textContent),
+    ).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]),
+  );
+});
+
+test("REQ-005-03 the order survives a reload", async () => {
+  const first = renderApp();
+  fireEvent.click(await screen.findByRole("button", { name: "Move right" }));
+  first.unmount();
+  renderApp();
+  await screen.findByRole("tablist", { name: "Scenarios" });
+  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
+});

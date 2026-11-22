@@ -1,4 +1,13 @@
-import { CopyIcon, EyeIcon, EyeOffIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  EyeIcon,
+  EyeOffIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MAX_SCENARIOS, type Scenario, scenarioColor } from "@/features/scenarios/scenario";
 import { cn } from "@/lib/utils";
@@ -8,6 +17,8 @@ type Props = {
   selectedKey: string;
   onSelect: (key: string) => void;
   onToggleVisible: (key: string) => void;
+  /** Moves the scenario `key` to position `toIndex` (REQ-005-01). */
+  onMove: (key: string, toIndex: number) => void;
   onAdd: () => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -18,26 +29,56 @@ export function ScenarioBar({
   selectedKey,
   onSelect,
   onToggleVisible,
+  onMove,
   onAdd,
   onDuplicate,
   onRemove,
 }: Props) {
   const full = scenarios.length >= MAX_SCENARIOS;
+  const [dragKey, setDragKey] = useState<string>();
+  const [dropIndex, setDropIndex] = useState<number>();
+  const selectedIndex = scenarios.findIndex((s) => s.key === selectedKey);
+  const endDrag = () => {
+    setDragKey(undefined);
+    setDropIndex(undefined);
+  };
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div role="tablist" aria-label="Scenarios" className="flex flex-wrap gap-2">
-        {scenarios.map((s) => {
+        {scenarios.map((s, index) => {
           const selected = s.key === selectedKey;
           const visible = !s.hidden;
           return (
+            // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop is a pointer shortcut; keyboard and touch users have the move buttons (REQ-005-02).
             <div
               key={s.key}
               role="presentation"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", s.key);
+                setDragKey(s.key);
+              }}
+              onDragOver={(e) => {
+                if (!dragKey) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setDropIndex(index);
+              }}
+              onDragLeave={() => setDropIndex(undefined)}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragKey) onMove(dragKey, index);
+                endDrag();
+              }}
+              onDragEnd={endDrag}
               className={cn(
-                "flex items-center rounded-md border text-sm transition-colors",
+                "flex cursor-grab items-center rounded-md border text-sm transition-colors active:cursor-grabbing",
                 selected
                   ? "border-foreground/40 bg-card shadow-sm"
                   : "border-transparent bg-muted hover:bg-card",
+                s.key === dragKey && "opacity-50",
+                dropIndex === index && s.key !== dragKey && "ring-2 ring-ring",
               )}
             >
               <button
@@ -79,6 +120,26 @@ export function ScenarioBar({
         })}
       </div>
       <div className="ml-auto flex gap-1">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onMove(selectedKey, selectedIndex - 1)}
+          disabled={selectedIndex <= 0}
+          aria-label="Move left"
+          title="Move the selected scenario left"
+        >
+          <ChevronLeftIcon />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onMove(selectedKey, selectedIndex + 1)}
+          disabled={selectedIndex >= scenarios.length - 1}
+          aria-label="Move right"
+          title="Move the selected scenario right"
+        >
+          <ChevronRightIcon />
+        </Button>
         <Button size="sm" variant="outline" onClick={onAdd} disabled={full}>
           <PlusIcon /> New
         </Button>

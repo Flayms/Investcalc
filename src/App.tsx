@@ -24,6 +24,7 @@ import {
   defaultChoices,
   defaultShared,
   initialScenarios,
+  moveScenario,
   newKey,
   nextColorIndex,
   type ResolvedScenario,
@@ -152,6 +153,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                     selectedKey={selected.key}
                     onSelect={setSelectedKey}
                     onToggleVisible={toggleVisible}
+                    onMove={(key, toIndex) => setScenarios(moveScenario(scenarios, key, toIndex))}
                     onAdd={() =>
                       addScenario({ ...defaultChoices, name: `Scenario ${scenarios.length + 1}` })
                     }
