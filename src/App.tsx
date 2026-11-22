@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { DataBasisCard } from "@/features/data/DataBasisCard";
 import { type DatasetLoader, fetchDataset, useDatasets } from "@/features/data/useDatasets";
 import { type MobileView, MobileViewSwitch } from "@/features/layout/MobileViewSwitch";
-import { MarketStatusCard } from "@/features/market/MarketStatusCard";
+import { MarketView } from "@/features/market/MarketView";
 import {
   browserStorage,
   loadState,
@@ -217,7 +217,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
             </TabsContent>
             <TabsContent value="market">
               <main className="mx-auto max-w-[1500px] space-y-4 px-3 py-4 sm:space-y-6 sm:pr-6 sm:pl-16 sm:py-6">
-                <MarketStatusCard datasets={datasets.data} />
+                <MarketView datasets={datasets.data} />
                 <DataBasisCard datasets={datasets.data} />
               </main>
             </TabsContent>
