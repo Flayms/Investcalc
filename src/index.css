@@ -5,18 +5,18 @@
 
 :root {
   --radius: 0.625rem;
-  /* Notebook paper (light): cream page, graphite ink, blue fountain-pen accents. */
-  --background: #fbf8f1;
+  /* Notebook paper (light): near-white page, graphite ink, blue fountain-pen accents. */
+  --background: #fafaf7;
   --foreground: #2b2a33;
-  --card: #fffdf8;
+  --card: #ffffff;
   --card-foreground: #2b2a33;
-  --popover: #fffdf8;
+  --popover: #ffffff;
   --popover-foreground: #2b2a33;
   --primary: #24408e;
-  --primary-foreground: #fffdf8;
-  --secondary: #f1ebdc;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f4;
   --secondary-foreground: #2b2a33;
-  --muted: #f1ebdc;
+  --muted: #eef0f4;
   --muted-foreground: #66636d;
   --accent: #fff0a3;
   --accent-foreground: #2b2a33;
@@ -67,8 +67,8 @@
   --heat-ink-7: #ffffff;
   --heat-ink-8: #ffffff;
 
-  --notebook-sans: "Patrick Hand", "Comic Sans MS", ui-rounded, system-ui, sans-serif;
-  --notebook-hand: "Caveat", "Patrick Hand", cursive;
+  --notebook-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --notebook-hand: "Caveat", cursive;
 }
 
 .dark {
@@ -172,9 +172,6 @@
     @apply outline-ring/50;
     border-color: var(--hairline);
   }
-  html {
-    font-size: 17px;
-  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     /* Ruled notebook paper; the red margin line is added from the sm breakpoint on. */
@@ -224,8 +221,8 @@
   border-radius: 18px 6px 16px 5px / 6px 16px 5px 18px;
   box-shadow: 3px 4px 0 var(--sketch-shadow);
 }
-/* A strip of tape holding each card on the page. */
-[data-slot="card"]::before {
+/* A strip of tape holds the main chart on the page: the one decoration, so it stays special. */
+[data-slot="card"].taped::before {
   content: "";
   position: absolute;
   top: -0.6rem;
@@ -236,10 +233,6 @@
   transform: rotate(-2.5deg);
   box-shadow: 0 1px 1px rgb(0 0 0 / 0.06);
   pointer-events: none;
-}
-[data-slot="card"]:nth-of-type(even)::before {
-  transform: rotate(2deg);
-  left: calc(35% - 2.6rem);
 }
 
 [data-slot="button"],
@@ -273,9 +266,6 @@
 [data-slot="tabs-list"] {
   border: 1.5px solid var(--border);
   background: transparent;
-}
-[data-slot="tabs-trigger"] {
-  font-size: 1rem;
 }
 [data-slot="tabs-trigger"][data-state="active"] {
   background: var(--highlight);
@@ -324,7 +314,5 @@ h2,
   border-bottom: 1px dashed var(--hairline);
 }
 [data-slot="table-head"] {
-  font-family: var(--notebook-hand);
-  font-size: 1.15rem;
   font-weight: 700;
 }

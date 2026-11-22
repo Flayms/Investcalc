@@ -48,6 +48,7 @@ lets users type exact values, adds a light/dark theme switch and restyles the pa
 - **When** the dashboard is shown
 - **Then** it looks like a page of a ruled notebook: ruled paper with a margin line, handwritten
   headings, hand-drawn (slightly irregular) outlines on cards and controls, and highlighter accents
+- **And** body text, labels and numbers use a plain, highly legible typeface (handwriting only for headings)
 - **And** numbers and charts stay legible and charts keep their validated colors for the theme
   (stepped for the dark surface in the dark theme)
 

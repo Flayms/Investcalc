@@ -2,7 +2,7 @@
 
 Static single-page app, no backend. Simulations run entirely in the browser, off the main thread.
 
-- `src/main.tsx` — entry; mounts `App` inside the TanStack Query provider and the sonner `Toaster`, loads the handwriting fonts (`@fontsource/caveat`, `@fontsource/patrick-hand`).
+- `src/main.tsx` — entry; mounts `App` inside the TanStack Query provider and the sonner `Toaster`, loads the handwriting fonts (`@fontsource/caveat`, `@fontsource/atkinson-hyperlegible`).
 - `src/index.css` — theme: light and dark CSS variables (shadcn tokens, the categorical `--series-N` scenario colors and the `--heat-N` / `--heat-ink-N` table ramp, each stepped per theme) and the notebook look (ruled paper, hand-drawn outlines, tape, highlighter). The notebook rules are unlayered on purpose so they override the utility classes of the shadcn primitives without forking them. The dark theme is the `.dark` class on `<html>`, set before first paint by an inline script in `index.html` and toggled by `features/theme`.
 - `src/components/ui/` — shadcn/ui components (generated with `bunx shadcn@latest add <name>`, excluded from Biome).
 - `src/simulation/` — the simulation engine: pure, framework-free TypeScript so it can be unit-tested and run inside a Web Worker.
