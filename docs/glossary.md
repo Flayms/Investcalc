@@ -19,6 +19,8 @@ Domain terms used in code, specs and tests. Use these names consistently.
 | Warm-up               | Months of history before the horizon, used only to compute SMA signals                                 | Horizon                 |
 | Net worth             | Holdings + cash − loan − unpaid taxes at a point in time, before the final sale                        | Final value after tax   |
 | Final value after tax | Net worth after selling everything at the end and paying all taxes                                     | Net worth               |
+| Distribution          | Final value after tax at every percentile from P1 to P99, plotted against the percentile               | Percentile band         |
+| Yearly return (p.a.)  | Money-weighted yearly return that turns the amount paid in into a given final value                    | CAGR of the index       |
 
 ## Investing
 

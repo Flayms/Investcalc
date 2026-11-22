@@ -10,7 +10,7 @@ A browser-based website that runs Monte Carlo simulations of ETF portfolios unde
 - **Costs and German taxes:** TER, order fees, bid-ask spread; Abgeltungsteuer + Soli, Teilfreistellung, Sparerpauschbetrag, Vorabpauschale, loss carry-forward.
 - **Strategies:** savings plan (buy and hold), SMA trend filter, "borrow from your future self" (invest a loan worth future contributions now).
 - **Scenarios:** compare up to 8 scenarios of your own choices (index, amounts, mix, leverage, strategy); costs, taxes and the data period are shared by all of them. Hide scenarios you don't want to compare right now with the eye toggle, and reorder them by dragging their tabs (or with the arrow buttons). Everything is saved in your browser and restored after a reload.
-- **Results:** fan chart and a percentile table color-coded per column so the winner stands out; leverage explorer (which factor pays off, and at what downside); how much each cost factor costs.
+- **Results:** fan chart; a chart of the final value against the percentile (P1–P99) and a percentile table color-coded per column so the winner stands out, both switchable between € and yearly return (% p.a.); leverage explorer (which factor pays off, and at what downside); how much each cost factor costs.
 - **Market & data:** current market phase (bull/bear, SMA position), key indicators (trailing returns, recent volatility, short rate), a chart with a selectable time frame (1 year to the whole history, log scale for long ones), historic bear and bull markets, and the data basis on their own view.
 - **Exact input:** every slider has a box next to it to type the exact value (e.g. €437 per month or a 0.07 % TER).
 - **Notebook look, light and dark:** styled like a scribbled notebook page; switch between light and dark in the header (defaults to your system setting).
@@ -18,6 +18,8 @@ A browser-based website that runs Monte Carlo simulations of ETF portfolios unde
 Specialised on German investors and German tax law. Not investment advice.
 
 ![Simulation](docs/screenshots/home.png)
+
+![Percentiles as yearly return](docs/screenshots/results-yearly-return.png)
 
 ![Simulation, dark theme](docs/screenshots/home-dark.png)
 

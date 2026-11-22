@@ -1,5 +1,13 @@
 import { TrophyIcon } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -8,6 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { annualReturn } from "@/features/results/annualReturn";
+import { DistributionChart, type ResultUnit } from "@/features/results/DistributionChart";
 import { columnHeat, type Heat, heatStyle } from "@/features/results/heatmap";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
 import { formatEuro, formatPercent } from "@/lib/format";
@@ -17,29 +27,52 @@ import type { ScenarioResult } from "@/simulation/simulate";
 type Props = {
   scenarios: ResolvedScenario[];
   results: Record<string, ScenarioResult>;
+  selectedKey: string;
   horizonYears: number;
 };
 
 const PERCENTILES = ["p5", "p10", "p25", "p50", "p75", "p95"] as const;
 type Percentile = (typeof PERCENTILES)[number];
 
-/** Money-weighted yearly return that turns the paid-in amount into `final` (approximation: annuity). */
-function annualReturn(final: number, s: ResolvedScenario["params"], years: number): number {
-  const months = years * 12;
-  const fv = (r: number) =>
-    s.initialInvestment * (1 + r) ** months +
-    (r === 0
-      ? s.monthlyContribution * months
-      : (s.monthlyContribution * (1 + r) * ((1 + r) ** months - 1)) / r);
-  if (final <= 0) return -1;
-  let lo = -0.5;
-  let hi = 0.5;
-  for (let i = 0; i < 80; i++) {
-    const mid = (lo + hi) / 2;
-    if (fv(mid) > final) hi = mid;
-    else lo = mid;
-  }
-  return (1 + lo) ** 12 - 1;
+const UNITS: { id: ResultUnit; label: string }[] = [
+  { id: "eur", label: "€" },
+  { id: "pa", label: "% p.a." },
+];
+
+/** What a percentile cell shows: the amount or its money-weighted yearly return. */
+function percentileValue(
+  r: ScenarioResult,
+  s: ResolvedScenario,
+  p: Percentile,
+  unit: ResultUnit,
+  horizonYears: number,
+): number {
+  return unit === "eur" ? r.final[p] : annualReturn(r.final[p], s.params, horizonYears);
+}
+
+const formatValue = (v: number, unit: ResultUnit) =>
+  unit === "eur" ? formatEuro(v) : formatPercent(v);
+
+function UnitSwitch({ unit, onChange }: { unit: ResultUnit; onChange: (u: ResultUnit) => void }) {
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: a fieldset would bring a legend and border we do not want here.
+    <div role="group" aria-label="Unit" className="inline-flex rounded-lg bg-muted p-1">
+      {UNITS.map((u) => (
+        <button
+          key={u.id}
+          type="button"
+          aria-pressed={unit === u.id}
+          onClick={() => onChange(u.id)}
+          className={cn(
+            "rounded-md px-2.5 py-1 text-sm font-medium transition-colors lg:text-xs",
+            unit === u.id ? "bg-background shadow-sm" : "text-muted-foreground",
+          )}
+        >
+          {u.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /** Compact per-scenario card for small screens (the table needs ~1000 px). */
@@ -48,11 +81,13 @@ function ResultCard({
   result: r,
   horizonYears,
   heat,
+  unit,
 }: {
   scenario: ResolvedScenario;
   result?: ScenarioResult;
   horizonYears: number;
   heat: Partial<Record<Percentile, Heat>>;
+  unit: ResultUnit;
 }) {
   const nameId = `result-${scenario.key}`;
   const stats = r
@@ -96,7 +131,7 @@ function ResultCard({
                   {heat[p]?.best && (
                     <TrophyIcon className="size-3 shrink-0" role="img" aria-label="Best" />
                   )}
-                  {formatEuro(r.final[p])}
+                  {formatValue(percentileValue(r, scenario, p, unit, horizonYears), unit)}
                 </dd>
               </div>
             ))}
@@ -115,13 +150,15 @@ function ResultCard({
   );
 }
 
-export function ResultsTable({ scenarios, results, horizonYears }: Props) {
-  const finals = scenarios.map((s) => {
+export function ResultsTable({ scenarios, results, selectedKey, horizonYears }: Props) {
+  const [unit, setUnit] = useState<ResultUnit>("eur");
+  const value = (s: ResolvedScenario, p: Percentile) => {
     const r = results[s.key];
-    return r && !r.error ? r.final : undefined;
-  });
+    return r && !r.error ? percentileValue(r, s, p, unit, horizonYears) : undefined;
+  };
+  // Shading compares what is shown: with different contributions the order can differ per unit.
   const heat = Object.fromEntries(
-    PERCENTILES.map((p) => [p, columnHeat(finals.map((f) => f?.[p]))]),
+    PERCENTILES.map((p) => [p, columnHeat(scenarios.map((s) => value(s, p)))]),
   ) as Record<Percentile, ReturnType<typeof columnHeat>>;
   const shaded = heat.p50.some((h) => h !== undefined);
 
@@ -131,10 +168,21 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
         <CardTitle className="text-base">Final value after taxes — percentiles</CardTitle>
         <CardDescription className="text-sm lg:text-xs">
           After selling everything at the end of the horizon and paying all taxes and loans. P5 =
-          only 5 % of the paths ended lower.
+          only 5 % of the paths ended lower.{" "}
+          {unit === "pa" && "Shown as money-weighted yearly return of each percentile."}
         </CardDescription>
+        <CardAction>
+          <UnitSwitch unit={unit} onChange={setUnit} />
+        </CardAction>
       </CardHeader>
       <CardContent>
+        <DistributionChart
+          scenarios={scenarios}
+          results={results}
+          selectedKey={selectedKey}
+          horizonYears={horizonYears}
+          unit={unit}
+        />
         <div className="space-y-3 md:hidden">
           {scenarios.map((s, row) => (
             <ResultCard
@@ -143,6 +191,7 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
               result={results[s.key]}
               horizonYears={horizonYears}
               heat={Object.fromEntries(PERCENTILES.map((p) => [p, heat[p][row]]))}
+              unit={unit}
             />
           ))}
         </div>
@@ -207,7 +256,7 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
                                   aria-label="Best"
                                 />
                               )}
-                              {formatEuro(r.final[p])}
+                              {formatValue(value(s, p) as number, unit)}
                             </span>
                           </TableCell>
                         );

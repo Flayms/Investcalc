@@ -31,6 +31,8 @@ export type ScenarioResult = {
   period: { from: string; to: string };
   bands: Band[];
   final: FinalPercentiles;
+  /** Final value after taxes at P1, P2, …, P99 (index i = percentile i + 1). */
+  distribution: number[];
   invested: number;
   probabilityOfLoss: number;
   medianFees: number;
@@ -107,6 +109,9 @@ function finalPercentiles(values: number[]): FinalPercentiles {
   };
 }
 
+/** Percentiles shown in the distribution chart: P1 … P99. */
+export const DISTRIBUTION_PERCENTILES = Array.from({ length: 99 }, (_, i) => i + 1);
+
 const emptyFinal: FinalPercentiles = { p5: 0, p10: 0, p25: 0, p50: 0, p75: 0, p90: 0, p95: 0 };
 
 export function runScenario(
@@ -122,6 +127,7 @@ export function runScenario(
       period,
       bands: [],
       final: emptyFinal,
+      distribution: [],
       invested: 0,
       probabilityOfLoss: 0,
       medianFees: 0,
@@ -151,11 +157,13 @@ export function runScenario(
   }
   const finals = results.map((r) => r.finalAfterTax);
   const invested = first.invested;
+  const sortedFinals = sortedCopy(finals);
   return {
     pathCount: results.length,
     period,
     bands,
     final: finalPercentiles(finals),
+    distribution: DISTRIBUTION_PERCENTILES.map((p) => percentile(sortedFinals, p / 100)),
     invested,
     probabilityOfLoss: finals.filter((f) => f < invested).length / finals.length,
     medianFees: median(results.map((r) => r.fees)),

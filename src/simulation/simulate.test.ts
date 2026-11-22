@@ -59,6 +59,17 @@ describe("REQ-001-14 percentiles", () => {
     expect(result.probabilityOfLoss).toBeGreaterThanOrEqual(0);
   });
 
+  test("REQ-007-01 the final value is reported for every percentile from P1 to P99", () => {
+    const result = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
+    expect(result.distribution).toHaveLength(99);
+    for (let i = 1; i < result.distribution.length; i++) {
+      expect(result.distribution[i]).toBeGreaterThanOrEqual(result.distribution[i - 1] as number);
+    }
+    expect(result.distribution[4]).toBe(result.final.p5);
+    expect(result.distribution[49]).toBe(result.final.p50);
+    expect(result.distribution[94]).toBe(result.final.p95);
+  });
+
   test("REQ-001-15 same seed gives identical results", () => {
     const a = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
     const b = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
