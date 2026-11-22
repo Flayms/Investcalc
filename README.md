@@ -15,6 +15,10 @@ Specialised on German investors and German tax law. Not investment advice.
 
 ![Home](docs/screenshots/home.png)
 
+On phones, results and settings are two views (switch at the top):
+
+<img src="docs/screenshots/home-mobile.png" alt="Mobile" width="300">
+
 ## Development
 
 Requires [mise](https://mise.jdx.dev) (installs Bun and Node from `mise.toml`).

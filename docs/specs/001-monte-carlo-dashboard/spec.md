@@ -143,7 +143,7 @@ distribution of outcomes as percentiles and lets the user compare several settin
 #### REQ-001-17 Parameter help
 
 - **Given** any setting
-- **When** the user hovers its info icon
+- **When** the user hovers, clicks or taps its info icon
 - **Then** a tooltip explains it and states the recommended value, and settings deviating from the
   recommendation are flagged
 
@@ -155,6 +155,16 @@ distribution of outcomes as percentiles and lets the user compare several settin
 - **When** the dashboard is shown
 - **Then** it shows the latest data month, the drawdown from the all-time high, the phase
   (bull / correction ≥ 10 % / bear ≥ 20 %) and whether the index is above its 6/10/12-month SMA
+
+### Mobile
+
+#### REQ-001-21 Readable on phones
+
+- **Given** a phone-sized screen (≈ 390 px wide)
+- **When** the dashboard is opened
+- **Then** the page does not scroll sideways and no visible text is smaller than 12 px
+- **And** the results come first, the settings are one tap away, and the percentiles of every scenario
+  are readable without horizontal scrolling
 
 ### Publishing
 
@@ -183,25 +193,26 @@ distribution of outcomes as percentiles and lets the user compare several settin
 
 ## Verification
 
-| REQ        | Test                                                                                                                                                | Result  |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| REQ-001-01 | `App.test.tsx` › REQ-001-01 the data basis lists all three indices…                                                                                 | pass    |
-| REQ-001-02 | `simulate.test.ts` › REQ-001-02 rolling windows only use months inside the selected period                                                          | pass    |
-| REQ-001-03 | `sampling.test.ts` › REQ-001-03 …; `simulate.test.ts` › too short history yields a message; e2e `REQ-001-03 historical windows on a short history…` | pass    |
-| REQ-001-04 | `sampling.test.ts` › REQ-001-04 same seed / contiguous blocks with mean length                                                                      | pass    |
-| REQ-001-05 | `leverage.test.ts` › REQ-001-05 (1× = index − TER, drag + financing, drag grows with variance, > −100 %)                                            | pass    |
-| REQ-001-06 | `leverage.test.ts` › REQ-001-06 without SOFR only the spread is charged; `App.test.tsx` › REQ-001-06 SOFR switch flagged                            | pass    |
-| REQ-001-07 | `portfolio.test.ts` › REQ-001-07 the leveraged share of a contribution goes into the leveraged ETF                                                  | pass    |
-| REQ-001-08 | `portfolio.test.ts` › REQ-001-08 order fee and half the spread are charged on buys and the final sale                                               | pass    |
-| REQ-001-09 | `tax.test.ts` › REQ-001-09 (exemption, allowance, loss carry-forward, disabled); `portfolio.test.ts` › final sale taxed                             | pass    |
-| REQ-001-10 | `tax.test.ts` › REQ-001-10 (formula, cap); `portfolio.test.ts` › Vorabpauschale not taxed again at sale                                             | pass    |
-| REQ-001-11 | `portfolio.test.ts` › REQ-001-11 sum of contributions / annuity due                                                                                 | pass    |
-| REQ-001-12 | `portfolio.test.ts` › REQ-001-12 sells below the SMA… / signals from monthly-average prices act one month later                                     | pass    |
-| REQ-001-13 | `portfolio.test.ts` › REQ-001-13 (ends like savings plan, rising markets, loan repaid incl. interest)                                               | pass    |
-| REQ-001-14 | `stats.test.ts`, `simulate.test.ts` › REQ-001-14 bands ordered; e2e `REQ-001-14 simulates the default scenarios in a worker…`                       | pass    |
-| REQ-001-15 | `App.test.tsx` › REQ-001-15 duplicate/rename/remove; `simulate.test.ts` › same seed gives identical results                                         | pass    |
-| REQ-001-16 | `simulate.test.ts` › REQ-001-16 sweeps 1×–3×; e2e `REQ-001-16 / REQ-001-20 analyses the selected scenario`                                          | pass    |
-| REQ-001-17 | `App.test.tsx` › REQ-001-17 every setting has help and deviations are flagged                                                                       | pass    |
-| REQ-001-18 | `market.test.ts` › REQ-001-18 (bull, bear, correction); `App.test.tsx` › REQ-001-18                                                                 | pass    |
-| REQ-001-19 | Manual: `.github/workflows/deploy.yml`; local `bun run build` with relative base. Not yet run on GitHub                                             | pending |
-| REQ-001-20 | `simulate.test.ts` › REQ-001-20 (never lowers the median, financing only with leverage)                                                             | pass    |
+| REQ        | Test                                                                                                                                                | Result |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| REQ-001-01 | `App.test.tsx` › REQ-001-01 the data basis lists all three indices…                                                                                 | pass   |
+| REQ-001-02 | `simulate.test.ts` › REQ-001-02 rolling windows only use months inside the selected period                                                          | pass   |
+| REQ-001-03 | `sampling.test.ts` › REQ-001-03 …; `simulate.test.ts` › too short history yields a message; e2e `REQ-001-03 historical windows on a short history…` | pass   |
+| REQ-001-04 | `sampling.test.ts` › REQ-001-04 same seed / contiguous blocks with mean length                                                                      | pass   |
+| REQ-001-05 | `leverage.test.ts` › REQ-001-05 (1× = index − TER, drag + financing, drag grows with variance, > −100 %)                                            | pass   |
+| REQ-001-06 | `leverage.test.ts` › REQ-001-06 without SOFR only the spread is charged; `App.test.tsx` › REQ-001-06 SOFR switch flagged                            | pass   |
+| REQ-001-07 | `portfolio.test.ts` › REQ-001-07 the leveraged share of a contribution goes into the leveraged ETF                                                  | pass   |
+| REQ-001-08 | `portfolio.test.ts` › REQ-001-08 order fee and half the spread are charged on buys and the final sale                                               | pass   |
+| REQ-001-09 | `tax.test.ts` › REQ-001-09 (exemption, allowance, loss carry-forward, disabled); `portfolio.test.ts` › final sale taxed                             | pass   |
+| REQ-001-10 | `tax.test.ts` › REQ-001-10 (formula, cap); `portfolio.test.ts` › Vorabpauschale not taxed again at sale                                             | pass   |
+| REQ-001-11 | `portfolio.test.ts` › REQ-001-11 sum of contributions / annuity due                                                                                 | pass   |
+| REQ-001-12 | `portfolio.test.ts` › REQ-001-12 sells below the SMA… / signals from monthly-average prices act one month later                                     | pass   |
+| REQ-001-13 | `portfolio.test.ts` › REQ-001-13 (ends like savings plan, rising markets, loan repaid incl. interest)                                               | pass   |
+| REQ-001-14 | `stats.test.ts`, `simulate.test.ts` › REQ-001-14 bands ordered; e2e `REQ-001-14 simulates the default scenarios in a worker…`                       | pass   |
+| REQ-001-15 | `App.test.tsx` › REQ-001-15 duplicate/rename/remove; `simulate.test.ts` › same seed gives identical results                                         | pass   |
+| REQ-001-16 | `simulate.test.ts` › REQ-001-16 sweeps 1×–3×; e2e `REQ-001-16 / REQ-001-20 analyses the selected scenario`                                          | pass   |
+| REQ-001-17 | `App.test.tsx` › REQ-001-17 every setting has help and deviations are flagged; e2e `mobile.spec.ts` › REQ-001-17 help opens on tap                  | pass   |
+| REQ-001-18 | `market.test.ts` › REQ-001-18 (bull, bear, correction); `App.test.tsx` › REQ-001-18                                                                 | pass   |
+| REQ-001-19 | Deploy workflow ran on `main` after PR #1; live site checked in a browser (simulation + analysis load, no page errors)                              | pass   |
+| REQ-001-21 | e2e `mobile.spec.ts` › REQ-001-21 (no sideways scroll, ≥ 12 px text, results first, settings switcher)                                              | pass   |
+| REQ-001-20 | `simulate.test.ts` › REQ-001-20 (never lowers the median, financing only with leverage)                                                             | pass   |
