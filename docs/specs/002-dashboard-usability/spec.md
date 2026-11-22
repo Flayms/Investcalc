@@ -38,6 +38,7 @@ results easier to read.
 - **When** the percentile table of the final value after taxes is shown
 - **Then** each percentile cell is shaded on a single-hue scale within its column, from light (lowest value) to dark (highest value)
 - **And** the highest value of each column is marked as best in text, not by color alone
+- **And** on small screens, where results are shown as one card per scenario, the same shading and marks apply to the percentiles in the cards
 - **And** with a single scenario no shading is applied
 
 ### REQ-002-04 Leverage explorer explains itself
@@ -74,6 +75,6 @@ results easier to read.
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
 | REQ-002-01 | `persistence.test.ts` › REQ-002-01 (round trip, missing, invalid, other version); `scenario.test.ts` › new keys never collide; `App.test.tsx` › REQ-002-01 (restored after remount, corrupt state); e2e `REQ-002-01 scenarios survive a page reload` | pass   |
 | REQ-002-02 | `scenario.test.ts` › REQ-002-02 merges shared settings; `App.test.tsx` › REQ-002-02 shared settings apply to all scenarios                                                                                                                           | pass   |
-| REQ-002-03 | `heatmap.test.ts` › REQ-002-03; `App.test.tsx` › REQ-002-03 best value marked per column                                                                                                                                                             | pass   |
+| REQ-002-03 | `heatmap.test.ts` › REQ-002-03; `App.test.tsx` › REQ-002-03 best value marked per percentile (table and cards)                                                                                                                                       | pass   |
 | REQ-002-04 | `AnalysisCards.test.tsx` › REQ-002-04 (takeaway vs 1×, 100 % note, legend incl. paid in); axis labels and paid-in line checked in `docs/screenshots/home.png`                                                                                        | pass   |
 | REQ-002-05 | `App.test.tsx` › REQ-002-05 market and data basis on their own view; e2e `REQ-002-05 …`                                                                                                                                                              | pass   |

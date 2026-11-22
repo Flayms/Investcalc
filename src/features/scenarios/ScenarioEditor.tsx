@@ -34,30 +34,30 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
           />
           Scenario settings
         </CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-sm lg:text-xs">
           What you choose per scenario. Costs, taxes and the data period are shared.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="space-y-1.5">
-          <Label htmlFor="scenario-name" className="text-xs font-medium">
+          <Label htmlFor="scenario-name" className="text-sm lg:text-xs font-medium">
             Name
           </Label>
           <Input
             id="scenario-name"
-            className="h-8 text-sm"
+            className="h-10 lg:h-8 text-sm"
             value={p.name}
             onChange={(e) => set({ name: e.target.value })}
           />
         </div>
 
         <section className="space-y-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Index
           </h3>
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
-              <Label htmlFor="etf" className="text-xs font-medium">
+              <Label htmlFor="etf" className="text-sm lg:text-xs font-medium">
                 Index
               </Label>
               <HelpTooltip
@@ -67,12 +67,12 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
               />
             </div>
             <Select value={p.etfId} onValueChange={(etfId) => set({ etfId })}>
-              <SelectTrigger id="etf" className="h-8 w-full text-xs">
+              <SelectTrigger id="etf" className="h-10 lg:h-8 w-full text-sm lg:text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {Object.values(datasets).map((d) => (
-                  <SelectItem key={d.id} value={d.id} className="text-xs">
+                  <SelectItem key={d.id} value={d.id} className="text-sm lg:text-xs">
                     {d.name}
                   </SelectItem>
                 ))}
@@ -85,7 +85,7 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
           const fields = group.fields.filter((f) => !f.visible || f.visible(p));
           return (
             <section key={group.title} className="space-y-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {group.title}
               </h3>
               {fields.map((field) => (

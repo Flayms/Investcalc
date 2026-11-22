@@ -23,13 +23,13 @@ export function HistoricalPeriodField({ datasets, value, onChange }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <Label className="text-xs font-medium">Historical period</Label>
+        <Label className="text-sm lg:text-xs font-medium">Historical period</Label>
         <HelpTooltip
           label="Historical period"
           help="Only months inside this period are used to generate paths. Indices with a shorter history use the part of the period they cover."
           recommendation="The full period: more market regimes make the distribution more robust."
         />
-        <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+        <span className="ml-auto text-sm lg:text-xs tabular-nums text-muted-foreground">
           {from}–{to}
         </span>
       </div>
@@ -45,7 +45,7 @@ export function HistoricalPeriodField({ datasets, value, onChange }: Props) {
         }
       />
       {shortest.length > 0 && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs lg:text-[11px] text-muted-foreground">
           {shortest.map((d) => `${d.name} from ${firstYear(d)}`).join(", ")}.
         </p>
       )}

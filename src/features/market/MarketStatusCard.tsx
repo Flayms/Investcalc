@@ -72,14 +72,14 @@ export function MarketStatusCard({ datasets }: { datasets: Record<string, Datase
       <CardHeader className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <CardTitle className="text-base">Current market</CardTitle>
-          <CardDescription className="text-xs">
+          <CardDescription className="text-sm lg:text-xs">
             Based on the latest data month ({status.lastMonth}), total return in USD.
           </CardDescription>
         </div>
-        <Tabs value={id} onValueChange={setId}>
-          <TabsList>
+        <Tabs value={id} onValueChange={setId} className="w-full sm:w-auto">
+          <TabsList className="w-full sm:w-auto">
             {Object.values(datasets).map((d) => (
-              <TabsTrigger key={d.id} value={d.id} className="text-xs">
+              <TabsTrigger key={d.id} value={d.id} className="text-sm lg:text-xs">
                 {d.name}
               </TabsTrigger>
             ))}
@@ -90,15 +90,17 @@ export function MarketStatusCard({ datasets }: { datasets: Record<string, Datase
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-semibold ${phase.className}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-sm font-semibold ${phase.className}`}
             >
               <phase.icon className="size-4" aria-hidden />
               {phase.label}
             </span>
-            <span className="text-xs text-muted-foreground">{phase.text}</span>
+            <span className="text-sm lg:text-xs text-muted-foreground">{phase.text}</span>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground">Distance from all-time high</div>
+            <div className="text-sm lg:text-xs text-muted-foreground">
+              Distance from all-time high
+            </div>
             <div className="text-2xl font-semibold tabular-nums">
               {formatSignedPercent(status.drawdown)}
             </div>
@@ -120,12 +122,12 @@ export function MarketStatusCard({ datasets }: { datasets: Record<string, Datase
               </li>
             ))}
           </ul>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs lg:text-[11px] text-muted-foreground">
             The SMA strategy is invested while the index is above its SMA. Not investment advice.
           </p>
         </div>
         <div>
-          <div className="mb-1 flex gap-4 text-xs text-muted-foreground">
+          <div className="mb-1 flex gap-4 text-sm lg:text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="h-0.5 w-4 rounded bg-[#2a78d6]" aria-hidden /> {dataset.name} (last 5
               years, start = 100)
@@ -135,7 +137,7 @@ export function MarketStatusCard({ datasets }: { datasets: Record<string, Datase
               {SMA_CHART}-month SMA
             </span>
           </div>
-          <ChartContainer config={{}} className="aspect-auto h-44 w-full">
+          <ChartContainer config={{}} className="aspect-auto h-44 w-full text-sm lg:text-xs">
             <LineChart data={chart} margin={{ left: 0, right: 8, top: 4 }}>
               <CartesianGrid vertical={false} strokeOpacity={0.5} />
               <XAxis dataKey="month" tickLine={false} axisLine={false} minTickGap={40} />

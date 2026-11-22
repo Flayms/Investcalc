@@ -18,7 +18,7 @@ export function GlobalSettingsCard({ global, onChange, children }: Props) {
     <Card className="gap-4">
       <CardHeader>
         <CardTitle className="text-base">Simulation</CardTitle>
-        <CardDescription className="text-xs">Shared by all scenarios.</CardDescription>
+        <CardDescription className="text-sm lg:text-xs">Shared by all scenarios.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {globalFields
@@ -33,7 +33,7 @@ export function GlobalSettingsCard({ global, onChange, children }: Props) {
           ))}
         {global.sampling === "bootstrap" && (
           <div className="flex items-center gap-2">
-            <Label htmlFor="seed" className="text-xs font-medium">
+            <Label htmlFor="seed" className="text-sm lg:text-xs font-medium">
               Seed
             </Label>
             <HelpTooltip
@@ -43,7 +43,7 @@ export function GlobalSettingsCard({ global, onChange, children }: Props) {
             <Input
               id="seed"
               type="number"
-              className="ml-auto h-8 w-24 text-right text-xs"
+              className="ml-auto h-10 lg:h-8 w-24 text-right text-sm lg:text-xs"
               value={global.seed}
               onChange={(e) =>
                 onChange({ ...global, seed: Math.trunc(Number(e.target.value) || 0) })

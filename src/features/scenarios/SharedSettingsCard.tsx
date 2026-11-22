@@ -15,7 +15,7 @@ export function SharedSettingsCard({ shared, context, onChange }: Props) {
     <Card className="gap-4">
       <CardHeader>
         <CardTitle className="text-base">Costs & taxes</CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-sm lg:text-xs">
           Shared by all scenarios: facts about your products, broker and tax situation.
         </CardDescription>
       </CardHeader>
@@ -25,7 +25,7 @@ export function SharedSettingsCard({ shared, context, onChange }: Props) {
           if (fields.length === 0) return null;
           return (
             <section key={group.title} className="space-y-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {group.title}
               </h3>
               {fields.map((field) => (

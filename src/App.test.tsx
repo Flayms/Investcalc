@@ -181,14 +181,17 @@ test("REQ-002-03 the best final value of each percentile is marked", async () =>
     analyze: () => new Promise(() => {}),
   } as unknown as Pick<SimulationClient, "run" | "analyze">;
   renderApp(client);
-  const table = (await screen.findByText(/Final value after taxes — percentiles/)).closest(
+  const card = (await screen.findByText(/Final value after taxes — percentiles/)).closest(
     "[data-slot=card]",
   ) as HTMLElement;
-  const best = await within(table).findAllByLabelText("Best");
-  expect(best).toHaveLength(6);
+  const table = within(card).getByRole("table");
+  expect(await within(table).findAllByLabelText("Best")).toHaveLength(6);
   const rows = within(table).getAllByRole("row");
   // The third scenario has the highest values.
   expect(within(rows[3] as HTMLElement).getAllByLabelText("Best")).toHaveLength(6);
+  // The cards for small screens mark the same scenario.
+  const thirdCard = within(card).getByRole("article", { name: "2× with 10-month SMA" });
+  expect(within(thirdCard).getAllByLabelText("Best")).toHaveLength(6);
 });
 
 test("REQ-002-05 market and data basis are on their own view, not among the results", async () => {

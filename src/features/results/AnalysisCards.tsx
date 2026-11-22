@@ -20,8 +20,12 @@ import type { LeveragePoint, LeverageSweep } from "@/simulation/simulate";
 type Props = { scenario: ResolvedScenario; analysis?: Analysis; loading: boolean };
 
 function Status({ loading, error }: { loading: boolean; error?: string }) {
-  if (error) return <p className="text-xs text-amber-800">{error}</p>;
-  return <p className="text-xs text-muted-foreground">{loading ? "Analysing…" : "No data."}</p>;
+  if (error) return <p className="text-sm lg:text-xs text-amber-800">{error}</p>;
+  return (
+    <p className="text-sm lg:text-xs text-muted-foreground">
+      {loading ? "Analysing…" : "No data."}
+    </p>
+  );
 }
 
 function LeverageTakeaway({ sweep, invested }: { sweep: LeverageSweep; invested?: number }) {
@@ -63,7 +67,7 @@ export function LeverageExplorer({ scenario, analysis, loading, invested }: Expl
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Leverage explorer: which factor pays off?</CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-sm lg:text-xs">
           The same paths and contributions as “{scenario.params.name}”, but always 100 % in the
           leveraged ETF; only the factor changes from 1× to 3×. Final value after taxes, up to 1,000
           paths.
@@ -76,7 +80,7 @@ export function LeverageExplorer({ scenario, analysis, loading, invested }: Expl
           <>
             <LeverageTakeaway sweep={sweep} invested={invested} />
             <ul
-              className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
+              className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm lg:text-xs text-muted-foreground"
               aria-label="Legend"
             >
               <li className="flex items-center gap-1.5">
@@ -101,7 +105,7 @@ export function LeverageExplorer({ scenario, analysis, loading, invested }: Expl
                 </li>
               )}
             </ul>
-            <ChartContainer config={{}} className="aspect-auto h-60 w-full">
+            <ChartContainer config={{}} className="aspect-auto h-60 w-full text-sm lg:text-xs">
               <ComposedChart data={rows} margin={{ left: 12, right: 16, top: 16, bottom: 12 }}>
                 <CartesianGrid vertical={false} strokeOpacity={0.5} />
                 <XAxis
@@ -116,7 +120,7 @@ export function LeverageExplorer({ scenario, analysis, loading, invested }: Expl
                     value: "Leverage factor",
                     position: "insideBottom",
                     offset: -8,
-                    fontSize: 11,
+                    fontSize: 12,
                   }}
                 />
                 <YAxis
@@ -133,7 +137,7 @@ export function LeverageExplorer({ scenario, analysis, loading, invested }: Expl
                     position: "insideLeft",
                     offset: -4,
                     style: { textAnchor: "middle" },
-                    fontSize: 11,
+                    fontSize: 12,
                   }}
                 />
                 <Tooltip
@@ -175,7 +179,7 @@ export function LeverageExplorer({ scenario, analysis, loading, invested }: Expl
                     value: "Highest median",
                     // Keep the label inside the plot at either end of the axis.
                     position: sweep.bestLeverage >= 2 ? "insideTopRight" : "insideTopLeft",
-                    fontSize: 11,
+                    fontSize: 12,
                     fill: "var(--muted-foreground)",
                   }}
                 />
@@ -189,7 +193,7 @@ export function LeverageExplorer({ scenario, analysis, loading, invested }: Expl
                 />
               </ComposedChart>
             </ChartContainer>
-            <p className="mt-2 text-[11px] text-muted-foreground">
+            <p className="mt-2 text-xs lg:text-[11px] text-muted-foreground">
               More leverage widens the band: the good case grows much faster than the median, while
               the bad case shrinks. Pick the factor whose bad case you could live with.
             </p>
@@ -206,7 +210,7 @@ export function FactorImpactCard({ scenario, analysis, loading }: Props) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">What each factor costs</CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-sm lg:text-xs">
           How much higher the median final value of “{scenario.params.name}” would be without each
           factor (up to 1,000 paths).
         </CardDescription>
@@ -220,7 +224,7 @@ export function FactorImpactCard({ scenario, analysis, loading }: Props) {
               Median final value:{" "}
               <span className="font-semibold">{formatEuro(impact.baseline)}</span>
             </p>
-            <ChartContainer config={{}} className="aspect-auto h-56 w-full">
+            <ChartContainer config={{}} className="aspect-auto h-56 w-full text-sm lg:text-xs">
               <BarChart data={impact.factors} layout="vertical" margin={{ left: 8, right: 24 }}>
                 <CartesianGrid horizontal={false} strokeOpacity={0.5} />
                 <XAxis
@@ -232,7 +236,7 @@ export function FactorImpactCard({ scenario, analysis, loading }: Props) {
                 <YAxis
                   type="category"
                   dataKey="label"
-                  width={130}
+                  width={120}
                   tickLine={false}
                   axisLine={false}
                 />

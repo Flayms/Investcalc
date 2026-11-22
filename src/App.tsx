@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DataBasisCard } from "@/features/data/DataBasisCard";
 import { type DatasetLoader, fetchDataset, useDatasets } from "@/features/data/useDatasets";
+import { type MobileView, MobileViewSwitch } from "@/features/layout/MobileViewSwitch";
 import { MarketStatusCard } from "@/features/market/MarketStatusCard";
 import {
   browserStorage,
@@ -32,6 +33,7 @@ import {
 } from "@/features/scenarios/scenario";
 import type { SimulationClient } from "@/features/simulation/client";
 import { useSimulation } from "@/features/simulation/useSimulation";
+import { cn } from "@/lib/utils";
 import { defaultGlobal } from "@/simulation/params";
 
 type AppProps = {
@@ -59,6 +61,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
   const [selectedKey, setSelectedKey] = useState(initial.selectedKey);
   const [global, setGlobal] = useState(initial.global);
   const [shared, setShared] = useState(initial.shared);
+  const [mobileView, setMobileView] = useState<MobileView>("results");
   const selected = scenarios.find((s) => s.key === selectedKey) ?? (scenarios[0] as Scenario);
 
   useEffect(() => {
@@ -100,10 +103,10 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
     <TooltipProvider delayDuration={150}>
       <Tabs defaultValue="simulation" className="min-h-screen gap-0 bg-muted/40">
         <header className="border-b bg-background">
-          <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-6 gap-y-3 px-6 py-4">
+          <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4 sm:px-6">
             <div>
               <h1 className="text-xl font-semibold tracking-tight">Investcalc</h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm lg:text-xs text-muted-foreground">
                 Monte Carlo simulation of ETF savings plans on historical data — leverage, costs and
                 German taxes.
               </p>
@@ -114,7 +117,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
             </TabsList>
             {running && (
               <span
-                className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground"
+                className="ml-auto hidden lg:flex items-center gap-1.5 text-sm lg:text-xs text-muted-foreground"
                 role="status"
               >
                 <LoaderCircleIcon className="size-3.5 animate-spin" aria-hidden /> Simulating…
@@ -132,8 +135,28 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
         ) : (
           <>
             <TabsContent value="simulation">
-              <main className="mx-auto grid max-w-[1500px] gap-6 px-6 py-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-                <aside className="space-y-6">
+              <MobileViewSwitch view={mobileView} onChange={setMobileView} running={running} />
+              <main className="mx-auto grid max-w-[1500px] gap-4 px-3 py-4 sm:gap-6 sm:px-6 sm:py-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+                <div className="lg:col-span-2">
+                  <ScenarioBar
+                    scenarios={scenarios}
+                    selectedKey={selected.key}
+                    onSelect={setSelectedKey}
+                    onAdd={() =>
+                      addScenario({ ...defaultChoices, name: `Scenario ${scenarios.length + 1}` })
+                    }
+                    onDuplicate={() =>
+                      addScenario({ ...selected.params, name: `${selected.params.name} (copy)` })
+                    }
+                    onRemove={removeSelected}
+                  />
+                </div>
+                <aside
+                  className={cn(
+                    "space-y-4 sm:space-y-6",
+                    mobileView === "results" && "hidden lg:block",
+                  )}
+                >
                   <GlobalSettingsCard global={global} onChange={setGlobal}>
                     <HistoricalPeriodField
                       datasets={datasets.data}
@@ -152,26 +175,19 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                     onChange={setShared}
                   />
                 </aside>
-                <div className="min-w-0 space-y-6">
-                  <ScenarioBar
-                    scenarios={scenarios}
-                    selectedKey={selected.key}
-                    onSelect={setSelectedKey}
-                    onAdd={() =>
-                      addScenario({ ...defaultChoices, name: `Scenario ${scenarios.length + 1}` })
-                    }
-                    onDuplicate={() =>
-                      addScenario({ ...selected.params, name: `${selected.params.name} (copy)` })
-                    }
-                    onRemove={removeSelected}
-                  />
+                <div
+                  className={cn(
+                    "flex min-w-0 flex-col gap-4 sm:gap-6",
+                    mobileView === "settings" && "hidden lg:flex",
+                  )}
+                >
                   <FanChart scenarios={resolved} results={results} selectedKey={selected.key} />
                   <ResultsTable
                     scenarios={resolved}
                     results={results}
                     horizonYears={global.horizonYears}
                   />
-                  <div className="grid gap-6 xl:grid-cols-2">
+                  <div className="grid gap-4 sm:gap-6 xl:grid-cols-2">
                     <LeverageExplorer
                       scenario={resolvedSelected}
                       analysis={analysis}
@@ -188,7 +204,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
               </main>
             </TabsContent>
             <TabsContent value="market">
-              <main className="mx-auto max-w-[1500px] space-y-6 px-6 py-6">
+              <main className="mx-auto max-w-[1500px] space-y-4 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-6">
                 <MarketStatusCard datasets={datasets.data} />
                 <DataBasisCard datasets={datasets.data} />
               </main>
