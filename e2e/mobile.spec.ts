@@ -53,4 +53,19 @@ test.describe("REQ-001-21 readable on phones", () => {
     await info.tap();
     await expect(page.getByRole("tooltip")).toContainText("Recommended:");
   });
+
+  test("REQ-006-04 the bear market table fits on a phone", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("tab", { name: "Market & data" }).click();
+    await page.getByRole("tab", { name: "Max", exact: true }).click();
+    const table = page.getByRole("table").first();
+    await expect(table.getByRole("row", { name: /1929-08/ })).toBeVisible();
+    const box = await table.boundingBox();
+    const parent = await table.evaluate((el) => el.parentElement?.clientWidth ?? 0);
+    expect(box?.width ?? 0).toBeLessThanOrEqual(parent);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
 });

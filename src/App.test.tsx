@@ -101,9 +101,118 @@ test("REQ-001-18 the current market phase and SMA position are shown", async () 
   renderApp();
   await openMarketAndData();
   await screen.findByText("Current market");
-  expect(screen.getByText(/Bull market|Correction|Bear market/)).toBeInTheDocument();
+  expect(screen.getByText(/^(Bull market|Correction|Bear market)$/)).toBeInTheDocument();
   expect(screen.getByText(/(Above|Below) 10-month SMA/)).toBeInTheDocument();
   expect(screen.getByText("Distance from all-time high")).toBeInTheDocument();
+});
+
+function pickTab(list: string, name: string | RegExp) {
+  const tab = within(screen.getByRole("tablist", { name: list })).getByRole("tab", { name });
+  fireEvent.mouseDown(tab);
+  fireEvent.click(tab);
+  return tab;
+}
+
+test("REQ-006-01 the chart time frame can be changed, 5 years preselected", async () => {
+  renderApp();
+  await openMarketAndData();
+  const frames = await screen.findByRole("tablist", { name: "Time frame" });
+  expect(within(frames).getByRole("tab", { name: "5Y" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByText(/last 5 years, start = 100/)).toBeInTheDocument();
+  pickTab("Time frame", "10Y");
+  expect(screen.getByText(/last 10 years, start = 100/)).toBeInTheDocument();
+});
+
+test("REQ-006-01 time frames longer than the history cannot be picked", async () => {
+  renderApp();
+  await openMarketAndData();
+  await screen.findByRole("tablist", { name: "Time frame" });
+  expect(screen.getByRole("tab", { name: "50Y" })).toBeEnabled();
+  pickTab("Index", "MSCI World");
+  expect(screen.getByRole("tab", { name: "50Y" })).toBeDisabled();
+});
+
+test("REQ-006-02 time frames over 10 years use a log scale", async () => {
+  renderApp();
+  await openMarketAndData();
+  await screen.findByRole("tablist", { name: "Time frame" });
+  expect(screen.queryByText(/log scale/)).not.toBeInTheDocument();
+  pickTab("Time frame", "20Y");
+  expect(screen.getByText(/log scale/)).toBeInTheDocument();
+});
+
+test("REQ-006-03 statistics of the selected time frame are shown", async () => {
+  renderApp();
+  await openMarketAndData();
+  const stats = await screen.findByRole("region", { name: "Selected time frame" });
+  for (const label of ["Total return", "CAGR", "Volatility", "Max drawdown"]) {
+    expect(within(stats).getByText(label)).toBeInTheDocument();
+  }
+  const before = stats.textContent;
+  pickTab("Time frame", "Max");
+  expect(screen.getByRole("region", { name: "Selected time frame" }).textContent).not.toBe(before);
+});
+
+test("REQ-006-04 historic bear markets of the time frame are listed", async () => {
+  renderApp();
+  await openMarketAndData();
+  const heading = await screen.findByText("Bear and bull markets");
+  const card = heading.closest("[data-slot=card]") as HTMLElement;
+  expect(within(card).getByText(/No bear market/)).toBeInTheDocument();
+  pickTab("Time frame", "Max");
+  const row = within(card).getByRole("row", { name: /1929-08/ });
+  expect(within(row).getByText("1932-05")).toBeInTheDocument();
+  expect(within(row).getByText("-81.7 %")).toBeInTheDocument();
+});
+
+test("REQ-006-04 an ongoing bear market is marked as such", async () => {
+  // S&P 500 history cut off at its 2009-02 trough (1871-01 + 1657 months).
+  const cutOff = async (id: string) => {
+    const d = JSON.parse(raw[id] ?? "null");
+    return id === "sp500"
+      ? { ...d, returns: d.returns.slice(0, 1658), rates: d.rates.slice(0, 1658) }
+      : d;
+  };
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <App loadDataset={cutOff} simulationClient={idleClient} />
+    </QueryClientProvider>,
+  );
+  await openMarketAndData();
+  const heading = await screen.findByText("Bear and bull markets");
+  const card = heading.closest("[data-slot=card]") as HTMLElement;
+  const row = within(card).getByRole("row", { name: /2007-09/ });
+  expect(within(row).getByText("ongoing")).toBeInTheDocument();
+  expect(within(card).queryByText("Current bull market")).not.toBeInTheDocument();
+});
+
+test("REQ-006-05 the current bull market and past bull markets are summarised", async () => {
+  renderApp();
+  await openMarketAndData();
+  const heading = await screen.findByText("Bear and bull markets");
+  const card = heading.closest("[data-slot=card]") as HTMLElement;
+  expect(within(card).getByText("Current bull market")).toBeInTheDocument();
+  expect(within(card).getByText(/since 2009-02/)).toBeInTheDocument();
+  expect(within(card).getByText("Median bull market")).toBeInTheDocument();
+});
+
+test("REQ-006-06 trailing returns, recent volatility and the short rate are shown", async () => {
+  renderApp();
+  await openMarketAndData();
+  const indicators = await screen.findByRole("region", { name: "Key indicators" });
+  for (const label of [
+    "1Y",
+    "3Y p.a.",
+    "5Y p.a.",
+    "10Y p.a.",
+    "Volatility 12 months",
+    "Short rate",
+  ]) {
+    expect(within(indicators).getByText(label)).toBeInTheDocument();
+  }
+  expect(within(indicators).getByText(/long-term 14.0 %/)).toBeInTheDocument();
+  expect(within(indicators).getByText("3.7 %")).toBeInTheDocument();
 });
 
 test("REQ-002-01 scenarios, selection and settings are restored after a reload", async () => {
