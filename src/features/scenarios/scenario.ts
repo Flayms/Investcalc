@@ -1,6 +1,10 @@
 import { defaultScenario, type ScenarioParams, scenarioSchema } from "@/simulation/params";
 
-/** Categorical palette, fixed order (validated reference palette, light mode). */
+/**
+ * Categorical palette, fixed order (validated reference palette). The hex values are the light
+ * steps; the rendered colors are CSS variables so the dark theme can use its own validated steps
+ * (see `--series-N` in index.css).
+ */
 export const SCENARIO_COLORS = [
   "#2a78d6",
   "#eb6834",
@@ -56,7 +60,8 @@ export type Scenario<P = ScenarioChoices> = { key: string; colorIndex: number; p
 /** A scenario merged with the shared settings, ready to simulate. */
 export type ResolvedScenario = Scenario<ScenarioParams>;
 
-export const scenarioColor = (s: Pick<Scenario, "colorIndex">) => SCENARIO_COLORS[s.colorIndex];
+export const scenarioColor = (s: Pick<Scenario, "colorIndex">) =>
+  `var(--series-${(s.colorIndex % SCENARIO_COLORS.length) + 1})`;
 
 /** A key that is not used by any of the given scenarios. */
 export function newKey(existing: Pick<Scenario, "key">[] = []): string {

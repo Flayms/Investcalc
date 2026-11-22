@@ -20,19 +20,19 @@ const PHASES: Record<
 > = {
   bull: {
     label: "Bull market",
-    className: "bg-emerald-100 text-emerald-900",
+    className: "bg-emerald-100 text-emerald-900 dark:bg-emerald-400/15 dark:text-emerald-200",
     icon: TrendingUpIcon,
     text: "Less than 10 % below the all-time high.",
   },
   correction: {
     label: "Correction",
-    className: "bg-amber-100 text-amber-900",
+    className: "bg-amber-100 text-amber-900 dark:bg-amber-400/15 dark:text-amber-200",
     icon: TriangleAlertIcon,
     text: "10–20 % below the all-time high.",
   },
   bear: {
     label: "Bear market",
-    className: "bg-red-100 text-red-900",
+    className: "bg-red-100 text-red-900 dark:bg-red-400/15 dark:text-red-200",
     icon: TrendingDownIcon,
     text: "20 % or more below the all-time high.",
   },
@@ -109,9 +109,15 @@ export function MarketStatusCard({ datasets }: { datasets: Record<string, Datase
             {status.smas.map((s) => (
               <li key={s.months} className="flex items-center gap-2">
                 {s.above ? (
-                  <ArrowUpRightIcon className="size-4 text-emerald-700" aria-hidden />
+                  <ArrowUpRightIcon
+                    className="size-4 text-emerald-700 dark:text-emerald-400"
+                    aria-hidden
+                  />
                 ) : (
-                  <ArrowDownRightIcon className="size-4 text-red-700" aria-hidden />
+                  <ArrowDownRightIcon
+                    className="size-4 text-red-700 dark:text-red-400"
+                    aria-hidden
+                  />
                 )}
                 <span>
                   {s.above ? "Above" : "Below"} {s.months}-month SMA
@@ -129,8 +135,8 @@ export function MarketStatusCard({ datasets }: { datasets: Record<string, Datase
         <div>
           <div className="mb-1 flex gap-4 text-sm lg:text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <span className="h-0.5 w-4 rounded bg-[#2a78d6]" aria-hidden /> {dataset.name} (last 5
-              years, start = 100)
+              <span className="h-0.5 w-4 rounded bg-(--series-1)" aria-hidden /> {dataset.name}{" "}
+              (last 5 years, start = 100)
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-4 border-t-2 border-dashed border-muted-foreground" aria-hidden />{" "}
@@ -149,7 +155,7 @@ export function MarketStatusCard({ datasets }: { datasets: Record<string, Datase
               <Line
                 dataKey="index"
                 name={dataset.name}
-                stroke="#2a78d6"
+                stroke="var(--series-1)"
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}

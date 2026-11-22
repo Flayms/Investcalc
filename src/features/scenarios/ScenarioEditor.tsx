@@ -52,9 +52,7 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
         </div>
 
         <section className="space-y-4">
-          <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Index
-          </h3>
+          <h3 className="font-hand text-xl leading-none font-bold text-primary">Index</h3>
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <Label htmlFor="etf" className="text-sm lg:text-xs font-medium">
@@ -85,7 +83,7 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
           const fields = group.fields.filter((f) => !f.visible || f.visible(p));
           return (
             <section key={group.title} className="space-y-4">
-              <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="font-hand text-xl leading-none font-bold text-primary">
                 {group.title}
               </h3>
               {fields.map((field) => (

@@ -53,7 +53,7 @@ function Slider({
           key={index}
           // The thumb carries role="slider", so it needs the accessible name.
           aria-label={ariaLabel}
-          className="block size-6 shrink-0 lg:size-4 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          className="block size-6 shrink-0 lg:size-4 rounded-full border-2 border-primary bg-card shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

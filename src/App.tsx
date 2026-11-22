@@ -33,6 +33,7 @@ import {
 } from "@/features/scenarios/scenario";
 import type { SimulationClient } from "@/features/simulation/client";
 import { useSimulation } from "@/features/simulation/useSimulation";
+import { ThemeToggle } from "@/features/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { defaultGlobal } from "@/simulation/params";
 
@@ -101,12 +102,14 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
 
   return (
     <TooltipProvider delayDuration={150}>
-      <Tabs defaultValue="simulation" className="min-h-screen gap-0 bg-muted/40">
-        <header className="border-b bg-background">
-          <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4 sm:px-6">
+      <Tabs defaultValue="simulation" className="min-h-screen gap-0">
+        <header className="border-b-2 border-dashed">
+          <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4 sm:pr-6 sm:pl-16">
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">Investcalc</h1>
-              <p className="text-sm lg:text-xs text-muted-foreground">
+              <h1 className="text-4xl leading-none">
+                <span className="highlighter">Investcalc</span>
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Monte Carlo simulation of ETF savings plans on historical data — leverage, costs and
                 German taxes.
               </p>
@@ -115,19 +118,22 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
               <TabsTrigger value="simulation">Simulation</TabsTrigger>
               <TabsTrigger value="market">Market & data</TabsTrigger>
             </TabsList>
-            {running && (
-              <span
-                className="ml-auto hidden lg:flex items-center gap-1.5 text-sm lg:text-xs text-muted-foreground"
-                role="status"
-              >
-                <LoaderCircleIcon className="size-3.5 animate-spin" aria-hidden /> Simulating…
-              </span>
-            )}
+            <div className="ml-auto flex items-center gap-3">
+              {running && (
+                <span
+                  className="hidden lg:flex items-center gap-1.5 text-sm text-muted-foreground"
+                  role="status"
+                >
+                  <LoaderCircleIcon className="size-3.5 animate-spin" aria-hidden /> Simulating…
+                </span>
+              )}
+              <ThemeToggle />
+            </div>
           </div>
         </header>
 
         {datasets.isError ? (
-          <p className="p-6 text-sm text-red-800">
+          <p className="p-6 text-sm text-red-800 dark:text-red-300">
             Could not load the historical data: {String(datasets.error)}
           </p>
         ) : !datasets.data ? (
@@ -136,7 +142,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
           <>
             <TabsContent value="simulation">
               <MobileViewSwitch view={mobileView} onChange={setMobileView} running={running} />
-              <main className="mx-auto grid max-w-[1500px] gap-4 px-3 py-4 sm:gap-6 sm:px-6 sm:py-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+              <main className="mx-auto grid max-w-[1500px] gap-4 px-3 py-4 sm:gap-6 sm:pr-6 sm:pl-16 sm:py-6 lg:grid-cols-[340px_minmax(0,1fr)]">
                 <div className="lg:col-span-2">
                   <ScenarioBar
                     scenarios={scenarios}
@@ -204,7 +210,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
               </main>
             </TabsContent>
             <TabsContent value="market">
-              <main className="mx-auto max-w-[1500px] space-y-4 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-6">
+              <main className="mx-auto max-w-[1500px] space-y-4 px-3 py-4 sm:space-y-6 sm:pr-6 sm:pl-16 sm:py-6">
                 <MarketStatusCard datasets={datasets.data} />
                 <DataBasisCard datasets={datasets.data} />
               </main>

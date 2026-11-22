@@ -5,6 +5,7 @@ const desktop = { viewport: { width: 1440, height: 900 } };
 
 const shots = [
   { name: "home", device: desktop, view: undefined },
+  { name: "home-dark", device: { ...desktop, colorScheme: "dark" as const }, view: undefined },
   { name: "home-mobile", device: iPhone, view: undefined },
   { name: "market", device: desktop, view: "Market & data" },
 ];

@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { columnHeat, type Heat } from "@/features/results/heatmap";
+import { columnHeat, type Heat, heatStyle } from "@/features/results/heatmap";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
 import { formatEuro, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -78,16 +78,12 @@ function ResultCard({
       {!r ? (
         <p className="text-sm text-muted-foreground">Simulating…</p>
       ) : r.error ? (
-        <p className="text-sm text-amber-800">{r.error}</p>
+        <p className="text-sm text-amber-800 dark:text-amber-300">{r.error}</p>
       ) : (
         <>
           <dl className="grid grid-cols-3 gap-x-3 gap-y-2 text-sm">
             {PERCENTILES.map((p) => (
-              <div
-                key={p}
-                className={cn("rounded px-1.5 py-0.5", heat[p]?.dark && "text-white")}
-                style={heat[p] && { background: heat[p].background }}
-              >
+              <div key={p} className="rounded px-1.5 py-0.5" style={heat[p] && heatStyle(heat[p])}>
                 <dt className={cn("text-xs", heat[p] ? "opacity-80" : "text-muted-foreground")}>
                   {p.toUpperCase()}
                 </dt>
@@ -187,7 +183,10 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
                       Simulating…
                     </TableCell>
                   ) : r.error ? (
-                    <TableCell colSpan={12} className="whitespace-normal text-amber-800">
+                    <TableCell
+                      colSpan={12}
+                      className="whitespace-normal text-amber-800 dark:text-amber-300"
+                    >
                       {r.error}
                     </TableCell>
                   ) : (
@@ -197,8 +196,8 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
                         return (
                           <TableCell
                             key={p}
-                            className={`text-right tabular-nums ${p === "p50" ? "font-semibold" : ""} ${h?.dark ? "text-white" : ""}`}
-                            style={h && { background: h.background }}
+                            className={`text-right tabular-nums ${p === "p50" ? "font-semibold" : ""}`}
+                            style={h && heatStyle(h)}
                           >
                             <span className="inline-flex items-center gap-0.5">
                               {h?.best && (

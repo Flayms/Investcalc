@@ -5,58 +5,139 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* Notebook paper (light): near-white page, graphite ink, blue fountain-pen accents. */
+  --background: #fafaf7;
+  --foreground: #2b2a33;
+  --card: #ffffff;
+  --card-foreground: #2b2a33;
+  --popover: #ffffff;
+  --popover-foreground: #2b2a33;
+  --primary: #24408e;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f4;
+  --secondary-foreground: #2b2a33;
+  --muted: #eef0f4;
+  --muted-foreground: #66636d;
+  --accent: #fff0a3;
+  --accent-foreground: #2b2a33;
+  --destructive: #c0392b;
+  --border: #3b3a45;
+  --input: #3b3a45;
+  --ring: #24408e;
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+
+  --paper-rule: rgb(70 120 200 / 0.16);
+  --paper-margin: rgb(220 70 70 / 0.38);
+  --highlight: rgb(255 226 80 / 0.65);
+  --tape: rgb(240 225 170 / 0.75);
+  --sketch-shadow: rgb(43 42 51 / 0.14);
+  --hairline: rgb(43 42 51 / 0.18);
+
+  /* Categorical scenario colors: validated reference palette, light steps. */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #6250d6;
+  --series-8: #e34948;
+
+  /* Sequential heat ramp for the results table: blue 100–500, light = low. */
+  --heat-0: #cde2fb;
+  --heat-1: #b7d3f6;
+  --heat-2: #9ec5f4;
+  --heat-3: #86b6ef;
+  --heat-4: #6da7ec;
+  --heat-5: #5598e7;
+  --heat-6: #3987e5;
+  --heat-7: #2a78d6;
+  --heat-8: #256abf;
+  --heat-ink-0: #1a1a19;
+  --heat-ink-1: #1a1a19;
+  --heat-ink-2: #1a1a19;
+  --heat-ink-3: #1a1a19;
+  --heat-ink-4: #1a1a19;
+  --heat-ink-5: #1a1a19;
+  --heat-ink-6: #1a1a19;
+  --heat-ink-7: #ffffff;
+  --heat-ink-8: #ffffff;
+
+  --notebook-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --notebook-hand: "Caveat", cursive;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  /* Notebook at night: dark page, white-pencil ink, light-blue pen. */
+  --background: #1d1c1a;
+  --foreground: #ece8df;
+  --card: #262522;
+  --card-foreground: #ece8df;
+  --popover: #2c2b28;
+  --popover-foreground: #ece8df;
+  --primary: #9db8ff;
+  --primary-foreground: #1d1c1a;
+  --secondary: #33322e;
+  --secondary-foreground: #ece8df;
+  --muted: #33322e;
+  --muted-foreground: #aaa59a;
+  --accent: rgb(255 226 80 / 0.22);
+  --accent-foreground: #fff6c9;
+  --destructive: #ff7b6b;
+  --border: #b9b4a8;
+  --input: #b9b4a8;
+  --ring: #9db8ff;
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+
+  --paper-rule: rgb(160 190 255 / 0.07);
+  --paper-margin: rgb(255 110 110 / 0.22);
+  --highlight: rgb(255 226 80 / 0.3);
+  --tape: rgb(200 190 150 / 0.28);
+  --sketch-shadow: rgb(0 0 0 / 0.45);
+  --hairline: rgb(236 232 223 / 0.16);
+
+  /* Same eight hues, stepped for the dark surface (validated against #1d1c1a). */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #0ca30c;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
+  /* Dark ramp: near-surface = low, bright = high (blue 650 → 250). */
+  --heat-0: #104281;
+  --heat-1: #184f95;
+  --heat-2: #1c5cab;
+  --heat-3: #256abf;
+  --heat-4: #2a78d6;
+  --heat-5: #3987e5;
+  --heat-6: #5598e7;
+  --heat-7: #6da7ec;
+  --heat-8: #86b6ef;
+  --heat-ink-0: #f0efec;
+  --heat-ink-1: #f0efec;
+  --heat-ink-2: #f0efec;
+  --heat-ink-3: #f0efec;
+  --heat-ink-4: #f0efec;
+  --heat-ink-5: #1a1a19;
+  --heat-ink-6: #1a1a19;
+  --heat-ink-7: #1a1a19;
+  --heat-ink-8: #1a1a19;
 }
 
 @theme inline {
+  --font-sans: var(--notebook-sans);
+  --font-hand: var(--notebook-hand);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -88,9 +169,150 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply outline-ring/50;
+    border-color: var(--hairline);
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    /* Ruled notebook paper; the red margin line is added from the sm breakpoint on. */
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(1.75rem - 1px),
+      var(--paper-rule) calc(1.75rem - 1px),
+      var(--paper-rule) 1.75rem
+    );
+    background-attachment: local;
   }
+  @media (min-width: 40rem) {
+    body {
+      background-image:
+        linear-gradient(
+          90deg,
+          transparent 2.6rem,
+          var(--paper-margin) 2.6rem,
+          var(--paper-margin) calc(2.6rem + 1.5px),
+          transparent calc(2.6rem + 1.5px),
+          transparent calc(2.6rem + 4px),
+          var(--paper-margin) calc(2.6rem + 4px),
+          var(--paper-margin) calc(2.6rem + 5px),
+          transparent calc(2.6rem + 5px)
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent calc(1.75rem - 1px),
+          var(--paper-rule) calc(1.75rem - 1px),
+          var(--paper-rule) 1.75rem
+        );
+    }
+  }
+}
+
+/*
+ * Notebook look (REQ-003-05). Unlayered on purpose so it wins over the utility classes the
+ * shadcn primitives ship with (rounded-*, shadow-*), without forking every component.
+ */
+
+/* Hand-drawn outlines: uneven elliptical corners read as a pen stroke. */
+[data-slot="card"] {
+  position: relative;
+  border: 1.5px solid var(--border);
+  border-radius: 18px 6px 16px 5px / 6px 16px 5px 18px;
+  box-shadow: 3px 4px 0 var(--sketch-shadow);
+}
+/* A strip of tape holds the main chart on the page: the one decoration, so it stays special. */
+[data-slot="card"].taped::before {
+  content: "";
+  position: absolute;
+  top: -0.6rem;
+  left: calc(50% - 2.6rem);
+  width: 5.2rem;
+  height: 1.2rem;
+  background: var(--tape);
+  transform: rotate(-2.5deg);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.06);
+  pointer-events: none;
+}
+
+[data-slot="button"],
+[data-slot="input"],
+[data-slot="select-trigger"],
+[data-slot="tabs-list"],
+.sketch-input {
+  border-radius: 10px 4px 9px 3px / 4px 9px 3px 10px;
+}
+[data-slot="button"][data-variant="outline"],
+[data-slot="input"],
+[data-slot="select-trigger"],
+.sketch-input {
+  border: 1.5px solid var(--border);
+  background-color: var(--card);
+  box-shadow: 1.5px 2px 0 var(--sketch-shadow);
+}
+[data-slot="button"][data-variant="default"] {
+  box-shadow: 2px 2.5px 0 var(--sketch-shadow);
+}
+[data-slot="button"]:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+[data-slot="select-content"],
+[data-slot="tooltip-content"] {
+  border-radius: 12px 5px 11px 4px / 5px 11px 4px 12px;
+}
+
+/* Tabs: the active one is marked with a highlighter. */
+[data-slot="tabs-list"] {
+  border: 1.5px solid var(--border);
+  background: transparent;
+}
+[data-slot="tabs-trigger"][data-state="active"] {
+  background: var(--highlight);
+  box-shadow: none;
+  border-color: transparent;
+  color: var(--foreground);
+  border-radius: 6px 2px 7px 3px / 3px 7px 2px 6px;
+}
+
+/* Handwritten headings. */
+h1,
+h2,
+[data-slot="card-title"] {
+  font-family: var(--notebook-hand);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+[data-slot="card-title"] {
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+.highlighter {
+  background-image: linear-gradient(
+    100deg,
+    transparent 1%,
+    var(--highlight) 3%,
+    var(--highlight) 96%,
+    transparent 99%
+  );
+  background-size: 100% 0.55em;
+  background-position: 0 88%;
+  background-repeat: no-repeat;
+  padding: 0 0.15em;
+}
+
+/* Pencil-line slider. */
+[data-slot="slider-track"] {
+  background: var(--hairline);
+}
+[data-slot="slider-range"] {
+  background: var(--primary);
+}
+
+/* Tables: ruled rows instead of boxes. */
+[data-slot="table-row"] {
+  border-bottom: 1px dashed var(--hairline);
+}
+[data-slot="table-head"] {
+  font-weight: 700;
 }

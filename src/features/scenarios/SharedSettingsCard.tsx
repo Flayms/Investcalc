@@ -25,7 +25,7 @@ export function SharedSettingsCard({ shared, context, onChange }: Props) {
           if (fields.length === 0) return null;
           return (
             <section key={group.title} className="space-y-4">
-              <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="font-hand text-xl leading-none font-bold text-primary">
                 {group.title}
               </h3>
               {fields.map((field) => (

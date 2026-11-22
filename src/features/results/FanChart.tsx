@@ -42,7 +42,7 @@ export function FanChart({ scenarios, results, selectedKey }: Props) {
   const color = selected ? scenarioColor(selected) : "#888";
 
   return (
-    <Card>
+    <Card className="taped">
       <CardHeader>
         <CardTitle className="text-base">Net worth over time</CardTitle>
         <CardDescription className="text-sm lg:text-xs">
