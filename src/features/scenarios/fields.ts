@@ -1,4 +1,5 @@
-import type { GlobalSettings, ScenarioParams } from "@/simulation/params";
+import type { ScenarioChoices, SharedSettings } from "@/features/scenarios/scenario";
+import type { GlobalSettings } from "@/simulation/params";
 
 export type Unit = "percent" | "euro" | "factor" | "months" | "years" | "count";
 
@@ -33,12 +34,23 @@ export type SelectField<K> = Base<K> & {
 
 export type Field<K> = SliderField<K> | SwitchField<K> | SelectField<K>;
 
-export type ScenarioField = Field<keyof ScenarioParams> & {
+export type ScenarioField = Field<keyof ScenarioChoices> & {
   /** Only shown when this returns true. */
-  visible?: (s: ScenarioParams) => boolean;
+  visible?: (s: ScenarioChoices) => boolean;
 };
 
 export type FieldGroup = { title: string; fields: ScenarioField[] };
+
+export type SharedContext = {
+  /** At least one scenario uses a leveraged ETF. */ anyLeveraged: boolean;
+};
+
+export type SharedField = Field<keyof SharedSettings> & {
+  /** Only shown when this returns true. */
+  visible?: (s: SharedSettings, ctx: SharedContext) => boolean;
+};
+
+export type SharedFieldGroup = { title: string; fields: SharedField[] };
 
 const near = (target: number, tolerance: number) => (v: number) =>
   Math.abs(v - target) <= tolerance;
@@ -95,80 +107,6 @@ export const scenarioGroups: FieldGroup[] = [
         step: 0.05,
         unit: "factor",
         visible: (s) => s.leveragedShare > 0,
-      },
-      {
-        key: "terUnleveraged",
-        kind: "slider",
-        label: "TER 1× ETF",
-        help: "Total expense ratio per year of the unleveraged ETF, deducted monthly.",
-        recommendation: "0.07–0.25 % for large World / S&P 500 ETFs. Default 0.20 %.",
-        min: 0,
-        max: 0.01,
-        step: 0.0001,
-        unit: "percent",
-        isRecommended: (v) => v <= 0.003,
-      },
-      {
-        key: "terLeveraged",
-        kind: "slider",
-        label: "TER leveraged ETF",
-        help: "Total expense ratio per year of the leveraged ETF.",
-        recommendation: "Typical 0.35–0.75 %. Default 0.60 %.",
-        min: 0,
-        max: 0.015,
-        step: 0.0001,
-        unit: "percent",
-        visible: (s) => s.leveragedShare > 0,
-      },
-      {
-        key: "includeSofr",
-        kind: "switch",
-        label: "Include SOFR financing",
-        help: "A leveraged ETF borrows (L − 1) × its assets and pays the short rate (SOFR; historically the 3-month T-bill rate) on it.",
-        recommendation:
-          "Keep on. Real leveraged ETFs always pay financing; switching it off only shows its influence.",
-        isRecommended: (v) => v,
-        visible: (s) => s.leveragedShare > 0,
-      },
-      {
-        key: "financingSpread",
-        kind: "slider",
-        label: "Financing spread over SOFR",
-        help: "Extra yearly swap cost above SOFR on the borrowed part.",
-        recommendation: "0.3–1 % for real products. Default 0.5 %.",
-        min: 0,
-        max: 0.02,
-        step: 0.0005,
-        unit: "percent",
-        isRecommended: (v) => v >= 0.002,
-        visible: (s) => s.leveragedShare > 0,
-      },
-    ],
-  },
-  {
-    title: "Trading costs",
-    fields: [
-      {
-        key: "orderFee",
-        kind: "slider",
-        label: "Order fee",
-        help: "Fixed fee per order (every monthly purchase, every sale).",
-        recommendation: "€0–1.50 for savings plans at German online brokers. Default €1.",
-        min: 0,
-        max: 10,
-        step: 0.5,
-        unit: "euro",
-      },
-      {
-        key: "bidAskSpread",
-        kind: "slider",
-        label: "Bid-ask spread",
-        help: "Difference between buy and sell price. Half of it is paid on every buy and every sale.",
-        recommendation: "0.02–0.2 % for liquid ETFs. Default 0.10 %.",
-        min: 0,
-        max: 0.01,
-        step: 0.0001,
-        unit: "percent",
       },
     ],
   },
@@ -228,6 +166,89 @@ export const scenarioGroups: FieldGroup[] = [
         step: 0.0025,
         unit: "percent",
         visible: (s) => s.borrowFromFuture,
+      },
+    ],
+  },
+];
+
+/** Settings shared by all scenarios (REQ-002-02), apart from the historical period. */
+export const sharedGroups: SharedFieldGroup[] = [
+  {
+    title: "Product costs",
+    fields: [
+      {
+        key: "terUnleveraged",
+        kind: "slider",
+        label: "TER 1× ETF",
+        help: "Total expense ratio per year of the unleveraged ETF, deducted monthly.",
+        recommendation: "0.07–0.25 % for large World / S&P 500 ETFs. Default 0.20 %.",
+        min: 0,
+        max: 0.01,
+        step: 0.0001,
+        unit: "percent",
+        isRecommended: (v) => v <= 0.003,
+      },
+      {
+        key: "terLeveraged",
+        kind: "slider",
+        label: "TER leveraged ETF",
+        help: "Total expense ratio per year of the leveraged ETF.",
+        recommendation: "Typical 0.35–0.75 %. Default 0.60 %.",
+        min: 0,
+        max: 0.015,
+        step: 0.0001,
+        unit: "percent",
+        visible: (_, ctx) => ctx.anyLeveraged,
+      },
+      {
+        key: "includeSofr",
+        kind: "switch",
+        label: "Include SOFR financing",
+        help: "A leveraged ETF borrows (L − 1) × its assets and pays the short rate (SOFR; historically the 3-month T-bill rate) on it.",
+        recommendation:
+          "Keep on. Real leveraged ETFs always pay financing; switching it off only shows its influence.",
+        isRecommended: (v) => v,
+        visible: (_, ctx) => ctx.anyLeveraged,
+      },
+      {
+        key: "financingSpread",
+        kind: "slider",
+        label: "Financing spread over SOFR",
+        help: "Extra yearly swap cost above SOFR on the borrowed part.",
+        recommendation: "0.3–1 % for real products. Default 0.5 %.",
+        min: 0,
+        max: 0.02,
+        step: 0.0005,
+        unit: "percent",
+        isRecommended: (v) => v >= 0.002,
+        visible: (_, ctx) => ctx.anyLeveraged,
+      },
+    ],
+  },
+  {
+    title: "Trading costs",
+    fields: [
+      {
+        key: "orderFee",
+        kind: "slider",
+        label: "Order fee",
+        help: "Fixed fee per order (every monthly purchase, every sale).",
+        recommendation: "€0–1.50 for savings plans at German online brokers. Default €1.",
+        min: 0,
+        max: 10,
+        step: 0.5,
+        unit: "euro",
+      },
+      {
+        key: "bidAskSpread",
+        kind: "slider",
+        label: "Bid-ask spread",
+        help: "Difference between buy and sell price. Half of it is paid on every buy and every sale.",
+        recommendation: "0.02–0.2 % for liquid ETFs. Default 0.10 %.",
+        min: 0,
+        max: 0.01,
+        step: 0.0001,
+        unit: "percent",
       },
     ],
   },

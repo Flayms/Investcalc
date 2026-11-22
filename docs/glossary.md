@@ -4,19 +4,20 @@ Domain terms used in code, specs and tests. Use these names consistently.
 
 ## Simulation
 
-| Term                  | Definition                                                                                           | Not to be confused with |
-| --------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------- |
-| Simulation            | One run of N paths for a given strategy and parameters                                               | Path                    |
-| Path                  | A single simulated sequence of returns and the resulting portfolio value over the horizon            | Simulation              |
-| Horizon               | Length of the simulated investment period                                                            |                         |
-| Percentile band       | Range of portfolio values between two percentiles (e.g. P10–P90) across all paths at each step       | Confidence interval     |
-| Seed                  | PRNG start value that makes a simulation reproducible                                                |                         |
-| Scenario              | One named combination of settings (ETF, mix, costs, taxes, strategy); several are compared           | Strategy                |
-| Historical window     | A path that replays a contiguous real period of the history                                          | Random slicing          |
-| Random slicing        | Path generation by stationary block bootstrap: random contiguous blocks of history stitched together | Historical window       |
-| Warm-up               | Months of history before the horizon, used only to compute SMA signals                               | Horizon                 |
-| Net worth             | Holdings + cash − loan − unpaid taxes at a point in time, before the final sale                      | Final value after tax   |
-| Final value after tax | Net worth after selling everything at the end and paying all taxes                                   | Net worth               |
+| Term                  | Definition                                                                                             | Not to be confused with |
+| --------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------- |
+| Simulation            | One run of N paths for a given strategy and parameters                                                 | Path                    |
+| Path                  | A single simulated sequence of returns and the resulting portfolio value over the horizon              | Simulation              |
+| Horizon               | Length of the simulated investment period                                                              |                         |
+| Percentile band       | Range of portfolio values between two percentiles (e.g. P10–P90) across all paths at each step         | Confidence interval     |
+| Seed                  | PRNG start value that makes a simulation reproducible                                                  |                         |
+| Scenario              | One named combination of choices (index, amounts, mix, leverage, strategy, loan); several are compared | Strategy                |
+| Shared settings       | Settings that are the same for all scenarios: data period, product/trading costs, German taxes         | Scenario                |
+| Historical window     | A path that replays a contiguous real period of the history                                            | Random slicing          |
+| Random slicing        | Path generation by stationary block bootstrap: random contiguous blocks of history stitched together   | Historical window       |
+| Warm-up               | Months of history before the horizon, used only to compute SMA signals                                 | Horizon                 |
+| Net worth             | Holdings + cash − loan − unpaid taxes at a point in time, before the final sale                        | Final value after tax   |
+| Final value after tax | Net worth after selling everything at the end and paying all taxes                                     | Net worth               |
 
 ## Investing
 

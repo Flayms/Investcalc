@@ -6,7 +6,7 @@ test.use(iPhone);
 test.describe("REQ-001-21 readable on phones", () => {
   test("REQ-001-21 no sideways scrolling and no text below 12 px", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText(/Highest median/)).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("leverage-takeaway")).toBeVisible({ timeout: 60_000 });
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );

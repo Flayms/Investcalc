@@ -1,3 +1,4 @@
+import { TrophyIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -7,20 +8,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { type Scenario, scenarioColor } from "@/features/scenarios/scenario";
+import { columnHeat, type Heat } from "@/features/results/heatmap";
+import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
 import { formatEuro, formatPercent } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { ScenarioResult } from "@/simulation/simulate";
 
 type Props = {
-  scenarios: Scenario[];
+  scenarios: ResolvedScenario[];
   results: Record<string, ScenarioResult>;
   horizonYears: number;
 };
 
 const PERCENTILES = ["p5", "p10", "p25", "p50", "p75", "p95"] as const;
+type Percentile = (typeof PERCENTILES)[number];
 
 /** Money-weighted yearly return that turns the paid-in amount into `final` (approximation: annuity). */
-function annualReturn(final: number, s: Scenario["params"], years: number): number {
+function annualReturn(final: number, s: ResolvedScenario["params"], years: number): number {
   const months = years * 12;
   const fv = (r: number) =>
     s.initialInvestment * (1 + r) ** months +
@@ -43,10 +47,12 @@ function ResultCard({
   scenario,
   result: r,
   horizonYears,
+  heat,
 }: {
-  scenario: Scenario;
+  scenario: ResolvedScenario;
   result?: ScenarioResult;
   horizonYears: number;
+  heat: Partial<Record<Percentile, Heat>>;
 }) {
   const nameId = `result-${scenario.key}`;
   const stats = r
@@ -77,9 +83,23 @@ function ResultCard({
         <>
           <dl className="grid grid-cols-3 gap-x-3 gap-y-2 text-sm">
             {PERCENTILES.map((p) => (
-              <div key={p}>
-                <dt className="text-xs text-muted-foreground">{p.toUpperCase()}</dt>
-                <dd className={`tabular-nums ${p === "p50" ? "font-semibold" : ""}`}>
+              <div
+                key={p}
+                className={cn("rounded px-1.5 py-0.5", heat[p]?.dark && "text-white")}
+                style={heat[p] && { background: heat[p].background }}
+              >
+                <dt className={cn("text-xs", heat[p] ? "opacity-80" : "text-muted-foreground")}>
+                  {p.toUpperCase()}
+                </dt>
+                <dd
+                  className={cn(
+                    "flex items-center gap-0.5 tabular-nums",
+                    p === "p50" && "font-semibold",
+                  )}
+                >
+                  {heat[p]?.best && (
+                    <TrophyIcon className="size-3 shrink-0" role="img" aria-label="Best" />
+                  )}
                   {formatEuro(r.final[p])}
                 </dd>
               </div>
@@ -100,6 +120,15 @@ function ResultCard({
 }
 
 export function ResultsTable({ scenarios, results, horizonYears }: Props) {
+  const finals = scenarios.map((s) => {
+    const r = results[s.key];
+    return r && !r.error ? r.final : undefined;
+  });
+  const heat = Object.fromEntries(
+    PERCENTILES.map((p) => [p, columnHeat(finals.map((f) => f?.[p]))]),
+  ) as Record<Percentile, ReturnType<typeof columnHeat>>;
+  const shaded = heat.p50.some((h) => h !== undefined);
+
   return (
     <Card>
       <CardHeader>
@@ -111,12 +140,13 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3 md:hidden">
-          {scenarios.map((s) => (
+          {scenarios.map((s, row) => (
             <ResultCard
               key={s.key}
               scenario={s}
               result={results[s.key]}
               horizonYears={horizonYears}
+              heat={Object.fromEntries(PERCENTILES.map((p) => [p, heat[p][row]]))}
             />
           ))}
         </div>
@@ -130,7 +160,7 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
                 </TableHead>
               ))}
               <TableHead className="text-right">Paid in</TableHead>
-              <TableHead className="text-right">Median p.a.</TableHead>
+              <TableHead className="whitespace-normal text-right">Median p.a.</TableHead>
               <TableHead className="text-right">P(loss)</TableHead>
               <TableHead className="text-right">Fees</TableHead>
               <TableHead className="text-right">Taxes</TableHead>
@@ -138,14 +168,14 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {scenarios.map((s) => {
+            {scenarios.map((s, row) => {
               const r = results[s.key];
               return (
                 <TableRow key={s.key}>
-                  <TableCell className="font-medium">
+                  <TableCell className="min-w-36 whitespace-normal font-medium">
                     <span className="flex items-center gap-2">
                       <span
-                        className="size-2.5 rounded-full"
+                        className="size-2.5 shrink-0 rounded-full"
                         style={{ background: scenarioColor(s) }}
                         aria-hidden
                       />
@@ -162,14 +192,27 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
                     </TableCell>
                   ) : (
                     <>
-                      {PERCENTILES.map((p) => (
-                        <TableCell
-                          key={p}
-                          className={`text-right tabular-nums ${p === "p50" ? "font-semibold" : ""}`}
-                        >
-                          {formatEuro(r.final[p])}
-                        </TableCell>
-                      ))}
+                      {PERCENTILES.map((p) => {
+                        const h = heat[p][row];
+                        return (
+                          <TableCell
+                            key={p}
+                            className={`text-right tabular-nums ${p === "p50" ? "font-semibold" : ""} ${h?.dark ? "text-white" : ""}`}
+                            style={h && { background: h.background }}
+                          >
+                            <span className="inline-flex items-center gap-0.5">
+                              {h?.best && (
+                                <TrophyIcon
+                                  className="size-3 shrink-0"
+                                  role="img"
+                                  aria-label="Best"
+                                />
+                              )}
+                              {formatEuro(r.final[p])}
+                            </span>
+                          </TableCell>
+                        );
+                      })}
                       <TableCell className="text-right tabular-nums">
                         {formatEuro(r.invested)}
                       </TableCell>
@@ -196,6 +239,12 @@ export function ResultsTable({ scenarios, results, horizonYears }: Props) {
           </TableBody>
         </Table>
         <p className="mt-2 text-xs lg:text-[11px] text-muted-foreground">
+          {shaded && (
+            <>
+              Shading compares the scenarios per percentile: lighter = lower, darker = higher;{" "}
+              <TrophyIcon className="inline size-3 align-[-2px]" aria-hidden /> = best.{" "}
+            </>
+          )}
           Median p.a. = money-weighted yearly return of the median path. P(loss) = share of paths
           ending below the amount paid in. Fees and taxes are medians over all paths.
         </p>

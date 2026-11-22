@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -8,27 +8,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { FieldControl, HelpTooltip } from "@/features/scenarios/FieldControl";
 import { scenarioGroups } from "@/features/scenarios/fields";
-import { type Scenario, scenarioColor } from "@/features/scenarios/scenario";
-import { type Dataset, firstYear, getDataset, lastYear } from "@/simulation/dataset";
-import type { ScenarioParams } from "@/simulation/params";
+import { type Scenario, type ScenarioChoices, scenarioColor } from "@/features/scenarios/scenario";
+import type { Dataset } from "@/simulation/dataset";
 
 type Props = {
   scenario: Scenario;
   datasets: Record<string, Dataset>;
-  onChange: (params: ScenarioParams) => void;
+  onChange: (params: ScenarioChoices) => void;
 };
 
 export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
   const p = scenario.params;
-  const set = (patch: Partial<ScenarioParams>) => onChange({ ...p, ...patch });
-  const dataset = getDataset(datasets, p.etfId);
-  const min = firstYear(dataset);
-  const max = lastYear(dataset);
-  const from = Math.max(min, Math.min(p.fromYear, max));
-  const to = Math.min(max, Math.max(p.toYear, from));
+  const set = (patch: Partial<ScenarioChoices>) => onChange({ ...p, ...patch });
 
   return (
     <Card className="gap-4">
@@ -41,6 +34,9 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
           />
           Scenario settings
         </CardTitle>
+        <CardDescription className="text-sm lg:text-xs">
+          What you choose per scenario. Costs, taxes and the data period are shared.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="space-y-1.5">
@@ -57,7 +53,7 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
 
         <section className="space-y-4">
           <h3 className="text-sm lg:text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            ETF & data
+            Index
           </h3>
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
@@ -70,13 +66,7 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
                 recommendation="S&P 500 for the longest history (since 1871, many crashes); MSCI data only starts in 2001."
               />
             </div>
-            <Select
-              value={p.etfId}
-              onValueChange={(etfId) => {
-                const d = getDataset(datasets, etfId);
-                set({ etfId, fromYear: firstYear(d), toYear: lastYear(d) });
-              }}
-            >
+            <Select value={p.etfId} onValueChange={(etfId) => set({ etfId })}>
               <SelectTrigger id="etf" className="h-10 lg:h-8 w-full text-sm lg:text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -88,28 +78,6 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-sm lg:text-xs font-medium">Historical period</Label>
-              <HelpTooltip
-                label="Historical period"
-                help="Only months inside this period are used to generate paths."
-                recommendation="The full period: more market regimes make the distribution more robust."
-              />
-              <span className="ml-auto text-sm lg:text-xs tabular-nums text-muted-foreground">
-                {from}–{to}
-              </span>
-            </div>
-            <Slider
-              aria-label="Historical period"
-              min={min}
-              max={max}
-              step={1}
-              minStepsBetweenThumbs={1}
-              value={[from, to]}
-              onValueChange={([fromYear, toYear]) => set({ fromYear, toYear })}
-            />
           </div>
         </section>
 
@@ -125,7 +93,7 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
                   key={field.key}
                   field={field}
                   value={p[field.key]}
-                  onChange={(value) => set({ [field.key]: value } as Partial<ScenarioParams>)}
+                  onChange={(value) => set({ [field.key]: value } as Partial<ScenarioChoices>)}
                 />
               ))}
             </section>

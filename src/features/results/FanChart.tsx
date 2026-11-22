@@ -1,12 +1,12 @@
 import { Area, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
-import { type Scenario, scenarioColor } from "@/features/scenarios/scenario";
+import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
 import { formatEuro, formatEuroCompact } from "@/lib/format";
 import type { ScenarioResult } from "@/simulation/simulate";
 
 type Props = {
-  scenarios: Scenario[];
+  scenarios: ResolvedScenario[];
   results: Record<string, ScenarioResult>;
   selectedKey: string;
 };
@@ -16,7 +16,7 @@ type Row = Record<string, number | [number, number]>;
 export function FanChart({ scenarios, results, selectedKey }: Props) {
   const shown = scenarios.filter((s) => results[s.key] && !results[s.key]?.error);
   const selected = shown.find((s) => s.key === selectedKey);
-  const resultOf = (s: Scenario) => results[s.key] as ScenarioResult;
+  const resultOf = (s: ResolvedScenario) => results[s.key] as ScenarioResult;
   const months = shown[0] ? resultOf(shown[0]).bands.length - 1 : 0;
 
   const steps: number[] = [];
