@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "screenshots": "playwright test --config playwright.screenshots.config.ts"
+    "screenshots": "playwright test --config playwright.screenshots.config.ts",
+    "data:fetch": "bun scripts/fetch-data.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.108.2",

@@ -1,0 +1,92 @@
+import type { Dataset } from "@/simulation/dataset";
+import { defaultGlobal, defaultScenario } from "@/simulation/params";
+import { exploreLeverage, factorImpact, runScenario } from "@/simulation/simulate";
+
+const dataset: Dataset = {
+  id: "test",
+  name: "Test",
+  description: "",
+  source: "",
+  currency: "USD",
+  priceType: "close",
+  start: "2000-01",
+  returns: Array.from({ length: 240 }, (_, i) => (i % 7 === 0 ? -0.04 : 0.015)),
+  rates: Array(240).fill(0.02),
+};
+
+const scenario = { ...defaultScenario, etfId: "test", fromYear: 2000, toYear: 2019 };
+const global = { ...defaultGlobal, horizonYears: 5, paths: 300 };
+
+describe("REQ-001-02 data period", () => {
+  test("REQ-001-02 rolling windows only use months inside the selected period", () => {
+    const all = runScenario(dataset, scenario, { ...global, sampling: "rolling" });
+    const recent = runScenario(
+      dataset,
+      { ...scenario, fromYear: 2010 },
+      { ...global, sampling: "rolling" },
+    );
+    expect(all.pathCount).toBe(240 - 72 + 1);
+    expect(recent.pathCount).toBe(120 - 72 + 1);
+  });
+});
+
+describe("REQ-001-03 rolling windows in a simulation", () => {
+  test("REQ-001-03 too short history yields a message instead of a result", () => {
+    const result = runScenario(dataset, scenario, {
+      ...global,
+      horizonYears: 25,
+      sampling: "rolling",
+    });
+    expect(result.error).toMatch(/shorter than/);
+    expect(result.pathCount).toBe(0);
+  });
+});
+
+describe("REQ-001-14 percentiles", () => {
+  test("REQ-001-14 bands are ordered and final percentiles are reported", () => {
+    const result = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
+    expect(result.pathCount).toBe(300);
+    expect(result.bands).toHaveLength(61);
+    for (const b of result.bands) {
+      expect(b.p10).toBeLessThanOrEqual(b.p50);
+      expect(b.p50).toBeLessThanOrEqual(b.p90);
+    }
+    const f = result.final;
+    expect(f.p5).toBeLessThanOrEqual(f.p25);
+    expect(f.p25).toBeLessThanOrEqual(f.p50);
+    expect(f.p50).toBeLessThanOrEqual(f.p95);
+    expect(result.invested).toBe(scenario.initialInvestment + 60 * scenario.monthlyContribution);
+    expect(result.probabilityOfLoss).toBeGreaterThanOrEqual(0);
+  });
+
+  test("REQ-001-15 same seed gives identical results", () => {
+    const a = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
+    const b = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
+    expect(a.final).toEqual(b.final);
+  });
+});
+
+describe("REQ-001-16 best leverage factor", () => {
+  test("REQ-001-16 sweeps 1×–3× and marks the highest median", () => {
+    const sweep = exploreLeverage(dataset, scenario, { ...global, sampling: "bootstrap" });
+    expect(sweep.points[0]?.leverage).toBe(1);
+    expect(sweep.points.at(-1)?.leverage).toBe(3);
+    const best = Math.max(...sweep.points.map((p) => p.p50));
+    expect(sweep.points.find((p) => p.leverage === sweep.bestLeverage)?.p50).toBe(best);
+  });
+});
+
+describe("REQ-001-20 influence of factors", () => {
+  test("REQ-001-20 removing a cost factor never lowers the median and is reported per factor", () => {
+    const leveraged = { ...scenario, leveragedShare: 1, leverage: 2 };
+    const impact = factorImpact(dataset, leveraged, { ...global, sampling: "bootstrap" });
+    expect(impact.factors.map((f) => f.id)).toEqual(["ter", "sofr", "spread", "trading", "taxes"]);
+    for (const f of impact.factors) expect(f.cost).toBeGreaterThanOrEqual(0);
+    expect(impact.factors.find((f) => f.id === "taxes")?.cost).toBeGreaterThan(0);
+  });
+
+  test("REQ-001-20 financing factors are skipped without leverage", () => {
+    const impact = factorImpact(dataset, scenario, { ...global, sampling: "bootstrap" });
+    expect(impact.factors.map((f) => f.id)).toEqual(["ter", "trading", "taxes"]);
+  });
+});
