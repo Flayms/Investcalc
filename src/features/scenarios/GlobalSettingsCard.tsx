@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5,9 +6,14 @@ import { FieldControl, HelpTooltip } from "@/features/scenarios/FieldControl";
 import { globalFields } from "@/features/scenarios/fields";
 import type { GlobalSettings } from "@/simulation/params";
 
-type Props = { global: GlobalSettings; onChange: (g: GlobalSettings) => void };
+type Props = {
+  global: GlobalSettings;
+  onChange: (g: GlobalSettings) => void;
+  /** Further shared simulation settings, shown below the built-in ones. */
+  children?: ReactNode;
+};
 
-export function GlobalSettingsCard({ global, onChange }: Props) {
+export function GlobalSettingsCard({ global, onChange, children }: Props) {
   return (
     <Card className="gap-4">
       <CardHeader>
@@ -45,6 +51,7 @@ export function GlobalSettingsCard({ global, onChange }: Props) {
             />
           </div>
         )}
+        {children}
       </CardContent>
     </Card>
   );

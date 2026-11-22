@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Scenario } from "@/features/scenarios/scenario";
+import type { ResolvedScenario } from "@/features/scenarios/scenario";
 import { SimulationClient } from "@/features/simulation/client";
 import { type Dataset, getDataset } from "@/simulation/dataset";
 import type { GlobalSettings } from "@/simulation/params";
@@ -11,8 +11,8 @@ const DEBOUNCE_MS = 250;
 /** Re-simulates all scenarios (and analyses the selected one) whenever settings change. */
 export function useSimulation(
   datasets: Record<string, Dataset> | undefined,
-  scenarios: Scenario[],
-  selected: Scenario | undefined,
+  scenarios: ResolvedScenario[],
+  selected: ResolvedScenario | undefined,
   global: GlobalSettings,
   injectedClient?: Pick<SimulationClient, "run" | "analyze">,
 ) {

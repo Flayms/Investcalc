@@ -1,4 +1,4 @@
-import { defaultScenario, type ScenarioParams } from "@/simulation/params";
+import { defaultScenario, type ScenarioParams, scenarioSchema } from "@/simulation/params";
 
 /** Categorical palette, fixed order (validated reference palette, light mode). */
 export const SCENARIO_COLORS = [
@@ -13,12 +13,58 @@ export const SCENARIO_COLORS = [
 ] as const;
 export const MAX_SCENARIOS = SCENARIO_COLORS.length;
 
-export type Scenario = { key: string; colorIndex: number; params: ScenarioParams };
+/**
+ * Settings that are facts about the data, the products, the broker or tax law rather than choices,
+ * so they are the same for every scenario (REQ-002-02).
+ */
+export const SHARED_KEYS = [
+  "fromYear",
+  "toYear",
+  "terUnleveraged",
+  "terLeveraged",
+  "includeSofr",
+  "financingSpread",
+  "orderFee",
+  "bidAskSpread",
+  "taxesEnabled",
+  "taxRate",
+  "partialExemption",
+  "allowance",
+  "baseRate",
+] as const satisfies readonly (keyof ScenarioParams)[];
 
-export const scenarioColor = (s: Scenario) => SCENARIO_COLORS[s.colorIndex];
+type SharedKey = (typeof SHARED_KEYS)[number];
+const sharedMask = Object.fromEntries(SHARED_KEYS.map((k) => [k, true])) as Record<SharedKey, true>;
 
-let counter = 0;
-export const newKey = () => `s${++counter}`;
+export const sharedSchema = scenarioSchema.pick(sharedMask);
+export const choicesSchema = scenarioSchema.omit(sharedMask);
+
+/** Shared by all scenarios. */
+export type SharedSettings = Pick<ScenarioParams, SharedKey>;
+/** What the user chooses per scenario. */
+export type ScenarioChoices = Omit<ScenarioParams, SharedKey>;
+
+export const defaultShared: SharedSettings = sharedSchema.parse(defaultScenario);
+export const defaultChoices: ScenarioChoices = choicesSchema.parse(defaultScenario);
+
+export const toParams = (choices: ScenarioChoices, shared: SharedSettings): ScenarioParams => ({
+  ...choices,
+  ...shared,
+});
+
+export type Scenario<P = ScenarioChoices> = { key: string; colorIndex: number; params: P };
+/** A scenario merged with the shared settings, ready to simulate. */
+export type ResolvedScenario = Scenario<ScenarioParams>;
+
+export const scenarioColor = (s: Pick<Scenario, "colorIndex">) => SCENARIO_COLORS[s.colorIndex];
+
+/** A key that is not used by any of the given scenarios. */
+export function newKey(existing: Pick<Scenario, "key">[] = []): string {
+  const used = new Set(existing.map((s) => s.key));
+  let i = existing.length + 1;
+  while (used.has(`s${i}`)) i++;
+  return `s${i}`;
+}
 
 /** Next free color slot, so colors follow the scenario and never get repainted. */
 export function nextColorIndex(scenarios: Scenario[]): number {
@@ -29,17 +75,17 @@ export function nextColorIndex(scenarios: Scenario[]): number {
 
 export function initialScenarios(): Scenario[] {
   return [
-    { key: newKey(), colorIndex: 0, params: { ...defaultScenario, name: "1× buy and hold" } },
+    { key: "s1", colorIndex: 0, params: { ...defaultChoices, name: "1× buy and hold" } },
     {
-      key: newKey(),
+      key: "s2",
       colorIndex: 1,
-      params: { ...defaultScenario, name: "2× buy and hold", leveragedShare: 1, leverage: 2 },
+      params: { ...defaultChoices, name: "2× buy and hold", leveragedShare: 1, leverage: 2 },
     },
     {
-      key: newKey(),
+      key: "s3",
       colorIndex: 2,
       params: {
-        ...defaultScenario,
+        ...defaultChoices,
         name: "2× with 10-month SMA",
         leveragedShare: 1,
         leverage: 2,

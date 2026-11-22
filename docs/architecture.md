@@ -10,7 +10,9 @@ Static single-page app, no backend. Simulations run entirely in the browser, off
   - `portfolio.ts` month-by-month simulation of one path (contributions, funds, cash, loan, taxes, strategy)
   - `simulate.ts` builds paths from a dataset and aggregates percentiles, leverage sweep, factor impact
   - `protocol.ts` / `worker.ts` messages between UI and Web Worker; `market.ts` current market phase
-- `src/features/` — UI by feature: `data` (loading, data basis), `scenarios` (settings, field metadata with tooltips and recommendations), `simulation` (worker client, hook), `results` (charts, tables), `market`.
+- `src/features/` — UI by feature: `data` (loading, data basis), `scenarios` (settings, field metadata with tooltips and recommendations), `simulation` (worker client, hook), `results` (charts, tables, heatmap shading), `market`, `persistence` (dashboard state in `localStorage`).
+  - A scenario in the UI only holds the user's _choices_ (`ScenarioChoices`); _shared settings_ (data period, product and trading costs, taxes) are kept once and merged with `toParams` into the engine's `ScenarioParams` before simulating. The engine itself is unaware of the split.
+  - The dashboard state (scenarios, selection, simulation and shared settings) is saved to `localStorage` on every change, versioned and validated with Zod on load; invalid state falls back to the defaults.
 - `scripts/fetch-data.ts` — downloads the historical data into `public/data/*.json` (committed).
 - `.github/workflows/deploy.yml` — builds and publishes to GitHub Pages (relative `base` in `vite.config.ts`).
 

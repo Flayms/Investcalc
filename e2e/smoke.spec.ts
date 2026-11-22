@@ -18,7 +18,10 @@ test("REQ-001-14 simulates the default scenarios in a worker and shows percentil
 
 test("REQ-001-16 / REQ-001-20 analyses the selected scenario", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText(/Highest median: \d\.\d\d×/)).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("leverage-takeaway")).toHaveText(
+    /\d\.\d\d× (\(no leverage\) )?has the highest median/,
+    { timeout: 60_000 },
+  );
   await expect(page.getByText(/Median final value: €/)).toBeVisible();
 });
 
@@ -35,4 +38,22 @@ test("REQ-001-03 historical windows on a short history explain why there is no r
   await expect(page.getByRole("table").getByText(/is shorter than the horizon/)).toBeVisible({
     timeout: 30_000,
   });
+});
+
+test("REQ-002-01 scenarios survive a page reload", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Duplicate/ }).click();
+  await page.getByLabel("Name").fill("Kept after reload");
+  await page.reload();
+  const tabs = page.getByRole("tablist", { name: "Scenarios" });
+  await expect(tabs.getByRole("tab")).toHaveCount(4);
+  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Kept after reload");
+});
+
+test("REQ-002-05 market and data basis are on their own view", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Current market")).toHaveCount(0);
+  await page.getByRole("tab", { name: "Market & data" }).click();
+  await expect(page.getByText("Current market")).toBeVisible();
+  await expect(page.getByText("Data basis")).toBeVisible();
 });
