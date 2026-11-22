@@ -5,6 +5,9 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  // Relative base: works on GitHub Pages (/<repo>/) and locally without configuration.
+  base: "./",
+  worker: { format: "es" },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "./src") },

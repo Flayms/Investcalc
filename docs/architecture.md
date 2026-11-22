@@ -4,7 +4,15 @@ Static single-page app, no backend. Simulations run entirely in the browser, off
 
 - `src/main.tsx` — entry; mounts `App` inside the TanStack Query provider and the sonner `Toaster`.
 - `src/components/ui/` — shadcn/ui components (generated with `bunx shadcn@latest add <name>`, excluded from Biome).
-- `src/simulation/` — the simulation engine (planned): pure, framework-free TypeScript so it can be unit-tested and run inside a Web Worker.
+- `src/simulation/` — the simulation engine: pure, framework-free TypeScript so it can be unit-tested and run inside a Web Worker.
+  - `sampling.ts` historical windows + stationary block bootstrap, `rng.ts` seeded PRNG
+  - `leverage.ts` daily-reset leveraged return (volatility drag, financing), `tax.ts` German tax rules
+  - `portfolio.ts` month-by-month simulation of one path (contributions, funds, cash, loan, taxes, strategy)
+  - `simulate.ts` builds paths from a dataset and aggregates percentiles, leverage sweep, factor impact
+  - `protocol.ts` / `worker.ts` messages between UI and Web Worker; `market.ts` current market phase
+- `src/features/` — UI by feature: `data` (loading, data basis), `scenarios` (settings, field metadata with tooltips and recommendations), `simulation` (worker client, hook), `results` (charts, tables), `market`.
+- `scripts/fetch-data.ts` — downloads the historical data into `public/data/*.json` (committed).
+- `.github/workflows/deploy.yml` — builds and publishes to GitHub Pages (relative `base` in `vite.config.ts`).
 
 ```mermaid
 flowchart LR
@@ -35,4 +43,4 @@ flowchart LR
 
 Deliberately not included (add when needed): TanStack Virtual (no large lists yet), cmdk (no command palette yet).
 
-Planned: Web Worker for the simulation loop (Vite `?worker` import; add Comlink if the message passing gets clumsy), a seeded PRNG for reproducible runs.
+The simulation runs in a module Web Worker (`new Worker(new URL(...), { type: "module" })`); in environments without workers (unit tests) `SimulationClient` runs it on the main thread.

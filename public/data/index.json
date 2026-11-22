@@ -1,0 +1,5 @@
+[
+  { "id": "sp500", "name": "S&P 500" },
+  { "id": "msci-world", "name": "MSCI World" },
+  { "id": "msci-acwi", "name": "MSCI ACWI (All World)" }
+]

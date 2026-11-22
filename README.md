@@ -2,6 +2,17 @@
 
 A browser-based website that runs Monte Carlo simulations of ETF portfolios under different investment strategies (e.g. lump sum vs. DCA) and visualizes the distribution of outcomes.
 
+**Live:** https://flayms.github.io/Investcalc/
+
+- **Historical data:** S&P 500 (since 1871), MSCI World and MSCI ACWI / All World (since 2001), monthly total returns, plus the short rate as SOFR proxy.
+- **Path generation:** every real historical window, or thousands of paths from _random slicing_ (stationary block bootstrap: random contiguous blocks of history, so crashes and volatility regimes stay intact).
+- **Products:** 1× ETF, leveraged ETF (1×–3×, daily reset with volatility drag, SOFR + spread financing) or any mix of both.
+- **Costs and German taxes:** TER, order fees, bid-ask spread; Abgeltungsteuer + Soli, Teilfreistellung, Sparerpauschbetrag, Vorabpauschale, loss carry-forward.
+- **Strategies:** savings plan (buy and hold), SMA trend filter, "borrow from your future self" (invest a loan worth future contributions now).
+- **Results:** compare several scenarios in a fan chart and a percentile table; leverage explorer (best factor); how much each cost factor costs; current market phase (bull/bear, SMA position).
+
+Specialised on German investors and German tax law. Not investment advice.
+
 ![Home](docs/screenshots/home.png)
 
 ## Development
@@ -24,3 +35,9 @@ bun run dev
 | `bun run lint`        | Lint + format check (Biome)             |
 | `bun run format`      | Apply Biome fixes                       |
 | `bun run screenshots` | Regenerate `docs/screenshots/`          |
+| `bun run data:fetch`  | Re-download the historical data         |
+
+## Deployment
+
+Every push to `main` is built and published to GitHub Pages by `.github/workflows/deploy.yml`
+(one-time setup: _Settings → Pages → Source: GitHub Actions_).
