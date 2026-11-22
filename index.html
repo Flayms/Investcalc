@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Investcalc</title>
+    <script>
+      // Apply the theme before first paint to avoid a flash (keep in sync with src/features/theme/theme.ts).
+      (() => {
+        var theme;
+        try { theme = localStorage.getItem("investcalc:theme"); } catch {}
+        if (theme !== "light" && theme !== "dark")
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        if (theme === "dark") document.documentElement.classList.add("dark");
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

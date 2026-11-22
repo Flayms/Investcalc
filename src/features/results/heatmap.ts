@@ -1,4 +1,8 @@
-/** Sequential single-hue ramp (reference palette, blue steps 100–500), light = low, dark = high. */
+/**
+ * Sequential single-hue ramp (reference palette, blue steps 100–500), light = low, dark = high.
+ * Light-theme reference; cells render `--heat-N` / `--heat-ink-N` from index.css so the dark theme
+ * can run its own ramp (near-surface = low, bright = high) with matching text colors.
+ */
 export const HEAT_RAMP = [
   "#cde2fb",
   "#b7d3f6",
@@ -10,10 +14,13 @@ export const HEAT_RAMP = [
   "#2a78d6",
   "#256abf",
 ] as const;
-/** From this step on, light text reads better than dark text. */
-const FIRST_DARK_STEP = 7;
+export type Heat = { step: number; best: boolean };
 
-export type Heat = { background: string; dark: boolean; best: boolean };
+/** Cell colors for a heat step, following the current theme. */
+export const heatStyle = (heat: Heat) => ({
+  background: `var(--heat-${heat.step})`,
+  color: `var(--heat-ink-${heat.step})`,
+});
 
 /**
  * Shades the values of one table column relative to each other (REQ-002-03).
@@ -28,10 +35,6 @@ export function columnHeat(values: (number | undefined)[]): (Heat | undefined)[]
     if (v === undefined || !Number.isFinite(v)) return undefined;
     const t = max === min ? 1 : (v - min) / (max - min);
     const step = Math.round(t * (HEAT_RAMP.length - 1));
-    return {
-      background: HEAT_RAMP[step] as string,
-      dark: step >= FIRST_DARK_STEP,
-      best: v === max,
-    };
+    return { step, best: v === max };
   });
 }

@@ -12,10 +12,14 @@ A browser-based website that runs Monte Carlo simulations of ETF portfolios unde
 - **Scenarios:** compare up to 8 scenarios of your own choices (index, amounts, mix, leverage, strategy); costs, taxes and the data period are shared by all of them. Everything is saved in your browser and restored after a reload.
 - **Results:** fan chart and a percentile table color-coded per column so the winner stands out; leverage explorer (which factor pays off, and at what downside); how much each cost factor costs.
 - **Market & data:** current market phase (bull/bear, SMA position) and the data basis on their own view.
+- **Exact input:** every slider has a box next to it to type the exact value (e.g. €437 per month or a 0.07 % TER).
+- **Notebook look, light and dark:** styled like a scribbled notebook page; switch between light and dark in the header (defaults to your system setting).
 
 Specialised on German investors and German tax law. Not investment advice.
 
 ![Simulation](docs/screenshots/home.png)
+
+![Simulation, dark theme](docs/screenshots/home-dark.png)
 
 ![Market & data](docs/screenshots/market.png)
 

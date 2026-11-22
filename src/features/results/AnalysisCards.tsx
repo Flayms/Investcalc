@@ -20,7 +20,8 @@ import type { LeveragePoint, LeverageSweep } from "@/simulation/simulate";
 type Props = { scenario: ResolvedScenario; analysis?: Analysis; loading: boolean };
 
 function Status({ loading, error }: { loading: boolean; error?: string }) {
-  if (error) return <p className="text-sm lg:text-xs text-amber-800">{error}</p>;
+  if (error)
+    return <p className="text-sm lg:text-xs text-amber-800 dark:text-amber-300">{error}</p>;
   return (
     <p className="text-sm lg:text-xs text-muted-foreground">
       {loading ? "Analysing…" : "No data."}

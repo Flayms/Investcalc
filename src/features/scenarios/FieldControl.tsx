@@ -11,27 +11,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Field, Unit } from "@/features/scenarios/fields";
-import { formatEuro } from "@/lib/format";
-
-export function formatFieldValue(unit: Unit, step: number, value: number): string {
-  switch (unit) {
-    case "percent": {
-      const digits = Math.max(0, -Math.floor(Math.log10(step * 100) + 1e-9));
-      return `${(value * 100).toFixed(digits)} %`;
-    }
-    case "euro":
-      return step < 1 ? `€${value.toFixed(2)}` : formatEuro(value);
-    case "factor":
-      return `${value.toFixed(2)}×`;
-    case "months":
-      return `${value} mo`;
-    case "years":
-      return `${value} y`;
-    case "count":
-      return value.toLocaleString("en-US");
-  }
-}
+import type { Field } from "@/features/scenarios/fields";
+import { ValueInput } from "@/features/scenarios/ValueInput";
 
 export function HelpTooltip({
   label,
@@ -79,7 +60,7 @@ export function HelpTooltip({
 
 export function NotRecommended() {
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs lg:text-[10px] font-medium text-amber-900">
+    <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs lg:text-[10px] font-medium text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">
       <TriangleAlertIcon className="size-3" aria-hidden />
       Not recommended
     </span>
@@ -106,9 +87,15 @@ export function FieldControl<K extends string>({ field, value, onChange }: Props
       <HelpTooltip label={field.label} help={field.help} recommendation={field.recommendation} />
       {deviates && <NotRecommended />}
       {field.kind === "slider" && (
-        <span className="ml-auto text-sm lg:text-xs tabular-nums text-muted-foreground">
-          {formatFieldValue(field.unit, field.step, value as number)}
-        </span>
+        <ValueInput
+          className="ml-auto"
+          label={field.label}
+          unit={field.unit}
+          min={field.min}
+          max={field.max}
+          value={value as number}
+          onChange={onChange}
+        />
       )}
       {field.kind === "switch" && (
         <Switch id={id} className="ml-auto" checked={value as boolean} onCheckedChange={onChange} />

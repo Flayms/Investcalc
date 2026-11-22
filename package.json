@@ -18,6 +18,8 @@
     "data:fetch": "bun scripts/fetch-data.ts"
   },
   "dependencies": {
+    "@fontsource/caveat": "^5.3.0",
+    "@fontsource/patrick-hand": "^5.3.0",
     "@tanstack/react-query": "^5.108.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
