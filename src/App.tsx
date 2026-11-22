@@ -70,7 +70,8 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
   }, [scenarios, selected.key, global, shared]);
 
   const resolved = useMemo<ResolvedScenario[]>(
-    () => scenarios.map((s) => ({ ...s, params: toParams(s.params, shared) })),
+    () =>
+      scenarios.filter((s) => !s.hidden).map((s) => ({ ...s, params: toParams(s.params, shared) })),
     [scenarios, shared],
   );
   // Memoised on its own so editing another scenario does not re-run the analysis.
@@ -93,6 +94,8 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
   };
   const updateSelected = (params: ScenarioChoices) =>
     setScenarios(scenarios.map((s) => (s.key === selected.key ? { ...s, params } : s)));
+  const toggleVisible = (key: string) =>
+    setScenarios(scenarios.map((s) => (s.key === key ? { ...s, hidden: !s.hidden } : s)));
   const removeSelected = () => {
     const rest = scenarios.filter((s) => s.key !== selected.key);
     setScenarios(rest);
@@ -148,6 +151,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                     scenarios={scenarios}
                     selectedKey={selected.key}
                     onSelect={setSelectedKey}
+                    onToggleVisible={toggleVisible}
                     onAdd={() =>
                       addScenario({ ...defaultChoices, name: `Scenario ${scenarios.length + 1}` })
                     }

@@ -33,6 +33,8 @@ const stateSchema = z.object({
           .max(MAX_SCENARIOS - 1),
         // Only indices that exist, so a restored scenario can always be simulated.
         params: choicesSchema.extend({ etfId: z.enum(datasetIds) }),
+        // Missing in state saved before scenarios could be hidden: visible (REQ-004-03).
+        hidden: z.boolean().optional(),
       }),
     )
     .min(1)

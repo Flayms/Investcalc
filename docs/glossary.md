@@ -13,6 +13,7 @@ Domain terms used in code, specs and tests. Use these names consistently.
 | Seed                  | PRNG start value that makes a simulation reproducible                                                  |                         |
 | Scenario              | One named combination of choices (index, amounts, mix, leverage, strategy, loan); several are compared | Strategy                |
 | Shared settings       | Settings that are the same for all scenarios: data period, product/trading costs, German taxes         | Scenario                |
+| Hidden scenario       | A scenario kept in the scenario bar but excluded from simulation, chart and results table              | Scenario                |
 | Historical window     | A path that replays a contiguous real period of the history                                            | Random slicing          |
 | Random slicing        | Path generation by stationary block bootstrap: random contiguous blocks of history stitched together   | Historical window       |
 | Warm-up               | Months of history before the horizon, used only to compute SMA signals                                 | Horizon                 |

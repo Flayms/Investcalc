@@ -42,3 +42,17 @@ test("REQ-002-01 state from another version is ignored", () => {
   localStorage.setItem("investcalc:state", JSON.stringify({ ...state(), version: 999 }));
   expect(loadState(localStorage)).toBeUndefined();
 });
+
+test("REQ-004-03 hidden scenarios are restored", () => {
+  const s = state();
+  s.scenarios = s.scenarios.map((sc, i) => ({ ...sc, hidden: i === 1 }));
+  saveState(localStorage, s);
+  expect(loadState(localStorage)?.scenarios.map((sc) => sc.hidden)).toEqual([false, true, false]);
+});
+
+test("REQ-004-03 state without visibility restores every scenario visible", () => {
+  const s = state();
+  const legacy = s.scenarios.map(({ hidden: _, ...sc }) => sc);
+  localStorage.setItem("investcalc:state", JSON.stringify({ ...s, version: 1, scenarios: legacy }));
+  expect(loadState(localStorage)?.scenarios.every((sc) => !sc.hidden)).toBe(true);
+});

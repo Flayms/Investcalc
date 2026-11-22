@@ -9,6 +9,7 @@ One folder per feature: `docs/specs/NNN-name/` with `spec.md` and, for tier 3 wo
 | [001-monte-carlo-dashboard](001-monte-carlo-dashboard/spec.md) | Simulation, UI, deployment                            | Implemented |
 | [002-dashboard-usability](002-dashboard-usability/spec.md)     | UI: persistence, shared settings, results readability | Implemented |
 | [003-notebook-look](003-notebook-look/spec.md)                 | UI: exact value input, dark theme, notebook styling   | Implemented |
+| [004-scenario-visibility](004-scenario-visibility/spec.md)     | UI: hide/show scenarios, body typeface                | Implemented |
 
 ## Conventions
 

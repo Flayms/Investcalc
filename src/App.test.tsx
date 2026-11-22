@@ -204,3 +204,84 @@ test("REQ-002-05 market and data basis are on their own view, not among the resu
   expect(screen.getByText("Data basis")).toBeInTheDocument();
   expect(screen.queryByText("Scenario settings")).not.toBeInTheDocument();
 });
+
+const fakeResult = () => ({
+  pathCount: 10,
+  period: "",
+  bands: [{ p10: 1, p25: 2, p50: 3, p75: 4, p90: 5 }],
+  final: { p5: 1, p10: 2, p25: 3, p50: 4, p75: 5, p95: 6 },
+  invested: 1,
+  probabilityOfLoss: 0,
+  medianFees: 0,
+  medianTaxes: 0,
+});
+
+function resolvingClient() {
+  const calls: { key: string }[][] = [];
+  const client = {
+    run: (jobs: { key: string }[]) => {
+      calls.push(jobs);
+      return Promise.resolve(Object.fromEntries(jobs.map((j) => [j.key, fakeResult()])));
+    },
+    analyze: () => new Promise(() => {}),
+  } as unknown as Pick<SimulationClient, "run" | "analyze">;
+  return { client, calls };
+}
+
+async function resultsCard() {
+  return (await screen.findByText(/Final value after taxes — percentiles/)).closest(
+    "[data-slot=card]",
+  ) as HTMLElement;
+}
+
+test("REQ-004-01 hidden scenarios leave the chart and the results table", async () => {
+  const { client, calls } = resolvingClient();
+  renderApp(client);
+  const legend = await screen.findByRole("list", { name: "Legend" });
+  await within(legend).findByText("2× buy and hold");
+
+  const toggle = screen.getByRole("button", { name: "Show 2× buy and hold" });
+  expect(toggle).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+  await vi.waitFor(() => expect(calls.at(-1)?.map((j) => j.key)).toEqual(["s1", "s3"]));
+  await vi.waitFor(() =>
+    expect(within(legend).queryByText("2× buy and hold")).not.toBeInTheDocument(),
+  );
+  const card = await resultsCard();
+  expect(within(card).queryByRole("article", { name: "2× buy and hold" })).not.toBeInTheDocument();
+  expect(within(card).getByRole("article", { name: "1× buy and hold" })).toBeInTheDocument();
+
+  // Still in the scenario bar and editable.
+  const tabs = screen.getByRole("tablist", { name: "Scenarios" });
+  fireEvent.click(within(tabs).getByRole("tab", { name: /2× buy and hold/ }));
+  expect(screen.getByLabelText("Name")).toHaveValue("2× buy and hold");
+});
+
+test("REQ-004-02 a hidden scenario can be shown again", async () => {
+  const { client, calls } = resolvingClient();
+  renderApp(client);
+  const legend = await screen.findByRole("list", { name: "Legend" });
+  const toggle = await screen.findByRole("button", { name: "Show 1× buy and hold" });
+  fireEvent.click(toggle);
+  await vi.waitFor(() => expect(calls.at(-1)?.map((j) => j.key)).toEqual(["s2", "s3"]));
+  fireEvent.click(toggle);
+  await vi.waitFor(() => expect(calls.at(-1)?.map((j) => j.key)).toEqual(["s1", "s2", "s3"]));
+  await within(legend).findByText("1× buy and hold");
+});
+
+test("REQ-004-03 hidden scenarios stay hidden after a reload", async () => {
+  const first = renderApp();
+  fireEvent.click(await screen.findByRole("button", { name: "Show 2× buy and hold" }));
+  first.unmount();
+  renderApp();
+  expect(await screen.findByRole("button", { name: "Show 2× buy and hold" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  expect(screen.getByRole("button", { name: "Show 1× buy and hold" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+});
