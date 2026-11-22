@@ -105,3 +105,16 @@ export function initialScenarios(): Scenario[] {
     },
   ];
 }
+
+/** The scenarios with `key` moved to position `toIndex`; the others keep their relative order. */
+export function moveScenario<S extends Pick<Scenario, "key">>(
+  scenarios: S[],
+  key: string,
+  toIndex: number,
+): S[] {
+  const from = scenarios.findIndex((s) => s.key === key);
+  if (from < 0) return scenarios;
+  const rest = scenarios.filter((_, i) => i !== from);
+  const to = Math.max(0, Math.min(toIndex, rest.length));
+  return [...rest.slice(0, to), scenarios[from] as S, ...rest.slice(to)];
+}

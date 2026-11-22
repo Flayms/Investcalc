@@ -41,7 +41,8 @@ scenarios and switches the body text to a friendlier, still highly legible typef
 
 ## Out of scope
 
-- Hiding all scenarios at once, reordering scenarios.
+- Hiding all scenarios at once.
+- Reordering scenarios (see spec 005).
 
 ## Assumptions
 

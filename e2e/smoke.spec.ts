@@ -57,3 +57,16 @@ test("REQ-002-05 market and data basis are on their own view", async ({ page }) 
   await expect(page.getByText("Current market")).toBeVisible();
   await expect(page.getByText("Data basis")).toBeVisible();
 });
+
+test("REQ-005-01 scenarios can be reordered by drag and drop", async ({ page }) => {
+  await page.goto("/");
+  const tabs = page.getByRole("tablist", { name: "Scenarios" });
+  await tabs
+    .getByRole("tab", { name: "2× with 10-month SMA" })
+    .dragTo(tabs.getByRole("tab", { name: "1× buy and hold" }));
+  await expect(tabs.getByRole("tab")).toHaveText([
+    "2× with 10-month SMA",
+    "1× buy and hold",
+    "2× buy and hold",
+  ]);
+});
