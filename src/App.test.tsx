@@ -460,3 +460,46 @@ test("REQ-005-03 the order survives a reload", async () => {
   await screen.findByRole("tablist", { name: "Scenarios" });
   expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
 });
+
+test("REQ-007-01 a chart plots the final value against the percentile for every scenario", async () => {
+  const { client } = resolvingClient();
+  renderApp(client);
+  const card = await resultsCard();
+  const chart = within(card).getByRole("img", { name: /Final value after taxes by percentile/ });
+  expect(chart).toBeInTheDocument();
+  const legend = within(card).getByRole("list", { name: "Percentile chart legend" });
+  await vi.waitFor(() =>
+    expect(
+      within(legend)
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual(["1× buy and hold", "2× buy and hold", "2× with 10-month SMA", "Paid in"]),
+  );
+});
+
+test("REQ-007-02 percentiles can be shown as yearly return", async () => {
+  const { client } = resolvingClient();
+  renderApp(client);
+  const card = await resultsCard();
+  const table = within(card).getByRole("table");
+  const p50 = () =>
+    within(within(table).getAllByRole("row")[1] as HTMLElement).getAllByRole("cell")[4];
+  await vi.waitFor(() => expect(p50()).toHaveTextContent("€4"));
+
+  const unit = within(card).getByRole("group", { name: "Unit" });
+  expect(within(unit).getByRole("button", { name: "€" })).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(within(unit).getByRole("button", { name: "% p.a." }));
+  expect(within(unit).getByRole("button", { name: "% p.a." })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(p50()).toHaveTextContent(/^-?\d+\.\d %$/);
+  expect(
+    within(card).getByRole("img", { name: /yearly return by percentile/i }),
+  ).toBeInTheDocument();
+  const firstCard = within(card).getByRole("article", { name: "1× buy and hold" });
+  expect(within(firstCard).getAllByText(/^-?\d+\.\d %$/).length).toBeGreaterThanOrEqual(6);
+
+  fireEvent.click(within(unit).getByRole("button", { name: "€" }));
+  expect(p50()).toHaveTextContent("€4");
+});
