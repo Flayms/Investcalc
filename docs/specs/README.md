@@ -4,18 +4,19 @@ One folder per feature: `docs/specs/NNN-name/` with `spec.md` and, for tier 3 wo
 
 ## Index
 
-| Spec                                                                 | Area                                                    | Status      |
-| -------------------------------------------------------------------- | ------------------------------------------------------- | ----------- |
-| [001-monte-carlo-dashboard](001-monte-carlo-dashboard/spec.md)       | Simulation, UI, deployment                              | Implemented |
-| [002-dashboard-usability](002-dashboard-usability/spec.md)           | UI: persistence, shared settings, results readability   | Implemented |
-| [003-notebook-look](003-notebook-look/spec.md)                       | UI: exact value input, dark theme, notebook styling     | Implemented |
-| [004-scenario-visibility](004-scenario-visibility/spec.md)           | UI: hide/show scenarios, body typeface                  | Implemented |
-| [005-scenario-order](005-scenario-order/spec.md)                     | UI: reorder scenarios                                   | Implemented |
-| [006-market-history](006-market-history/spec.md)                     | Market: time frame, bear/bull markets, indicators       | Implemented |
-| [007-final-value-distribution](007-final-value-distribution/spec.md) | UI: final value vs. percentile chart, % p.a. unit       | Implemented |
-| [008-value-explorer](008-value-explorer/spec.md)                     | Best value of leverage, share and SMA sliders           | Implemented |
-| [009-simulation-feedback](009-simulation-feedback/spec.md)           | UI: visible progress, stale results, skipped work       | Implemented |
-| [010-daily-volatility](010-daily-volatility/spec.md)                 | Data: daily variance for the drag, US market since 1926 | Implemented |
+| Spec                                                                 | Area                                                       | Status      |
+| -------------------------------------------------------------------- | ---------------------------------------------------------- | ----------- |
+| [001-monte-carlo-dashboard](001-monte-carlo-dashboard/spec.md)       | Simulation, UI, deployment                                 | Implemented |
+| [002-dashboard-usability](002-dashboard-usability/spec.md)           | UI: persistence, shared settings, results readability      | Implemented |
+| [003-notebook-look](003-notebook-look/spec.md)                       | UI: exact value input, dark theme, notebook styling        | Implemented |
+| [004-scenario-visibility](004-scenario-visibility/spec.md)           | UI: hide/show scenarios, body typeface                     | Implemented |
+| [005-scenario-order](005-scenario-order/spec.md)                     | UI: reorder scenarios                                      | Implemented |
+| [006-market-history](006-market-history/spec.md)                     | Market: time frame, bear/bull markets, indicators          | Implemented |
+| [007-final-value-distribution](007-final-value-distribution/spec.md) | UI: final value vs. percentile chart, % p.a. unit          | Implemented |
+| [008-value-explorer](008-value-explorer/spec.md)                     | Best value of leverage, share and SMA sliders              | Implemented |
+| [009-simulation-feedback](009-simulation-feedback/spec.md)           | UI: visible progress, stale results, skipped work          | Implemented |
+| [010-daily-volatility](010-daily-volatility/spec.md)                 | Data: daily variance for the drag, US market since 1926    | Implemented |
+| [011-eur-returns](011-eur-returns/spec.md)                           | Data: simulation in euros (exchange rate, euro short rate) | Implemented |
 
 ## Conventions
 

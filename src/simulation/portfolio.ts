@@ -2,7 +2,12 @@ import { leveragedReturn, type MonthMarket } from "@/simulation/leverage";
 import { PARTIAL_EXEMPTION_EQUITY, type ScenarioParams } from "@/simulation/params";
 import { settleTaxYear, type TaxSettings, vorabpauschale } from "@/simulation/tax";
 
-export type PathMonth = MonthMarket;
+export type PathMonth = MonthMarket & {
+  /** Change of the dollar's value in the investor's currency this month (0 when investing in USD). */
+  fx?: number;
+  /** Annualised rate earned on cash; defaults to `rate`. */
+  cashRate?: number;
+};
 
 export type PathResult = {
   /** Net worth before tax at the end of each month (index 0 = start). */
@@ -76,11 +81,11 @@ export function simulatePath(
   const fundLev = newFund(p.leveragedShare);
   const funds = [fund1x, fundLev];
 
-  // Index level for the SMA signal (start of path = 1).
+  // Index level in the investor's currency for the SMA signal (start of path = 1, REQ-011-05).
   const levels: number[] = [];
   let level = 1;
   for (const month of months) {
-    level *= 1 + month.r;
+    level *= (1 + month.r) * (1 + (month.fx ?? 0));
     levels.push(level);
   }
   const aboveSma = (index: number) => {
@@ -193,9 +198,11 @@ export function simulatePath(
       f.value *= factor;
       f.yearGrowth *= factor;
     };
-    grow(fund1x, 1 + leveragedReturn(month, unleveraged));
-    grow(fundLev, 1 + leveragedReturn(month, leveraged));
-    const interest = (cash * month.rate) / 12;
+    // Leverage applies to the index return in USD, the currency effect once (REQ-011-02).
+    const currency = 1 + (month.fx ?? 0);
+    grow(fund1x, (1 + leveragedReturn(month, unleveraged)) * currency);
+    grow(fundLev, (1 + leveragedReturn(month, leveraged)) * currency);
+    const interest = (cash * (month.cashRate ?? month.rate)) / 12;
     cash += interest;
     yearInterest += interest;
 

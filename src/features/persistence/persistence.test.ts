@@ -56,3 +56,9 @@ test("REQ-004-03 state without visibility restores every scenario visible", () =
   localStorage.setItem("investcalc:state", JSON.stringify({ ...s, version: 1, scenarios: legacy }));
   expect(loadState(localStorage)?.scenarios.every((sc) => !sc.hidden)).toBe(true);
 });
+
+test("REQ-011-06 state saved before the currency setting loads with the euro", () => {
+  const { currency: _, ...shared } = state().shared;
+  localStorage.setItem("investcalc:state", JSON.stringify({ ...state(), version: 1, shared }));
+  expect(loadState(localStorage)?.shared.currency).toBe("EUR");
+});

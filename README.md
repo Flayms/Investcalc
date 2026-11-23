@@ -5,6 +5,7 @@ A browser-based website that runs Monte Carlo simulations of ETF portfolios unde
 **Live:** https://flayms.github.io/Investcalc/
 
 - **Historical data:** S&P 500 (since 1871), US total market (since 1926), MSCI World and MSCI ACWI / All World (since 2001), monthly total returns, plus the short rate as SOFR proxy. The volatility drag of leveraged ETFs uses the realised variance of each month's daily returns (estimated for the S&P 500 before 1926).
+- **Currency:** simulate in euros (default; from 1960, exchange rates from the Bundesbank and ECB, cash earns the German / euro money market rate) or in US dollars (full history).
 - **Path generation:** every real historical window, or thousands of paths from _random slicing_ (stationary block bootstrap: random contiguous blocks of history, so crashes and volatility regimes stay intact).
 - **Products:** 1× ETF, leveraged ETF (1×–3×, daily reset with volatility drag, SOFR + spread financing) or any mix of both.
 - **Costs and German taxes:** TER, order fees, bid-ask spread; Abgeltungsteuer + Soli, Teilfreistellung, Sparerpauschbetrag, Vorabpauschale, loss carry-forward.

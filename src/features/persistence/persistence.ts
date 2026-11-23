@@ -41,7 +41,8 @@ const stateSchema = z.object({
     .max(MAX_SCENARIOS),
   selectedKey: z.string(),
   global: globalSchema,
-  shared: sharedSchema,
+  // Missing in state saved before the currency setting existed: euro (REQ-011-06).
+  shared: sharedSchema.extend({ currency: sharedSchema.shape.currency.default("EUR") }),
 });
 
 type KeyValueStore = Pick<Storage, "getItem" | "setItem">;

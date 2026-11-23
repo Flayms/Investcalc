@@ -12,7 +12,9 @@ test("REQ-001-14 simulates the default scenarios in a worker and shows percentil
   const table = page.getByRole("table").filter({ hasText: "P(loss)" });
   await expect(table.getByRole("columnheader", { name: "P50" })).toBeVisible();
   // Three default scenarios, each with 2,000 paths.
-  await expect(table.getByRole("cell", { name: "2,000" })).toHaveCount(3, { timeout: 30_000 });
+  await expect(table.getByRole("cell", { name: "2,000", exact: true })).toHaveCount(3, {
+    timeout: 30_000,
+  });
   await expect(page.getByText("Net worth over time")).toBeVisible();
 });
 
@@ -136,4 +138,20 @@ test("REQ-009-01 the status stays in view while scrolled down", async ({ page })
       timeout: 60_000,
     },
   );
+});
+
+test("REQ-011-01 switching the currency to US dollars recalculates the scenarios", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const table = page.getByRole("table").filter({ hasText: "P(loss)" });
+  await expect(table.getByRole("cell", { name: "2,000", exact: true })).toHaveCount(3, {
+    timeout: 30_000,
+  });
+  await expect(page.getByText(/In euros from 1960/)).toBeVisible();
+  const inEuros = await table.textContent();
+  await page.getByRole("combobox", { name: "Currency" }).click();
+  await page.getByRole("option", { name: "US dollar" }).click();
+  await expect(page.getByText(/In euros from 1960/)).toHaveCount(0);
+  await expect.poll(() => table.textContent(), { timeout: 30_000 }).not.toBe(inEuros);
 });

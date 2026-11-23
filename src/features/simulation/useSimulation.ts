@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ResolvedScenario } from "@/features/scenarios/scenario";
 import { isSuperseded, type SimulationApi, SimulationClient } from "@/features/simulation/client";
-import { type Dataset, getDataset } from "@/simulation/dataset";
+import { datasetFor, type SimulationData } from "@/simulation/currency";
 import type { GlobalSettings, ScenarioParams } from "@/simulation/params";
 import type { FactorImpact, ScenarioResult } from "@/simulation/simulate";
 import { type ParameterSweep, SWEEP_PARAMS, type SweepParam } from "@/simulation/sweep";
@@ -38,7 +38,7 @@ const sorted = (o: object) =>
   Object.fromEntries(Object.entries(o).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 
 /** The latest result of a scenario and what it was computed from. */
-type Kept = { inputs: string; datasets: Record<string, Dataset>; result: ScenarioResult };
+type Kept = { inputs: string; data: SimulationData; result: ScenarioResult };
 
 /**
  * Simulates the scenarios whose inputs changed (REQ-009-04) and analyses the selected one when its
@@ -47,7 +47,7 @@ type Kept = { inputs: string; datasets: Record<string, Dataset>; result: Scenari
  * are computed (REQ-009-02).
  */
 export function useSimulation(
-  datasets: Record<string, Dataset> | undefined,
+  data: SimulationData | undefined,
   scenarios: ResolvedScenario[],
   selected: ResolvedScenario | undefined,
   global: GlobalSettings,
@@ -65,7 +65,7 @@ export function useSimulation(
     [scenarios, global],
   );
   const outdated = inputs.filter(
-    ({ s, inputs }) => kept[s.key]?.inputs !== inputs || kept[s.key]?.datasets !== datasets,
+    ({ s, inputs }) => kept[s.key]?.inputs !== inputs || kept[s.key]?.data !== data,
   );
   /** Identifies the work to do by value, so unrelated re-renders do not restart it. */
   const work = outdated.map(({ s, inputs }) => `${s.key}\u0000${inputs}`).join("\u0001");
@@ -73,13 +73,13 @@ export function useSimulation(
   latest.current = { outdated, inputs, global };
 
   useEffect(() => {
-    if (!datasets || !work) return;
+    if (!data || !work) return;
     let cancelled = false;
     const timer = setTimeout(() => {
       const todo = latest.current.outdated;
       const jobs = todo.map(({ s }) => ({
         key: s.key,
-        dataset: getDataset(datasets, s.params.etfId),
+        dataset: datasetFor(data, s.params),
         scenario: s.params,
       }));
       client.run(jobs, latest.current.global).then(
@@ -91,7 +91,7 @@ export function useSimulation(
               // A result that arrives late still counts if nothing changed since it was requested.
               const current = latest.current.inputs.find((c) => c.s.key === s.key)?.inputs;
               if (result && (current === undefined || current === inputs))
-                next[s.key] = { inputs, datasets, result };
+                next[s.key] = { inputs, data, result };
             }
             return next;
           });
@@ -105,7 +105,7 @@ export function useSimulation(
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [client, datasets, work]);
+  }, [client, data, work]);
 
   const results = useMemo(() => {
     const shown: Record<string, ScenarioResult> = {};
@@ -122,11 +122,11 @@ export function useSimulation(
   latestSelected.current = { params: selected?.params, global };
   useEffect(() => {
     const { params, global } = latestSelected.current;
-    if (!datasets || !analysisInputs || !params) return;
+    if (!data || !analysisInputs || !params) return;
     let cancelled = false;
     setAnalysing({ sweeps: allSweeps(true), factors: true });
     const timer = setTimeout(() => {
-      const dataset = getDataset(datasets, params.etfId);
+      const dataset = datasetFor(data, params);
       const failed = (done: () => void) => (e: unknown) => {
         if (!cancelled && !isSuperseded(e)) done();
       };
@@ -149,10 +149,10 @@ export function useSimulation(
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [client, datasets, analysisInputs]);
+  }, [client, data, analysisInputs]);
 
   const pending: Pending = {
-    run: datasets && work !== failed ? outdated.map(({ s }) => s.key) : [],
+    run: data && work !== failed ? outdated.map(({ s }) => s.key) : [],
     ...analysing,
   };
   return { results, sweeps, factors, pending };

@@ -24,6 +24,7 @@ export const MAX_SCENARIOS = SCENARIO_COLORS.length;
 export const SHARED_KEYS = [
   "fromYear",
   "toYear",
+  "currency",
   "terUnleveraged",
   "terLeveraged",
   "includeSofr",

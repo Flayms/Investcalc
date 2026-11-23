@@ -9,10 +9,12 @@ type Props = {
   datasets: Record<string, Dataset>;
   value: Period;
   onChange: (period: Period) => void;
+  /** First year of the history in the chosen currency, if it starts later (REQ-011-04). */
+  currencyFrom?: { currency: string; year: number };
 };
 
 /** One historical period for all scenarios, spanning all indices (REQ-002-02). */
-export function HistoricalPeriodField({ datasets, value, onChange }: Props) {
+export function HistoricalPeriodField({ datasets, value, onChange, currencyFrom }: Props) {
   const all = Object.values(datasets);
   const min = Math.min(...all.map(firstYear));
   const max = Math.max(...all.map(lastYear));
@@ -47,6 +49,11 @@ export function HistoricalPeriodField({ datasets, value, onChange }: Props) {
       {shortest.length > 0 && (
         <p className="text-xs lg:text-[11px] text-muted-foreground">
           {shortest.map((d) => `${d.name} from ${firstYear(d)}`).join(", ")}.
+        </p>
+      )}
+      {currencyFrom && currencyFrom.year > from && (
+        <p className="text-xs lg:text-[11px] text-muted-foreground">
+          In {currencyFrom.currency} from {currencyFrom.year}: earlier months have no exchange rate.
         </p>
       )}
     </div>

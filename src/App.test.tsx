@@ -6,7 +6,7 @@ import { defaultShared, initialScenarios } from "@/features/scenarios/scenario";
 import type { SimulationApi } from "@/features/simulation/client";
 import { defaultGlobal } from "@/simulation/params";
 import { SWEEP_VALUES, type SweepParam } from "@/simulation/sweep";
-
+import eur from "../public/data/eur.json?raw";
 import msciAcwi from "../public/data/msci-acwi.json?raw";
 import msciWorld from "../public/data/msci-world.json?raw";
 import sp500 from "../public/data/sp500.json?raw";
@@ -17,6 +17,7 @@ const raw: Record<string, string> = {
   "us-market": usMarket,
   "msci-world": msciWorld,
   "msci-acwi": msciAcwi,
+  eur,
 };
 const loadDataset = async (id: string) => JSON.parse(raw[id] ?? "null");
 
@@ -62,6 +63,27 @@ test("REQ-001-01 the data basis lists all indices with period, CAGR and volatili
   }
   expect(within(table).getByText(/1871-01 –/)).toBeInTheDocument();
   expect(within(table).getAllByText(/%$/).length).toBeGreaterThanOrEqual(6);
+});
+
+test("REQ-011-01 scenarios are simulated in euros by default", async () => {
+  renderApp();
+  const currency = await screen.findByRole("combobox", { name: "Currency" });
+  expect(currency).toHaveTextContent("Euro");
+});
+
+test("REQ-011-04 the historical period says from when the history in euros starts", async () => {
+  renderApp();
+  expect(await screen.findByText(/In euros from 1960/)).toBeInTheDocument();
+});
+
+test("REQ-011-07 the data basis names the exchange rate and euro short rate sources", async () => {
+  renderApp();
+  await openMarketAndData();
+  const heading = await screen.findByText("Data basis");
+  const card = heading.closest("[data-slot=card]") as HTMLElement;
+  expect(within(card).getByText(/Bundesbank/)).toBeInTheDocument();
+  expect(within(card).getByText(/ECB/)).toBeInTheDocument();
+  expect(within(card).getByText(/3-month money market rate/)).toBeInTheDocument();
 });
 
 test("REQ-010-03 the data basis lists the US total market from 1926-07", async () => {

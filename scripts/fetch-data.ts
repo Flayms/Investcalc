@@ -8,6 +8,9 @@
  * - MSCI World / MSCI ACWI: MSCI daily net total return levels in USD.
  * - Short rate (SOFR proxy): FRED TB3MS (3-month T-bill) from 1934, 1-month T-bill (French) from
  *   1926-07, before that Shiller's long interest rate.
+ * - Euro (REQ-011): Deutsche Bundesbank daily DM per USD (Frankfurt fixing, until 1998) and ECB
+ *   euro reference rate (from 1999), last quote of each month; euro short rate: OECD 3-month
+ *   interbank rate for Germany (FRED IR3TIB01DEM156N).
  * - Variance per month (volatility drag): realised variance of daily log returns. The S&P 500 uses
  *   the US total market's daily data; months without daily data are estimated (see daily.ts).
  */
@@ -24,13 +27,21 @@ import {
   nextMonth,
   varianceScale,
 } from "../src/simulation/daily";
-import type { Dataset } from "../src/simulation/dataset";
+import type { CurrencyData, Dataset } from "../src/simulation/dataset";
 
 const SHILLER_URL = "https://raw.githubusercontent.com/datasets/s-and-p-500/main/data/data.csv";
 const FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=TB3MS";
 const FRENCH = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp";
 const FRENCH_DAILY_URL = `${FRENCH}/F-F_Research_Data_Factors_daily_CSV.zip`;
 const FRENCH_MONTHLY_URL = `${FRENCH}/F-F_Research_Data_Factors_CSV.zip`;
+const BUNDESBANK = "https://api.statistiken.bundesbank.de/rest/data/BBEX3";
+const DEM_PER_USD_URL = `${BUNDESBANK}/D.USD.DEM.AA.AC.000`;
+const USD_PER_EUR_URL = `${BUNDESBANK}/D.USD.EUR.BB.AC.000`;
+const EUR_RATE_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=IR3TIB01DEM156N";
+/** Fixed conversion rate of the D-Mark to the euro. */
+const DEM_PER_EUR = 1.95583;
+/** First month of the euro short rate series. */
+const EUR_START = "1960-01";
 const today = new Date().toISOString().slice(0, 10).replaceAll("-", "");
 const msciUrl = (code: string) =>
   `https://app2.msci.com/products/service/index/indexmaster/getLevelDataForGraph?currency_symbol=USD&index_variant=NETR&start_date=19970101&end_date=${today}&data_frequency=DAILY&index_codes=${code}`;
@@ -38,8 +49,9 @@ const msciUrl = (code: string) =>
 const run = promisify(execFile);
 
 // curl instead of fetch(): Bun's fetch gets ECONNRESET from FRED behind some proxies.
-async function text(url: string): Promise<string> {
-  const { stdout } = await run("curl", ["-sfL", "--retry", "3", url], {
+async function text(url: string, accept?: string): Promise<string> {
+  const headers = accept ? ["-H", `Accept: ${accept}`] : [];
+  const { stdout } = await run("curl", ["-sfL", "--retry", "3", ...headers, url], {
     maxBuffer: 64 * 1024 * 1024,
   });
   return stdout;
@@ -125,6 +137,64 @@ async function loadFrench(): Promise<French> {
   };
 }
 
+/** Bundesbank daily series (CSV) → last quote of each month, transformed by `f`. */
+async function bundesbankMonthEnd(url: string, f: (v: number) => number) {
+  const out = new Map<string, number>();
+  for (const line of (await text(url, "text/csv")).split("\n")) {
+    const cols = line.split(";");
+    const date = cols[7] ?? "";
+    const value = Number(cols[8]);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(value > 0)) continue;
+    out.set(month(date), f(value));
+  }
+  return out;
+}
+
+/** Euro per US dollar at the end of each month and the euro short rate (REQ-011-04). */
+async function loadEuro(): Promise<CurrencyData> {
+  const [dem, eur, rateCsv] = await Promise.all([
+    bundesbankMonthEnd(DEM_PER_USD_URL, (v) => v / DEM_PER_EUR),
+    bundesbankMonthEnd(USD_PER_EUR_URL, (v) => 1 / v),
+    text(EUR_RATE_URL),
+  ]);
+  const eurPerUsd = new Map([...dem].filter(([ym]) => ym < "1999-01").concat([...eur]));
+  const rates = new Map(
+    rateCsv
+      .trim()
+      .split("\n")
+      .slice(1)
+      .map((row) => {
+        const [date = "", value] = row.split(",");
+        return [month(date), Number(value) / 100] as const;
+      })
+      .filter(([, v]) => Number.isFinite(v)),
+  );
+  const fx: number[] = [];
+  const shortRates: number[] = [];
+  let lastRate = 0;
+  for (let ym = EUR_START; ym < currentMonth && eurPerUsd.has(ym); ym = nextMonth(ym)) {
+    const prev = eurPerUsd.get(previousMonth(ym));
+    const cur = eurPerUsd.get(ym);
+    if (prev === undefined || cur === undefined) throw new Error(`exchange rate missing: ${ym}`);
+    fx.push(round(cur / prev - 1));
+    lastRate = rates.get(ym) ?? lastRate;
+    shortRates.push(round(lastRate));
+  }
+  return {
+    id: "eur",
+    name: "Euro",
+    source: `Exchange rate: Deutsche Bundesbank, DM per US dollar (Frankfurt fixing, converted at ${DEM_PER_EUR} DM per euro) until 1998, ECB euro reference rate from 1999; last quote of each month. Euro short rate: 3-month money market rate for Germany (OECD via FRED IR3TIB01DEM156N), latest months carried forward.`,
+    start: EUR_START,
+    fx,
+    rates: shortRates,
+  };
+}
+
+function previousMonth(ym: string): string {
+  const [y = 0, m = 0] = ym.split("-").map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+}
+
 /** Month label → value of a monthly series. */
 function byMonth(series: MonthlySeries, values: number[]): Map<string, number> {
   const out = new Map<string, number>();
@@ -137,7 +207,12 @@ function byMonth(series: MonthlySeries, values: number[]): Map<string, number> {
 }
 
 async function main() {
-  const [shiller, tbill, french] = await Promise.all([loadShiller(), loadTbill(), loadFrench()]);
+  const [shiller, tbill, french, euro] = await Promise.all([
+    loadShiller(),
+    loadTbill(),
+    loadFrench(),
+    loadEuro(),
+  ]);
   const lastTbill = [...tbill.values()].at(-1) ?? 0;
   const firstTbillMonth = [...tbill.keys()][0] ?? "";
   const dailyVariance = french.variance;
@@ -255,6 +330,8 @@ async function main() {
     await writeFile(`public/data/${d.id}.json`, `${JSON.stringify(d)}\n`);
     console.log(`${d.id}: ${d.start}, ${d.returns.length} months`);
   }
+  await writeFile("public/data/eur.json", `${JSON.stringify(euro)}\n`);
+  console.log(`eur: ${euro.start}, ${euro.fx.length} months`);
   console.log(`S&P 500 variance scale for months without daily data: ${scale.toFixed(3)}`);
   await writeFile(
     "public/data/index.json",

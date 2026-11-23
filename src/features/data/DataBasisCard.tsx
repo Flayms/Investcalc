@@ -8,9 +8,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatPercent } from "@/lib/format";
-import { type Dataset, datasetStats } from "@/simulation/dataset";
+import { type CurrencyData, type Dataset, datasetStats, monthLabel } from "@/simulation/dataset";
 
-export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> }) {
+type Props = { datasets: Record<string, Dataset>; eur: CurrencyData };
+
+export function DataBasisCard({ datasets, eur }: Props) {
+  const eurTo = monthLabel(eur, eur.fx.length - 1);
   return (
     <Card>
       <CardHeader>
@@ -93,6 +96,16 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
             })}
           </TableBody>
         </Table>
+        <div className="text-sm lg:text-xs text-muted-foreground">
+          <h3 className="mb-1 font-semibold text-foreground">
+            Euro ({eur.start} – {eurTo})
+          </h3>
+          <p>
+            Simulations in euros convert each month's return with that month's change of the
+            euro/dollar rate and pay the 3-month money market rate (Germany, euro area) on cash.{" "}
+            {eur.source}
+          </p>
+        </div>
         <div className="grid gap-4 text-sm lg:text-xs text-muted-foreground md:grid-cols-2">
           <div>
             <h3 className="mb-1 font-semibold text-foreground">How paths are generated</h3>
@@ -109,7 +122,10 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
           <div>
             <h3 className="mb-1 font-semibold text-foreground">Assumptions & limits</h3>
             <ul className="list-disc space-y-0.5 pl-4">
-              <li>Amounts in €, returns in USD: currency effects and inflation are ignored.</li>
+              <li>
+                Returns in euros (or US dollars, see the currency setting); leveraged ETFs are
+                dollar-based, their currency effect is not leveraged. Inflation is ignored.
+              </li>
               <li>
                 S&P 500 uses monthly average prices (smooths monthly returns); SMA signals act one
                 month later.

@@ -5,7 +5,8 @@ export const datasetSchema = z.object({
   name: z.string(),
   description: z.string(),
   source: z.string(),
-  currency: z.literal("USD"),
+  /** Currency of `returns`. "EUR" only for datasets converted with `inCurrency`. */
+  currency: z.enum(["USD", "EUR"]),
   /** "average": monthly average prices (Shiller), "close": end-of-month levels. */
   priceType: z.enum(["average", "close"]),
   start: z.string().regex(/^\d{4}-\d{2}$/),
@@ -18,9 +19,28 @@ export const datasetSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}$/)
     .optional(),
+  /** Converted datasets only: monthly change of the dollar's value in the target currency. */
+  fx: z.array(z.number()).optional(),
+  /** Converted datasets only: annualised short rate earned on cash in the target currency. */
+  cashRates: z.array(z.number()).optional(),
 });
 
 export type Dataset = z.infer<typeof datasetSchema>;
+
+/** Exchange rate and short rate of the euro, used to convert the USD datasets (REQ-011-01). */
+export const currencySchema = z.object({
+  id: z.literal("eur"),
+  name: z.string(),
+  source: z.string(),
+  /** "YYYY-MM" of the first month. */
+  start: z.string().regex(/^\d{4}-\d{2}$/),
+  /** Monthly change of the value of one US dollar in euros (month-end rates). */
+  fx: z.array(z.number()),
+  /** Annualised euro short rate (German 3-month money market rate). */
+  rates: z.array(z.number()),
+});
+
+export type CurrencyData = z.infer<typeof currencySchema>;
 
 export const datasetIds = ["sp500", "us-market", "msci-world", "msci-acwi"] as const;
 export type DatasetId = (typeof datasetIds)[number];
