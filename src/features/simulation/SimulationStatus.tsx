@@ -1,13 +1,14 @@
 import { LoaderCircleIcon } from "lucide-react";
+import type { Messages } from "@/features/i18n/messages/en";
 import type { Pending } from "@/features/simulation/useSimulation";
 import { cn } from "@/lib/utils";
 
 /** What is running, in words; undefined when everything is up to date. */
-export function statusText(pending: Pending, selectedName: string) {
+export function statusText(t: Messages, pending: Pending, selectedName: string) {
   const count = pending.run.length;
-  if (count > 0) return `Simulating ${count} scenario${count === 1 ? "" : "s"}…`;
+  if (count > 0) return t.status.simulating(count);
   if (pending.factors || Object.values(pending.sweeps).some(Boolean))
-    return `Analysing “${selectedName}”…`;
+    return t.status.analysing(selectedName);
   return undefined;
 }
 

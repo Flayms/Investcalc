@@ -426,10 +426,8 @@ function resolvingClient() {
   return { client, calls };
 }
 
-async function resultsCard() {
-  return (await screen.findByText(/Final value after taxes — percentiles/)).closest(
-    "[data-slot=card]",
-  ) as HTMLElement;
+async function resultsCard(title = /Final value after taxes — percentiles/) {
+  return (await screen.findByText(title)).closest("[data-slot=card]") as HTMLElement;
 }
 
 test("REQ-004-01 hidden scenarios leave the chart and the results table", async () => {
@@ -892,4 +890,85 @@ test("REQ-009-06 a scenario shown again reuses its results", async () => {
   expect(isBusy()).toBe(false);
   await pastDebounce();
   expect(runs).toEqual([["s1", "s2", "s3"]]);
+});
+
+describe("REQ-014 UI language", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.documentElement.lang = "en";
+  });
+
+  const preferLanguages = (languages: string[]) =>
+    vi.spyOn(Object.getPrototypeOf(navigator), "languages", "get").mockReturnValue(languages);
+
+  test("REQ-014-01 / REQ-014-05 switching to German translates the UI without recalculating", async () => {
+    const { client, runs, sweeps, factorCalls } = recordingClient();
+    await renderSettled(client);
+    const before = { runs: runs.length, sweeps: sweeps.length, factors: factorCalls() };
+    expect(document.documentElement.lang).toBe("en");
+
+    const language = screen.getByRole("group", { name: "Language" });
+    fireEvent.click(within(language).getByRole("button", { name: "Deutsch" }));
+
+    expect(within(language).getByRole("button", { name: "Deutsch" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("group", { name: "Sprache" })).toBe(language);
+    expect(document.documentElement.lang).toBe("de");
+    // Headings, labels, tabs, buttons, table headers and tooltips' triggers are German.
+    expect(screen.getByText("Szenario-Einstellungen")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Markt & Daten" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Währung" })).toHaveTextContent("Euro");
+    expect(screen.getByRole("button", { name: "Über Anlagedauer" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Duplizieren/ })).toBeInTheDocument();
+    expect(screen.getByText("Endwert nach Steuern — Perzentile")).toBeInTheDocument();
+    expect(screen.queryByText("Scenario settings")).not.toBeInTheDocument();
+    // Scenario names are the user's data and stay as they are.
+    const tabs = screen.getByRole("tablist", { name: "Szenarien" });
+    expect(within(tabs).getByRole("tab", { name: "1× buy and hold" })).toBeInTheDocument();
+    // The results are still shown and nothing was simulated or analysed again.
+    const card = await resultsCard(/Endwert nach Steuern — Perzentile/);
+    expect(within(card).getAllByRole("article")).toHaveLength(3);
+    await pastDebounce();
+    expect({ runs: runs.length, sweeps: sweeps.length, factors: factorCalls() }).toEqual(before);
+  });
+
+  test("REQ-014-02 the chosen language survives a reload", async () => {
+    const { unmount } = renderApp();
+    fireEvent.click(await screen.findByRole("button", { name: "Deutsch" }));
+    unmount();
+    renderApp();
+    expect(await screen.findByText("Szenario-Einstellungen")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "English" }));
+    expect(screen.getByText("Scenario settings")).toBeInTheDocument();
+  });
+
+  test("REQ-014-03 a first visit with a German browser opens in German", async () => {
+    preferLanguages(["de-AT", "en"]);
+    renderApp();
+    expect(await screen.findByText("Szenario-Einstellungen")).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("de");
+    // The default scenarios of a first visit are named in its language.
+    const tabs = screen.getByRole("tablist", { name: "Szenarien" });
+    expect(within(tabs).getByRole("tab", { name: "1× Buy and Hold" })).toBeInTheDocument();
+  });
+
+  test("REQ-014-03 a first visit with another browser language opens in English", async () => {
+    preferLanguages(["fr-FR", "de"]);
+    renderApp();
+    expect(await screen.findByText("Scenario settings")).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe("en");
+  });
+
+  test("REQ-014-04 German results use German number formats", async () => {
+    localStorage.setItem("investcalc:language", "de");
+    const { client } = recordingClient();
+    renderApp(client);
+    const card = await resultsCard(/Endwert nach Steuern — Perzentile/);
+    const article = await within(card).findByRole("article", { name: "1× Buy and Hold" });
+    // fakeResult: P50 = €4, 0 % chance of loss.
+    expect(await within(article).findByText(/^4\s€$/)).toBeInTheDocument();
+    expect(within(article).getByText("0,0 %")).toBeInTheDocument();
+  });
 });

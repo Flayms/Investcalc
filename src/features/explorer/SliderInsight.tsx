@@ -1,6 +1,6 @@
 import { ChartSplineIcon } from "lucide-react";
-import { type ExploredSlider, GOALS, goalValue } from "@/features/explorer/explored";
-import { formatEuro, formatPercent } from "@/lib/format";
+import { type ExploredSlider, goalValue } from "@/features/explorer/explored";
+import { useI18n } from "@/features/i18n/i18n";
 import { cn } from "@/lib/utils";
 import { bestPoint, type Goal, type ParameterSweep } from "@/simulation/sweep";
 
@@ -34,7 +34,8 @@ export function SliderInsight({
   onExplore,
 }: Props) {
   const Icon = slider.icon;
-  const goalInfo = GOALS.find((g) => g.id === goal);
+  const { t, format } = useI18n();
+  const goalName = t.goals[goal].short;
   const points = sweep && !sweep.error ? sweep.points : [];
   const best = bestPoint(points, goal);
   const ys = points.map((p) =>
@@ -49,7 +50,7 @@ export function SliderInsight({
   const area = points.length ? `${line} L${W},${H} L0,${H} Z` : "";
   const bestIndex = best ? points.indexOf(best) : -1;
   const isBest = best !== undefined && Math.abs(best.value - value) < 1e-9;
-  const metric = (v: number) => (goal === "loss" ? formatPercent(v, 0) : formatEuro(v));
+  const metric = (v: number) => (goal === "loss" ? format.percent(v, 0) : format.euro(v));
 
   return (
     <div className="space-y-1" data-testid={`insight-${slider.param}`}>
@@ -64,8 +65,8 @@ export function SliderInsight({
           role="img"
           aria-label={
             best
-              ? `${goalInfo?.short} by ${slider.label}; best at ${slider.format(best.value)}`
-              : `${goalInfo?.short} by ${slider.label}: calculating`
+              ? t.insight.chartBest(goalName, slider.label, slider.format(best.value))
+              : t.insight.chartCalculating(goalName, slider.label)
           }
         >
           {points.length > 0 && (
@@ -120,15 +121,17 @@ export function SliderInsight({
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs lg:text-[11px] text-muted-foreground">
         <Icon className="size-3.5 shrink-0" style={{ color }} aria-hidden />
         <span>
-          {goalInfo?.short} by value
+          {t.insight.byValue(goalName)}
           {best && (
             <>
               {" · "}
-              <span className="font-medium text-foreground">best {slider.format(best.value)}</span>{" "}
+              <span className="font-medium text-foreground">
+                {t.insight.best(slider.format(best.value))}
+              </span>{" "}
               ({metric(goalValue(goal, best))})
             </>
           )}
-          {!best && updating && " · calculating…"}
+          {!best && updating && t.insight.calculating}
         </span>
         <span className="ml-auto flex gap-1">
           {best && !isBest && (
@@ -137,17 +140,17 @@ export function SliderInsight({
               onClick={() => onApply(best.value)}
               className="rounded border px-1.5 py-0.5 font-medium text-foreground hover:bg-muted"
             >
-              Use {slider.format(best.value)}
+              {t.explorer.use(slider.format(best.value))}
             </button>
           )}
           <button
             type="button"
             onClick={onExplore}
-            aria-label={`Explore ${slider.label}`}
-            title="Open this slider's diagram in the value explorer"
+            aria-label={t.insight.exploreSlider(slider.label)}
+            title={t.insight.exploreHint}
             className="flex items-center gap-1 rounded border px-1.5 py-0.5 font-medium text-foreground hover:bg-muted"
           >
-            <ChartSplineIcon className="size-3.5" aria-hidden /> Explore
+            <ChartSplineIcon className="size-3.5" aria-hidden /> {t.insight.explore}
           </button>
         </span>
       </div>

@@ -26,8 +26,14 @@ export type FinalPercentiles = {
   p95: number;
 };
 
+/** Why a simulation has no result; the UI words it (REQ-014-01). */
+export type SimulationError =
+  | { kind: "periodShorterThanHorizon"; years: number }
+  | { kind: "periodShorterThanTwoYears"; years: number }
+  | { kind: "noPaths" };
+
 export type ScenarioResult = {
-  error?: string;
+  error?: SimulationError;
   pathCount: number;
   period: { from: string; to: string };
   bands: Band[];
@@ -54,7 +60,7 @@ export const pathOptions = (dataset: Dataset) => ({
 export type PathSet = {
   paths: PathMonth[][];
   period: { from: string; to: string };
-  error?: string;
+  error?: SimulationError;
 };
 
 /** Turns the selected history into the list of paths (warm-up + horizon months each). */
@@ -82,14 +88,14 @@ export function buildPaths(dataset: Dataset, s: ScenarioParams, g: GlobalSetting
   const pick = (indices: number[]) => indices.map((i) => history[i] as PathMonth);
 
   const pathLength = g.horizonYears * 12 + WARMUP_MONTHS;
-  const years = (history.length / 12).toFixed(1);
+  const years = Math.round((history.length / 12) * 10) / 10;
   if (g.sampling === "rolling") {
     const windows = rollingWindowPaths(history.length, pathLength);
     if (windows.length === 0) {
       return {
         paths: [],
         period,
-        error: `The selected period (${years} years) is shorter than the horizon plus one warm-up year. Use random slicing or a shorter horizon.`,
+        error: { kind: "periodShorterThanHorizon", years },
       };
     }
     return { paths: windows.map(pick), period };
@@ -98,7 +104,7 @@ export function buildPaths(dataset: Dataset, s: ScenarioParams, g: GlobalSetting
     return {
       paths: [],
       period,
-      error: `The selected period (${years} years) is shorter than 2 years.`,
+      error: { kind: "periodShorterThanTwoYears", years },
     };
   }
   const rng = createRng(g.seed);
@@ -136,7 +142,7 @@ export function runScenario(
   const { paths, period, error } = buildPaths(dataset, s, g);
   if (error || paths.length === 0) {
     return {
-      error: error ?? "No paths.",
+      error: error ?? { kind: "noPaths" },
       pathCount: 0,
       period,
       bands: [],
@@ -192,34 +198,30 @@ export function runScenario(
 }
 
 export type FactorId = "ter" | "sofr" | "spread" | "trading" | "taxes";
-export type Factor = { id: FactorId; label: string; cost: number };
-export type FactorImpact = { baseline: number; factors: Factor[]; error?: string };
+export type Factor = { id: FactorId; cost: number };
+export type FactorImpact = { baseline: number; factors: Factor[]; error?: SimulationError };
 
 const FACTORS: {
   id: FactorId;
-  label: string;
   leveragedOnly?: boolean;
   remove: (s: ScenarioParams) => ScenarioParams;
 }[] = [
-  { id: "ter", label: "TER", remove: (s) => ({ ...s, terUnleveraged: 0, terLeveraged: 0 }) },
+  { id: "ter", remove: (s) => ({ ...s, terUnleveraged: 0, terLeveraged: 0 }) },
   {
     id: "sofr",
-    label: "SOFR financing",
     leveragedOnly: true,
     remove: (s) => ({ ...s, includeSofr: false }),
   },
   {
     id: "spread",
-    label: "Financing spread",
     leveragedOnly: true,
     remove: (s) => ({ ...s, financingSpread: 0 }),
   },
   {
     id: "trading",
-    label: "Order fees + bid-ask",
     remove: (s) => ({ ...s, orderFee: 0, bidAskSpread: 0 }),
   },
-  { id: "taxes", label: "Taxes", remove: (s) => ({ ...s, taxesEnabled: false }) },
+  { id: "taxes", remove: (s) => ({ ...s, taxesEnabled: false }) },
 ];
 
 /** How much higher the median final value would be without each cost factor (same paths). */
@@ -233,7 +235,6 @@ export function factorImpact(dataset: Dataset, s: ScenarioParams, g: GlobalSetti
   const leveraged = s.leveragedShare > 0 && s.leverage > 1;
   const factors = FACTORS.filter((f) => leveraged || !f.leveragedOnly).map((f) => ({
     id: f.id,
-    label: f.label,
     cost: medianFinal(f.remove(s)) - baseline,
   }));
   return { baseline, factors };

@@ -103,3 +103,20 @@ test("REQ-005-01 / REQ-005-05 scenarios can be reordered by touch (press and hol
     "2× buy and hold",
   ]);
 });
+
+test.describe("REQ-014-01 German on phones", () => {
+  test.use({ locale: "de-DE" });
+  for (const view of ["Ergebnisse", "Einstellungen"]) {
+    test(`REQ-014-01 the longer German text causes no sideways scrolling (${view})`, async ({
+      page,
+    }) => {
+      await page.goto("/");
+      await expect(page.getByTestId("explorer-takeaway")).toBeVisible({ timeout: 60_000 });
+      await page.getByRole("tab", { name: view }).click();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
+});

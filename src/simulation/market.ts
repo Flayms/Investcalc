@@ -48,16 +48,20 @@ export function marketStatus(dataset: Dataset): MarketStatus {
   };
 }
 
-export type TimeFrame = { label: string; months: number; available: boolean };
-
 const TIME_FRAME_YEARS = [1, 3, 5, 10, 20, 50] as const;
+
+export type TimeFrameId = `${(typeof TIME_FRAME_YEARS)[number]}y` | "max";
+/** A trailing period of the history; `years` is undefined for the whole history. */
+export type TimeFrame = { id: TimeFrameId; years?: number; months: number; available: boolean };
 
 /** Selectable chart time frames; those longer than the history are unavailable. */
 export function timeFrames(dataset: Pick<Dataset, "returns">): TimeFrame[] {
   const n = dataset.returns.length;
   return [
-    ...TIME_FRAME_YEARS.map((y) => ({ label: `${y}Y`, months: y * 12, available: y * 12 <= n })),
-    { label: "Max", months: n, available: true },
+    ...TIME_FRAME_YEARS.map(
+      (y): TimeFrame => ({ id: `${y}y`, years: y, months: y * 12, available: y * 12 <= n }),
+    ),
+    { id: "max", months: n, available: true },
   ];
 }
 

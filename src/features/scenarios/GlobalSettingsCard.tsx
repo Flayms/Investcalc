@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/features/i18n/i18n";
 import { FieldControl, HelpTooltip } from "@/features/scenarios/FieldControl";
 import { globalFields } from "@/features/scenarios/fields";
 import type { GlobalSettings } from "@/simulation/params";
@@ -14,11 +15,14 @@ type Props = {
 };
 
 export function GlobalSettingsCard({ global, onChange, children }: Props) {
+  const { t } = useI18n();
   return (
     <Card className="gap-4">
       <CardHeader>
-        <CardTitle className="text-base">Simulation</CardTitle>
-        <CardDescription className="text-sm lg:text-xs">Shared by all scenarios.</CardDescription>
+        <CardTitle className="text-base">{t.globalSettings.title}</CardTitle>
+        <CardDescription className="text-sm lg:text-xs">
+          {t.globalSettings.description}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {globalFields
@@ -34,12 +38,9 @@ export function GlobalSettingsCard({ global, onChange, children }: Props) {
         {global.sampling === "bootstrap" && (
           <div className="flex items-center gap-2">
             <Label htmlFor="seed" className="text-sm lg:text-xs font-medium">
-              Seed
+              {t.globalSettings.seed}
             </Label>
-            <HelpTooltip
-              label="Seed"
-              help="Start value of the random generator. Same seed = same paths = reproducible results."
-            />
+            <HelpTooltip label={t.globalSettings.seed} help={t.globalSettings.seedHelp} />
             <Input
               id="seed"
               type="number"

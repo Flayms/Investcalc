@@ -1,3 +1,4 @@
+import { en, type Messages } from "@/features/i18n/messages/en";
 import { defaultScenario, type ScenarioParams, scenarioSchema } from "@/simulation/params";
 
 /**
@@ -86,20 +87,26 @@ export function nextColorIndex(scenarios: Scenario[]): number {
   return 0;
 }
 
-export function initialScenarios(): Scenario[] {
+/** The scenarios of a first visit, named in the language of the first visit. */
+export function initialScenarios(
+  names: Pick<
+    Messages["scenarioNames"],
+    "buyAndHold" | "leveraged" | "leveragedSma"
+  > = en.scenarioNames,
+): Scenario[] {
   return [
-    { key: "s1", colorIndex: 0, params: { ...defaultChoices, name: "1× buy and hold" } },
+    { key: "s1", colorIndex: 0, params: { ...defaultChoices, name: names.buyAndHold } },
     {
       key: "s2",
       colorIndex: 1,
-      params: { ...defaultChoices, name: "2× buy and hold", leveragedShare: 1, leverage: 2 },
+      params: { ...defaultChoices, name: names.leveraged, leveragedShare: 1, leverage: 2 },
     },
     {
       key: "s3",
       colorIndex: 2,
       params: {
         ...defaultChoices,
-        name: "2× with 10-month SMA",
+        name: names.leveragedSma,
         leveragedShare: 1,
         leverage: 2,
         strategy: "sma",

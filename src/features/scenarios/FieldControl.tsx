@@ -11,7 +11,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Field } from "@/features/scenarios/fields";
+import { useI18n } from "@/features/i18n/i18n";
+import type { Field, FieldKey, FieldText } from "@/features/scenarios/fields";
 import { ValueInput } from "@/features/scenarios/ValueInput";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function HelpTooltip({
 }) {
   // Controlled so that a tap/click toggles it (Radix tooltips only react to hover and focus).
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
       <TooltipTrigger asChild>
@@ -40,7 +42,7 @@ export function HelpTooltip({
             e.preventDefault();
             setOpen((o) => !o);
           }}
-          aria-label={`About ${label}`}
+          aria-label={t.common.about(label)}
           className="-m-1.5 p-1.5 text-muted-foreground hover:text-foreground lg:-m-1 lg:p-1"
         >
           <InfoIcon className="size-4 lg:size-3.5" />
@@ -50,7 +52,7 @@ export function HelpTooltip({
         <p>{help}</p>
         {recommendation && (
           <p className="mt-1.5">
-            <span className="font-semibold">Recommended: </span>
+            <span className="font-semibold">{t.common.recommended} </span>
             {recommendation}
           </p>
         )}
@@ -60,10 +62,11 @@ export function HelpTooltip({
 }
 
 export function NotRecommended() {
+  const { t } = useI18n();
   return (
     <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs lg:text-[10px] font-medium text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">
       <TriangleAlertIcon className="size-3" aria-hidden />
-      Not recommended
+      {t.common.notRecommended}
     </span>
   );
 }
@@ -76,8 +79,10 @@ type Props<K> = {
   footer?: ReactNode;
 };
 
-export function FieldControl<K extends string>({ field, value, onChange, footer }: Props<K>) {
+export function FieldControl<K extends FieldKey>({ field, value, onChange, footer }: Props<K>) {
   const id = useId();
+  const { t } = useI18n();
+  const text: FieldText = t.fields[field.key];
   const deviates =
     (field.kind === "slider" && field.isRecommended && !field.isRecommended(value as number)) ||
     (field.kind === "switch" && field.isRecommended && !field.isRecommended(value as boolean));
@@ -85,14 +90,14 @@ export function FieldControl<K extends string>({ field, value, onChange, footer 
   const header = (
     <div className="flex items-center gap-1.5">
       <Label htmlFor={id} className="text-sm lg:text-xs font-medium">
-        {field.label}
+        {text.label}
       </Label>
-      <HelpTooltip label={field.label} help={field.help} recommendation={field.recommendation} />
+      <HelpTooltip label={text.label} help={text.help} recommendation={text.recommendation} />
       {deviates && <NotRecommended />}
       {field.kind === "slider" && (
         <ValueInput
           className="ml-auto"
-          label={field.label}
+          label={text.label}
           unit={field.unit}
           min={field.min}
           max={field.max}
@@ -118,7 +123,7 @@ export function FieldControl<K extends string>({ field, value, onChange, footer 
         {header}
         <Slider
           id={id}
-          aria-label={field.label}
+          aria-label={text.label}
           min={field.min}
           max={field.max}
           step={field.step}
@@ -139,8 +144,8 @@ export function FieldControl<K extends string>({ field, value, onChange, footer 
           </SelectTrigger>
           <SelectContent>
             {field.options.map((o) => (
-              <SelectItem key={o.value} value={o.value} className="text-sm lg:text-xs">
-                {o.label}
+              <SelectItem key={o} value={o} className="text-sm lg:text-xs">
+                {text.options?.[o] ?? o}
               </SelectItem>
             ))}
           </SelectContent>

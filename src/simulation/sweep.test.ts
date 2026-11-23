@@ -59,7 +59,7 @@ describe("REQ-008-01 sweep of a slider", () => {
       { ...global, sampling: "rolling", horizonYears: 25 },
       "leverage",
     );
-    expect(sweep.error).toMatch(/shorter than/);
+    expect(sweep.error).toEqual({ kind: "periodShorterThanHorizon", years: expect.any(Number) });
     expect(sweep.points).toEqual([]);
   });
 });
@@ -84,7 +84,7 @@ describe("REQ-008-02 sweeps that need another setting", () => {
   test("REQ-008-02 SMA window with buy and hold assumes SMA and shows buy and hold as reference", () => {
     const sweep = sweepParameter(dataset, scenario, global, "smaMonths");
     expect(sweep.assumed).toEqual({ strategy: "sma" });
-    expect(sweep.reference?.label).toBe("Buy and hold");
+    expect(sweep.reference?.strategy).toBe("buyAndHold");
     expect(sweep.reference?.point.p50).toBeGreaterThan(0);
   });
 });
