@@ -11,7 +11,7 @@ type Props = { scenario: ResolvedScenario; factors?: FactorImpact; updating: boo
 
 /** How much each cost factor lowers the median of the selected scenario (REQ-001-20). */
 export function FactorImpactCard({ scenario, factors: impact, updating }: Props) {
-  const { t, format } = useI18n();
+  const { language, t, format } = useI18n();
   const rows = impact?.factors.map((f) => ({ ...f, label: t.factors.names[f.id] }));
   return (
     <Card>
@@ -50,7 +50,7 @@ export function FactorImpactCard({ scenario, factors: impact, updating }: Props)
                 <YAxis
                   type="category"
                   dataKey="label"
-                  width={120}
+                  width={language === "de" ? 160 : 120}
                   tickLine={false}
                   axisLine={false}
                 />

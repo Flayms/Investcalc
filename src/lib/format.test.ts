@@ -32,6 +32,12 @@ test("REQ-012-04 English numbers stay as before", () => {
 test("REQ-012-04 German numbers use German formatting", () => {
   expect(plain(de.euro(1234.4))).toBe("1.234 €");
   expect(plain(de.euroCompact(1_234_567))).toBe("1,2 Mio. €");
+  // Intl does not abbreviate German thousands ("800.000 €"), too wide for chart axes.
+  expect(plain(de.euroCompact(800_000))).toBe("800 Tsd. €");
+  expect(plain(de.euroCompact(850))).toBe("850 €");
+  expect(plain(de.compact(12_300))).toBe("12,3 Tsd.");
+  expect(de.compact(500)).toBe("500");
+  expect(de.gain(13)).toBe("×14");
   expect(de.percent(0.1234)).toBe("12,3 %");
   expect(de.percent(0.1234, 0)).toBe("12 %");
   expect(de.signedPercent(0.05)).toBe("+5,0 %");

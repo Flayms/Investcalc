@@ -17,6 +17,7 @@ A browser-based website that runs Monte Carlo simulations of ETF portfolios unde
 - **Market & data:** current market phase (bull/bear, SMA position), key indicators (trailing returns, recent volatility, short rate), a chart with a selectable time frame (1 year to the whole history, log scale for long ones), historic bear and bull markets, and the data basis on their own view.
 - **Exact input:** every slider has a box next to it to type the exact value (e.g. €437 per month or a 0.07 % TER).
 - **Notebook look, light and dark:** styled like a scribbled notebook page; switch between light and dark in the header (defaults to your system setting).
+- **English or German:** switch the language with _EN / DE_ in the header; text and number formats follow it (`1.234 €`, `12,3 %`). The first visit follows your browser language, your choice is remembered.
 
 Specialised on German investors and German tax law. Not investment advice.
 
@@ -39,6 +40,12 @@ Specialised on German investors and German tax law. Not investment advice.
 On phones, results and settings are two views (switch at the top):
 
 <img src="docs/screenshots/home-mobile.png" alt="Mobile" width="300">
+
+Auf Deutsch:
+
+![Simulation auf Deutsch](docs/screenshots/home-de.png)
+
+<img src="docs/screenshots/home-mobile-de.png" alt="Mobil auf Deutsch" width="300">
 
 ## Development
 

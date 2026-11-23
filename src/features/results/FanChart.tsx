@@ -43,7 +43,7 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
   }
 
   const color = selected ? scenarioColor(selected) : "#888";
-  const { t, format } = useI18n();
+  const { language, t, format } = useI18n();
 
   return (
     <Card className="taped">
@@ -99,7 +99,7 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
                 tickFormatter={(v: number) => format.euroCompact(v)}
                 tickLine={false}
                 axisLine={false}
-                width={64}
+                width={language === "de" ? 80 : 64}
               />
               <Tooltip
                 content={({ active, payload, label }) => {

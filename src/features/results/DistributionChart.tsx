@@ -25,7 +25,7 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
   const selected = shown.find((s) => s.key === selectedKey);
   const paidIn = selected ? results[selected.key]?.invested : undefined;
   const pa = unit === "pa";
-  const { t, format: f } = useI18n();
+  const { language, t, format: f } = useI18n();
   const format = pa ? (v: number) => f.percent(v) : f.euro;
 
   const rows: Row[] = DISTRIBUTION_PERCENTILES.map((p, i) => {
@@ -84,7 +84,7 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
               tickFormatter={(v: number) => (pa ? f.percent(v, 0) : f.euroCompact(v))}
               tickLine={false}
               axisLine={false}
-              width={64}
+              width={language === "de" ? 80 : 64}
             />
             <Tooltip
               content={({ active, payload, label }) => {

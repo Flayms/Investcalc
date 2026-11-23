@@ -268,7 +268,7 @@ export const de: Messages = {
     },
   },
   explorer: {
-    title: "Werte-Explorer: Welche Einstellung lohnt sich?",
+    title: "Werte-Explorer: Was lohnt sich?",
     description: (name) =>
       `„${name}“ für jeden Wert eines Schiebereglers simuliert, alles andere unverändert, auf denselben Pfaden (bis zu 500). Endwert nach Steuern.`,
     diagram: "Diagramm",

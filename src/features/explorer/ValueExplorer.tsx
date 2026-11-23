@@ -241,7 +241,7 @@ function DistributionView({
     inner: [p.p25, p.p75],
   }));
   const ref = sweep.reference;
-  const { t, format } = useI18n();
+  const { language, t, format } = useI18n();
   return (
     <>
       <ul
@@ -295,7 +295,7 @@ function DistributionView({
             tickFormatter={format.euroCompact}
             tickLine={false}
             axisLine={false}
-            width={72}
+            width={language === "de" ? 84 : 72}
             label={{
               value: t.explorer.finalValueLog,
               angle: -90,
@@ -413,7 +413,7 @@ function TradeoffView({
 }) {
   const rows = sweep.points.map((p) => ({ ...p, loss: p.lossProbability }));
   const highlight = (p: SweepPoint) => p.value === current || p.value === best?.value;
-  const { t, format } = useI18n();
+  const { language, t, format } = useI18n();
   return (
     <>
       <ul
@@ -466,7 +466,7 @@ function TradeoffView({
             tickFormatter={format.euroCompact}
             tickLine={false}
             axisLine={false}
-            width={72}
+            width={language === "de" ? 84 : 72}
             label={{
               value: t.explorer.medianLog,
               angle: -90,

@@ -103,12 +103,17 @@ test("REQ-012-04 in German the value box shows a decimal comma and German units"
       <TooltipProvider>
         <FieldControl field={percent} value={0.002} onChange={onChange} />
         <FieldControl field={months} value={10} onChange={onChange} />
+        <FieldControl field={euro} value={500} onChange={onChange} />
       </TooltipProvider>
     </I18nProvider>,
   );
   const box = screen.getByRole("textbox", { name: "Wert für TER 1×-ETF" }) as HTMLInputElement;
   expect(box.value).toBe("0,2");
   expect(screen.getByText("Mon.")).toBeInTheDocument();
+  // The euro sign follows the amount in German.
+  const amount = screen.getByRole("textbox", { name: "Wert für Monatliche Sparrate" });
+  expect(amount.nextElementSibling).toHaveTextContent("€");
+  expect(amount.previousElementSibling).toBeNull();
   type(box, "0,07");
   expect(onChange.mock.calls[0]?.[0]).toBeCloseTo(0.0007, 10);
 });

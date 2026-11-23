@@ -54,16 +54,25 @@ export function createFormat(language: Language): Format {
     }
     return f.format(v);
   };
+  // German CLDR data has no short form for thousands ("800.000 €"); "Tsd." keeps axes narrow.
+  const oneDecimal = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+  const germanThousands = (v: number) =>
+    language === "de" && Math.abs(v) >= 1000 && Math.abs(v) < 999_950
+      ? `${oneDecimal.format(v / 1000)}\u00a0Tsd.`
+      : undefined;
   const percent = (v: number, digits = 1) => `${number(v * 100, digits)} %`;
   const signedPercent = (v: number, digits = 1) => `${v >= 0 ? "+" : ""}${percent(v, digits)}`;
   const units = DURATION_UNITS[language];
   return {
     euro: (v) => euro.format(v),
-    euroCompact: (v) => euroCompact.format(v),
+    euroCompact: (v) => {
+      const thousands = germanThousands(v);
+      return thousands ? `${thousands}\u00a0€` : euroCompact.format(v);
+    },
     percent,
     signedPercent,
     factor: (v) => `${number(v, 2)}×`,
-    compact: (v) => compact.format(v),
+    compact: (v) => germanThousands(v) ?? compact.format(v),
     count: (v) => count.format(v),
     number,
     duration: (months) =>

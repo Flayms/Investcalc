@@ -21,7 +21,6 @@ const WHOLE: Record<Unit, boolean> = {
   years: true,
   count: true,
 };
-const PREFIX: Partial<Record<Unit, string>> = { euro: "€" };
 /** Value as shown in the box, without float noise (0.0007 × 100 → "0.07"; "0,07" in German). */
 export function toDisplay(unit: Unit, value: number, language: Language = "en"): string {
   const text = String(Number((value * SCALE[unit]).toFixed(8)));
@@ -55,7 +54,10 @@ export function ValueInput({ label, unit, min, max, value, onChange, className }
   // While the user types, the box shows their draft instead of the committed value.
   const [draft, setDraft] = useState<string | undefined>();
   const { language, t } = useI18n();
+  // "€500" in English, "500 €" in German (REQ-012-04).
+  const prefix: Partial<Record<Unit, string>> = language === "de" ? {} : { euro: "€" };
   const suffix: Partial<Record<Unit, string>> = {
+    ...(language === "de" && { euro: "€" }),
     percent: "%",
     factor: "×",
     months: t.units.months,
@@ -77,7 +79,7 @@ export function ValueInput({ label, unit, min, max, value, onChange, className }
         className,
       )}
     >
-      {PREFIX[unit] && <span className="text-muted-foreground">{PREFIX[unit]}</span>}
+      {prefix[unit] && <span className="text-muted-foreground">{prefix[unit]}</span>}
       <input
         type="text"
         inputMode="decimal"

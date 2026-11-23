@@ -82,7 +82,7 @@ export function MarketStatusCard({
   const ind = useMemo(() => indicators(dataset), [dataset]);
   const bears = useMemo(() => bearMarkets(dataset), [dataset]);
   const phase = PHASES[status.phase];
-  const { t, format } = useI18n();
+  const { language, t, format } = useI18n();
   const phaseText = t.market.phases[status.phase];
   const indexName = dataText(t, dataset).name;
   const chart = useMemo(() => chartSeries(dataset, frame.months, SMA_CHART), [dataset, frame]);
@@ -241,7 +241,7 @@ export function MarketStatusCard({
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                width={44}
+                width={language === "de" ? 60 : 44}
                 scale={log ? "log" : "auto"}
                 domain={log ? [lo, hi] : ["auto", "auto"]}
                 ticks={log ? logTicks(lo, hi) : undefined}
