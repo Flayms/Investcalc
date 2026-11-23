@@ -1,88 +1,81 @@
-import { devices, expect, test } from "@playwright/test";
+import { devices, expect, type Page, test } from "@playwright/test";
+
+// `bun run screenshots` writes docs/screenshots/*.png for the README and PRs.
+// Each shot shows one thing: the first screen, or a single card cropped to itself,
+// so it stays legible at the width GitHub shows it.
 
 const { defaultBrowserType: _, ...iPhone } = devices["iPhone 13"];
-const desktop = { viewport: { width: 1440, height: 900 } };
+// Narrow enough that the hero stays readable when GitHub scales it down; 2× for sharp text.
+const desktop = { viewport: { width: 1200, height: 760 }, deviceScaleFactor: 2 };
+// Wide enough that the percentile table fits its card without scrolling.
+const wide = { viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 };
 
 type Shot = {
   name: string;
   device: object;
-  view?: string;
-  hide?: string;
+  /** Top-level view to open first. */
+  view?: "Market & data";
+  /** Time frame of the market chart. */
   frame?: string;
-  unit?: string;
   /** Scenario to select before the shot. */
   select?: string;
-  /** Only the value explorer, in this diagram. */
-  explorer?: "Distribution" | "Trade-off";
-  /** Only the scenario settings card. */
-  settings?: boolean;
-  /** Browser language of the first visit (REQ-014-03). */
-  locale?: string;
+  /** Element to crop the shot to; the first screen without it. */
+  element?: (page: Page) => ReturnType<Page["locator"]>;
 };
+
+const card = (title: string) => (page: Page) =>
+  page.locator("[data-slot=card]", { hasText: title });
 
 const shots: Shot[] = [
   { name: "home", device: desktop },
   { name: "home-dark", device: { ...desktop, colorScheme: "dark" as const } },
   { name: "home-mobile", device: iPhone },
-  { name: "scenario-hidden", device: desktop, hide: "2× buy and hold" },
-  { name: "results-yearly-return", device: desktop, unit: "% p.a." },
+  { name: "percentiles", device: wide, element: card("Final value after taxes — percentiles") },
   {
     name: "value-explorer",
     device: desktop,
     select: "2× buy and hold",
-    explorer: "Distribution",
+    element: (page) => page.locator("#value-explorer"),
   },
   {
-    name: "value-explorer-tradeoff",
+    name: "slider-insight",
     device: desktop,
     select: "2× buy and hold",
-    explorer: "Trade-off",
+    element: (page) => page.locator("[data-explored]").first(),
   },
-  { name: "slider-insight", device: desktop, select: "2× buy and hold", settings: true },
-  { name: "market", device: desktop, view: "Market & data" },
-  { name: "market-history", device: desktop, view: "Market & data", frame: "Max" },
-  { name: "home-de", device: desktop, locale: "de-DE" },
-  { name: "home-mobile-de", device: iPhone, locale: "de-DE" },
-  { name: "market-de", device: desktop, view: "Markt & Daten", locale: "de-DE" },
+  {
+    name: "market",
+    device: desktop,
+    view: "Market & data",
+    frame: "Max",
+    element: card("Current market"),
+  },
 ];
 
-for (const shot of shots) {
-  const { name, device, view, hide, frame, unit, select, explorer, settings, locale } = shot;
+for (const { name, device, view, frame, select, element } of shots) {
   test.describe(name, () => {
-    test.use({ ...device, ...(locale && { locale }) });
+    test.use(device);
     test(`screenshot: ${name}`, async ({ page }) => {
       await page.goto("/");
-      if (hide) await page.getByRole("button", { name: `Show ${hide}` }).click();
       if (select)
         await page
           .getByRole("tablist", { name: "Scenarios" })
           .getByRole("tab", { name: select })
           .click();
+      // Wait for the simulation and the analysis of the selected scenario.
+      await expect(page.getByTestId("explorer-takeaway")).toBeVisible({ timeout: 60_000 });
+      await expect(
+        page.getByRole("status").filter({ hasText: /Simulating|Analysing/ }),
+      ).toHaveCount(0, { timeout: 60_000 });
       if (view) {
         await page.getByRole("tab", { name: view }).click();
-        await expect(page.getByText(/^(Data basis|Datenbasis)$/)).toBeVisible();
+        await expect(page.getByText("Data basis", { exact: true })).toBeVisible();
         if (frame) await page.getByRole("tab", { name: frame, exact: true }).click();
-      } else {
-        // Wait for the simulation and the analysis of the selected scenario.
-        await expect(page.getByTestId("explorer-takeaway")).toBeVisible({ timeout: 60_000 });
-        await expect(
-          page.getByRole("status").filter({ hasText: /Simulating|Analysing|simuliert|analysiert/ }),
-        ).toHaveCount(0, { timeout: 60_000 });
-        if (unit) await page.getByRole("button", { name: unit, exact: true }).click();
-        await page.mouse.move(0, 0);
       }
+      await page.mouse.move(0, 0);
       const path = `docs/screenshots/${name}.png`;
-      if (explorer) {
-        const card = page.locator("#value-explorer");
-        await card.getByRole("button", { name: explorer }).click();
-        await card.screenshot({ path });
-      } else if (settings) {
-        await page
-          .locator("[data-slot=card]", { hasText: "Scenario settings" })
-          .screenshot({ path });
-      } else {
-        await page.screenshot({ path, fullPage: true });
-      }
+      if (element) await element(page).screenshot({ path });
+      else await page.screenshot({ path });
     });
   });
 }
