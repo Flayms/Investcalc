@@ -44,7 +44,7 @@ a yearly return.
 
 ## Verification
 
-| REQ        | Test                                                                                                                                                                                                                       | Result |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| REQ-007-01 | `simulate.test.ts` › REQ-007-01 final value for every percentile P1–P99; `App.test.tsx` › REQ-007-01 chart with a line per scenario and paid in; chart checked in `docs/screenshots/home.png`                              | pass   |
-| REQ-007-02 | `annualReturn.test.ts` › REQ-007-02 (lump sum, break-even, monotonic, total loss); `App.test.tsx` › REQ-007-02 percentiles as yearly return (table, cards, chart, back to €); `docs/screenshots/results-yearly-return.png` | pass   |
+| REQ        | Test                                                                                                                                                                                         | Result |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| REQ-007-01 | `simulate.test.ts` › REQ-007-01 final value for every percentile P1–P99; `App.test.tsx` › REQ-007-01 chart with a line per scenario and paid in; chart in `docs/screenshots/percentiles.png` | pass   |
+| REQ-007-02 | `annualReturn.test.ts` › REQ-007-02 (lump sum, break-even, monotonic, total loss); `App.test.tsx` › REQ-007-02 percentiles as yearly return (table, cards, chart, back to €)                 | pass   |
