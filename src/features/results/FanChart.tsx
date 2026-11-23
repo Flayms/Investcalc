@@ -1,9 +1,9 @@
 import { Area, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
+import { useI18n } from "@/features/i18n/i18n";
 import { Stale, UpdatingBadge } from "@/features/results/Updating";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
-import { formatEuro, formatEuroCompact } from "@/lib/format";
 import type { ScenarioResult } from "@/simulation/simulate";
 
 type Props = {
@@ -43,23 +43,21 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
   }
 
   const color = selected ? scenarioColor(selected) : "#888";
+  const { t, format } = useI18n();
 
   return (
     <Card className="taped">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          Net worth over time <UpdatingBadge updating={updating} />
+          {t.fanChart.title} <UpdatingBadge updating={updating} />
         </CardTitle>
-        <CardDescription className="text-sm lg:text-xs">
-          Median of every scenario. Bands for the selected scenario: P25–P75 (dark) and P10–P90
-          (light). Before the final sale's taxes.
-        </CardDescription>
+        <CardDescription className="text-sm lg:text-xs">{t.fanChart.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <Stale updating={updating}>
           <ul
             className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm lg:text-xs text-muted-foreground"
-            aria-label="Legend"
+            aria-label={t.common.legend}
           >
             {shown.map((s) => (
               <li key={s.key} className="flex items-center gap-1.5">
@@ -79,7 +77,7 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
                   className="w-4 border-t-2 border-dashed border-muted-foreground"
                   aria-hidden
                 />
-                Paid in
+                {t.common.paidIn}
               </li>
             )}
           </ul>
@@ -93,12 +91,12 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
                 dataKey="year"
                 type="number"
                 domain={[0, months / 12]}
-                tickFormatter={(v: number) => `${v}y`}
+                tickFormatter={t.fanChart.yearTick}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tickFormatter={(v: number) => formatEuroCompact(v)}
+                tickFormatter={(v: number) => format.euroCompact(v)}
                 tickLine={false}
                 axisLine={false}
                 width={64}
@@ -109,7 +107,9 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
                   const row = payload[0]?.payload as Row;
                   return (
                     <div className="rounded-md border bg-background px-3 py-2 text-sm lg:text-xs shadow-md">
-                      <div className="mb-1 font-medium">Year {Number(label).toFixed(1)}</div>
+                      <div className="mb-1 font-medium">
+                        {t.fanChart.year(format.number(Number(label), 1))}
+                      </div>
                       {shown.map((s) => (
                         <div key={s.key} className="flex items-center gap-2">
                           <span
@@ -119,16 +119,16 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
                           />
                           <span className="text-muted-foreground">{s.params.name}</span>
                           <span className="ml-auto pl-3 tabular-nums">
-                            {formatEuro(row[s.key] as number)}
+                            {format.euro(row[s.key] as number)}
                           </span>
                         </div>
                       ))}
                       {selected && Array.isArray(row.outer) && (
                         <div className="mt-1 border-t pt-1 text-muted-foreground">
-                          {selected.params.name} P10–P90: {formatEuroCompact(row.outer[0])} –{" "}
-                          {formatEuroCompact(row.outer[1])}
+                          {selected.params.name} P10–P90: {format.euroCompact(row.outer[0])} –{" "}
+                          {format.euroCompact(row.outer[1])}
                           <br />
-                          Paid in: {formatEuro(row.paid as number)}
+                          {t.common.paidIn}: {format.euro(row.paid as number)}
                         </div>
                       )}
                     </div>

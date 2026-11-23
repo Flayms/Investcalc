@@ -16,12 +16,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { errorText } from "@/features/i18n/errors";
+import { type I18n, useI18n } from "@/features/i18n/i18n";
 import { annualReturn } from "@/features/results/annualReturn";
 import { DistributionChart, type ResultUnit } from "@/features/results/DistributionChart";
 import { columnHeat, type Heat, heatStyle } from "@/features/results/heatmap";
 import { Stale, staleClass, UpdatingBadge } from "@/features/results/Updating";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
-import { formatEuro, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ScenarioResult } from "@/simulation/simulate";
 
@@ -37,11 +38,6 @@ type Props = {
 const PERCENTILES = ["p5", "p10", "p25", "p50", "p75", "p95"] as const;
 type Percentile = (typeof PERCENTILES)[number];
 
-const UNITS: { id: ResultUnit; label: string }[] = [
-  { id: "eur", label: "€" },
-  { id: "pa", label: "% p.a." },
-];
-
 /** What a percentile cell shows: the amount or its money-weighted yearly return. */
 function percentileValue(
   r: ScenarioResult,
@@ -53,14 +49,19 @@ function percentileValue(
   return unit === "eur" ? r.final[p] : annualReturn(r.final[p], s.params, horizonYears);
 }
 
-const formatValue = (v: number, unit: ResultUnit) =>
-  unit === "eur" ? formatEuro(v) : formatPercent(v);
+const formatValue = ({ format }: I18n, v: number, unit: ResultUnit) =>
+  unit === "eur" ? format.euro(v) : format.percent(v);
 
 function UnitSwitch({ unit, onChange }: { unit: ResultUnit; onChange: (u: ResultUnit) => void }) {
+  const { t } = useI18n();
+  const units: { id: ResultUnit; label: string }[] = [
+    { id: "eur", label: "€" },
+    { id: "pa", label: t.results.perYear },
+  ];
   return (
     // biome-ignore lint/a11y/useSemanticElements: a fieldset would bring a legend and border we do not want here.
-    <div role="group" aria-label="Unit" className="inline-flex rounded-lg bg-muted p-1">
-      {UNITS.map((u) => (
+    <div role="group" aria-label={t.results.unit} className="inline-flex rounded-lg bg-muted p-1">
+      {units.map((u) => (
         <button
           key={u.id}
           type="button"
@@ -95,14 +96,19 @@ function ResultCard({
   updating: boolean;
 }) {
   const nameId = `result-${scenario.key}`;
+  const i18n = useI18n();
+  const { t, format } = i18n;
   const stats = r
     ? [
-        ["Paid in", formatEuro(r.invested)],
-        ["Median p.a.", formatPercent(annualReturn(r.final.p50, scenario.params, horizonYears))],
-        ["P(loss)", formatPercent(r.probabilityOfLoss)],
-        ["Fees", formatEuro(r.medianFees)],
-        ["Taxes", formatEuro(r.medianTaxes)],
-        ["Paths", r.pathCount.toLocaleString("en-US")],
+        [t.common.paidIn, format.euro(r.invested)],
+        [
+          t.results.medianPerYear,
+          format.percent(annualReturn(r.final.p50, scenario.params, horizonYears)),
+        ],
+        [t.results.lossShort, format.percent(r.probabilityOfLoss)],
+        [t.results.fees, format.euro(r.medianFees)],
+        [t.results.taxes, format.euro(r.medianTaxes)],
+        [t.results.paths, format.count(r.pathCount)],
       ]
     : [];
   return (
@@ -120,9 +126,11 @@ function ResultCard({
         {scenario.params.name}
       </h3>
       {!r ? (
-        <p className="text-sm text-muted-foreground">Simulating…</p>
+        <p className="text-sm text-muted-foreground">{t.common.simulating}</p>
       ) : r.error ? (
-        <p className="text-sm text-amber-800 dark:text-amber-300">{r.error}</p>
+        <p className="text-sm text-amber-800 dark:text-amber-300">
+          {errorText(t, format, r.error)}
+        </p>
       ) : (
         <>
           <dl className="grid grid-cols-3 gap-x-3 gap-y-2 text-sm">
@@ -138,9 +146,9 @@ function ResultCard({
                   )}
                 >
                   {heat[p]?.best && (
-                    <TrophyIcon className="size-3 shrink-0" role="img" aria-label="Best" />
+                    <TrophyIcon className="size-3 shrink-0" role="img" aria-label={t.common.best} />
                   )}
-                  {formatValue(percentileValue(r, scenario, p, unit, horizonYears), unit)}
+                  {formatValue(i18n, percentileValue(r, scenario, p, unit, horizonYears), unit)}
                 </dd>
               </div>
             ))}
@@ -167,6 +175,8 @@ export function ResultsTable({
   updating = [],
 }: Props) {
   const [unit, setUnit] = useState<ResultUnit>("eur");
+  const i18n = useI18n();
+  const { t, format } = i18n;
   const anyUpdating = updating.length > 0;
   const isUpdating = (s: ResolvedScenario) => updating.includes(s.key);
   const value = (s: ResolvedScenario, p: Percentile) => {
@@ -183,12 +193,10 @@ export function ResultsTable({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          Final value after taxes — percentiles <UpdatingBadge updating={anyUpdating} />
+          {t.results.title} <UpdatingBadge updating={anyUpdating} />
         </CardTitle>
         <CardDescription className="text-sm lg:text-xs">
-          After selling everything at the end of the horizon and paying all taxes and loans. P5 =
-          only 5 % of the paths ended lower.{" "}
-          {unit === "pa" && "Shown as money-weighted yearly return of each percentile."}
+          {t.results.description} {unit === "pa" && t.results.yearlyReturnNote}
         </CardDescription>
         <CardAction>
           <UnitSwitch unit={unit} onChange={setUnit} />
@@ -220,18 +228,20 @@ export function ResultsTable({
         <Table className="hidden text-sm md:table lg:text-xs">
           <TableHeader>
             <TableRow>
-              <TableHead>Scenario</TableHead>
+              <TableHead>{t.results.scenario}</TableHead>
               {PERCENTILES.map((p) => (
                 <TableHead key={p} className="text-right">
                   {p.toUpperCase()}
                 </TableHead>
               ))}
-              <TableHead className="text-right">Paid in</TableHead>
-              <TableHead className="whitespace-normal text-right">Median p.a.</TableHead>
-              <TableHead className="text-right">P(loss)</TableHead>
-              <TableHead className="text-right">Fees</TableHead>
-              <TableHead className="text-right">Taxes</TableHead>
-              <TableHead className="text-right">Paths</TableHead>
+              <TableHead className="text-right">{t.common.paidIn}</TableHead>
+              <TableHead className="whitespace-normal text-right">
+                {t.results.medianPerYear}
+              </TableHead>
+              <TableHead className="text-right">{t.results.lossShort}</TableHead>
+              <TableHead className="text-right">{t.results.fees}</TableHead>
+              <TableHead className="text-right">{t.results.taxes}</TableHead>
+              <TableHead className="text-right">{t.results.paths}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -255,14 +265,14 @@ export function ResultsTable({
                   </TableCell>
                   {!r ? (
                     <TableCell colSpan={12} className="text-muted-foreground">
-                      Simulating…
+                      {t.common.simulating}
                     </TableCell>
                   ) : r.error ? (
                     <TableCell
                       colSpan={12}
                       className="whitespace-normal text-amber-800 dark:text-amber-300"
                     >
-                      {r.error}
+                      {errorText(t, format, r.error)}
                     </TableCell>
                   ) : (
                     <>
@@ -279,31 +289,31 @@ export function ResultsTable({
                                 <TrophyIcon
                                   className="size-3 shrink-0"
                                   role="img"
-                                  aria-label="Best"
+                                  aria-label={t.common.best}
                                 />
                               )}
-                              {formatValue(value(s, p) as number, unit)}
+                              {formatValue(i18n, value(s, p) as number, unit)}
                             </span>
                           </TableCell>
                         );
                       })}
                       <TableCell className="text-right tabular-nums">
-                        {formatEuro(r.invested)}
+                        {format.euro(r.invested)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatPercent(annualReturn(r.final.p50, s.params, horizonYears))}
+                        {format.percent(annualReturn(r.final.p50, s.params, horizonYears))}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatPercent(r.probabilityOfLoss)}
+                        {format.percent(r.probabilityOfLoss)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatEuro(r.medianFees)}
+                        {format.euro(r.medianFees)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatEuro(r.medianTaxes)}
+                        {format.euro(r.medianTaxes)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {r.pathCount.toLocaleString("en-US")}
+                        {format.count(r.pathCount)}
                       </TableCell>
                     </>
                   )}
@@ -315,12 +325,11 @@ export function ResultsTable({
         <p className="mt-2 text-xs lg:text-[11px] text-muted-foreground">
           {shaded && (
             <>
-              Shading compares the scenarios per percentile: lighter = lower, darker = higher;{" "}
-              <TrophyIcon className="inline size-3 align-[-2px]" aria-hidden /> = best.{" "}
+              {t.results.shading} <TrophyIcon className="inline size-3 align-[-2px]" aria-hidden />{" "}
+              {t.results.isBest}{" "}
             </>
           )}
-          Median p.a. = money-weighted yearly return of the median path. P(loss) = share of paths
-          ending below the amount paid in. Fees and taxes are medians over all paths.
+          {t.results.footnote}
         </p>
       </CardContent>
     </Card>

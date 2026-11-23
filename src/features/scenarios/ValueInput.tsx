@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useI18n } from "@/features/i18n/i18n";
+import type { Language } from "@/features/i18n/language";
 import type { Unit } from "@/features/scenarios/fields";
 import { cn } from "@/lib/utils";
 
@@ -20,16 +22,10 @@ const WHOLE: Record<Unit, boolean> = {
   count: true,
 };
 const PREFIX: Partial<Record<Unit, string>> = { euro: "€" };
-const SUFFIX: Partial<Record<Unit, string>> = {
-  percent: "%",
-  factor: "×",
-  months: "mo",
-  years: "y",
-};
-
-/** Value as shown in the box, without float noise (0.0007 × 100 → "0.07"). */
-export function toDisplay(unit: Unit, value: number): string {
-  return String(Number((value * SCALE[unit]).toFixed(8)));
+/** Value as shown in the box, without float noise (0.0007 × 100 → "0.07"; "0,07" in German). */
+export function toDisplay(unit: Unit, value: number, language: Language = "en"): string {
+  const text = String(Number((value * SCALE[unit]).toFixed(8)));
+  return language === "de" ? text.replace(".", ",") : text;
 }
 
 /**
@@ -58,6 +54,13 @@ type Props = {
 export function ValueInput({ label, unit, min, max, value, onChange, className }: Props) {
   // While the user types, the box shows their draft instead of the committed value.
   const [draft, setDraft] = useState<string | undefined>();
+  const { language, t } = useI18n();
+  const suffix: Partial<Record<Unit, string>> = {
+    percent: "%",
+    factor: "×",
+    months: t.units.months,
+    years: t.units.years,
+  };
 
   const commit = () => {
     if (draft === undefined) return;
@@ -78,9 +81,9 @@ export function ValueInput({ label, unit, min, max, value, onChange, className }
       <input
         type="text"
         inputMode="decimal"
-        aria-label={`${label} value`}
+        aria-label={t.common.value(label)}
         className="w-[7ch] bg-transparent text-right outline-none"
-        value={draft ?? toDisplay(unit, value)}
+        value={draft ?? toDisplay(unit, value, language)}
         onFocus={(e) => e.currentTarget.select()}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
@@ -89,7 +92,7 @@ export function ValueInput({ label, unit, min, max, value, onChange, className }
           if (e.key === "Escape") setDraft(undefined);
         }}
       />
-      {SUFFIX[unit] && <span className="text-muted-foreground">{SUFFIX[unit]}</span>}
+      {suffix[unit] && <span className="text-muted-foreground">{suffix[unit]}</span>}
     </span>
   );
 }

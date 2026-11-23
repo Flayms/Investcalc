@@ -16,6 +16,8 @@ type Shot = {
   explorer?: "Distribution" | "Trade-off";
   /** Only the scenario settings card. */
   settings?: boolean;
+  /** Browser language of the first visit (REQ-012-03). */
+  locale?: string;
 };
 
 const shots: Shot[] = [
@@ -39,11 +41,15 @@ const shots: Shot[] = [
   { name: "slider-insight", device: desktop, select: "2× buy and hold", settings: true },
   { name: "market", device: desktop, view: "Market & data" },
   { name: "market-history", device: desktop, view: "Market & data", frame: "Max" },
+  { name: "home-de", device: desktop, locale: "de-DE" },
+  { name: "home-mobile-de", device: iPhone, locale: "de-DE" },
+  { name: "market-de", device: desktop, view: "Markt & Daten", locale: "de-DE" },
 ];
 
-for (const { name, device, view, hide, frame, unit, select, explorer, settings } of shots) {
+for (const shot of shots) {
+  const { name, device, view, hide, frame, unit, select, explorer, settings, locale } = shot;
   test.describe(name, () => {
-    test.use(device);
+    test.use({ ...device, ...(locale && { locale }) });
     test(`screenshot: ${name}`, async ({ page }) => {
       await page.goto("/");
       if (hide) await page.getByRole("button", { name: `Show ${hide}` }).click();
@@ -54,13 +60,13 @@ for (const { name, device, view, hide, frame, unit, select, explorer, settings }
           .click();
       if (view) {
         await page.getByRole("tab", { name: view }).click();
-        await expect(page.getByText("Data basis")).toBeVisible();
+        await expect(page.getByText(/^(Data basis|Datenbasis)$/)).toBeVisible();
         if (frame) await page.getByRole("tab", { name: frame, exact: true }).click();
       } else {
         // Wait for the simulation and the analysis of the selected scenario.
         await expect(page.getByTestId("explorer-takeaway")).toBeVisible({ timeout: 60_000 });
         await expect(
-          page.getByRole("status").filter({ hasText: /Simulating|Analysing/ }),
+          page.getByRole("status").filter({ hasText: /Simulating|Analysing|simuliert|analysiert/ }),
         ).toHaveCount(0, { timeout: 60_000 });
         if (unit) await page.getByRole("button", { name: unit, exact: true }).click();
         await page.mouse.move(0, 0);

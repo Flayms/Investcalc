@@ -1,8 +1,8 @@
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
+import { useI18n } from "@/features/i18n/i18n";
 import { annualReturn } from "@/features/results/annualReturn";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
-import { formatEuro, formatEuroCompact, formatPercent } from "@/lib/format";
 import { DISTRIBUTION_PERCENTILES, type ScenarioResult } from "@/simulation/simulate";
 
 export type ResultUnit = "eur" | "pa";
@@ -25,7 +25,8 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
   const selected = shown.find((s) => s.key === selectedKey);
   const paidIn = selected ? results[selected.key]?.invested : undefined;
   const pa = unit === "pa";
-  const format = pa ? (v: number) => formatPercent(v) : formatEuro;
+  const { t, format: f } = useI18n();
+  const format = pa ? (v: number) => f.percent(v) : f.euro;
 
   const rows: Row[] = DISTRIBUTION_PERCENTILES.map((p, i) => {
     const row = { p } as Row;
@@ -38,14 +39,14 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
   });
 
   const reference = pa ? 0 : paidIn;
-  const referenceLabel = pa ? "Paid in (0 % p.a.)" : "Paid in";
-  const measure = pa ? "Yearly return" : "Final value after taxes";
+  const referenceLabel = pa ? t.distributionChart.paidInZero : t.common.paidIn;
+  const measure = pa ? t.distributionChart.yearlyReturn : t.distributionChart.finalValue;
 
   return (
     <div className="mb-4">
       <ul
         className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm lg:text-xs text-muted-foreground"
-        aria-label="Percentile chart legend"
+        aria-label={t.distributionChart.legend}
       >
         {shown.map((s) => (
           <li key={s.key} className="flex items-center gap-1.5">
@@ -66,7 +67,7 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
           </li>
         )}
       </ul>
-      <div role="img" aria-label={`${measure} by percentile, P1 to P99, per scenario`}>
+      <div role="img" aria-label={t.distributionChart.chartLabel(measure)}>
         <ChartContainer config={{}} className="aspect-auto h-56 w-full text-sm sm:h-72 lg:text-xs">
           <LineChart data={rows} margin={{ left: 0, right: 8, top: 8 }}>
             <CartesianGrid vertical={false} strokeOpacity={0.5} />
@@ -80,7 +81,7 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
               axisLine={false}
             />
             <YAxis
-              tickFormatter={(v: number) => (pa ? formatPercent(v, 0) : formatEuroCompact(v))}
+              tickFormatter={(v: number) => (pa ? f.percent(v, 0) : f.euroCompact(v))}
               tickLine={false}
               axisLine={false}
               width={64}
@@ -106,7 +107,7 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
                       </div>
                     ))}
                     <div className="mt-1 border-t pt-1 text-muted-foreground">
-                      {label}% of the paths ended lower.
+                      {t.distributionChart.endedLower(Number(label))}
                     </div>
                   </div>
                 );

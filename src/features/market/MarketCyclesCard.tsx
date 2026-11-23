@@ -8,7 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDuration, formatGain, formatSignedPercent } from "@/lib/format";
+import { dataText } from "@/features/i18n/datasets";
+import { useI18n } from "@/features/i18n/i18n";
 import { type Dataset, monthLabel } from "@/simulation/dataset";
 import { bearMarkets, bullMarkets, median } from "@/simulation/market";
 
@@ -34,62 +35,62 @@ export function MarketCyclesCard({ dataset, months }: { dataset: Dataset; months
   const medianRecovery = median(recovered);
   const medianBullGain = median(bulls.past.map((b) => b.gain));
   const medianBullMonths = median(bulls.past.map((b) => b.months));
+  const { t, format } = useI18n();
+  const c = t.cycles;
 
   return (
     <Card className="gap-4">
       <CardHeader>
-        <CardTitle className="text-base">Bear and bull markets</CardTitle>
+        <CardTitle className="text-base">{c.title}</CardTitle>
         <CardDescription className="text-sm lg:text-xs">
-          {dataset.name}: declines of 20 % or more from the all-time high, from the peak to the
-          lowest point before the high was regained. Bull markets run from a bear market's low to
-          the next peak.
+          {c.description(dataText(t, dataset).name)}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <dl className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Stat
-            label={`Bear markets since ${dataset.start.slice(0, 4)}`}
+            label={c.bearMarketsSince(dataset.start.slice(0, 4))}
             value={String(bears.length)}
             note={
               medianDecline === null
                 ? undefined
-                : `median decline ${formatSignedPercent(medianDecline)}`
+                : c.medianDecline(format.signedPercent(medianDecline))
             }
           />
           <Stat
-            label="Median time to recover"
-            value={medianRecovery === null ? "–" : formatDuration(medianRecovery)}
-            note="peak to new all-time high"
+            label={c.medianRecovery}
+            value={medianRecovery === null ? "–" : format.duration(medianRecovery)}
+            note={c.peakToHigh}
           />
           {bulls.current && (
             <Stat
-              label="Current bull market"
-              value={formatGain(bulls.current.gain)}
-              note={`since ${bulls.current.start} · ${formatDuration(bulls.current.months)}`}
+              label={c.currentBull}
+              value={format.gain(bulls.current.gain)}
+              note={c.bullSince(bulls.current.start, format.duration(bulls.current.months))}
             />
           )}
           {medianBullGain !== null && medianBullMonths !== null && (
             <Stat
-              label="Median bull market"
-              value={formatGain(medianBullGain)}
-              note={`${formatDuration(medianBullMonths)} · ${bulls.past.length} completed`}
+              label={c.medianBull}
+              value={format.gain(medianBullGain)}
+              note={c.completed(format.duration(medianBullMonths), bulls.past.length)}
             />
           )}
         </dl>
         {inFrame.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No bear market in this time frame (since {monthLabel(dataset, first)}).
+            {c.noBearMarket(monthLabel(dataset, first))}
           </p>
         ) : (
           <Table className="text-sm lg:text-xs">
             <TableHeader>
               <TableRow>
-                <TableHead>Peak</TableHead>
-                <TableHead>Low</TableHead>
-                <TableHead className="text-right">Decline</TableHead>
-                <TableHead className="hidden text-right sm:table-cell">Peak to low</TableHead>
-                <TableHead className="hidden sm:table-cell">Recovered</TableHead>
-                <TableHead className="text-right">Peak to recovery</TableHead>
+                <TableHead>{c.peak}</TableHead>
+                <TableHead>{c.low}</TableHead>
+                <TableHead className="text-right">{c.decline}</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">{c.peakToLow}</TableHead>
+                <TableHead className="hidden sm:table-cell">{c.recovered}</TableHead>
+                <TableHead className="text-right">{c.peakToRecovery}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -97,18 +98,16 @@ export function MarketCyclesCard({ dataset, months }: { dataset: Dataset; months
                 <TableRow key={b.peak}>
                   <TableCell
                     className="tabular-nums"
-                    title={
-                      b.peakIndex === 0 ? "First data month; the peak may be earlier" : undefined
-                    }
+                    title={b.peakIndex === 0 ? c.firstMonth : undefined}
                   >
                     {b.peakIndex === 0 ? `≤ ${b.peak}` : b.peak}
                   </TableCell>
                   <TableCell className="tabular-nums">{b.trough}</TableCell>
                   <TableCell className="text-right font-medium tabular-nums text-red-800 dark:text-red-300">
-                    {formatSignedPercent(b.decline)}
+                    {format.signedPercent(b.decline)}
                   </TableCell>
                   <TableCell className="hidden text-right tabular-nums sm:table-cell">
-                    {formatDuration(b.monthsDown)}
+                    {format.duration(b.monthsDown)}
                   </TableCell>
                   <TableCell className="hidden tabular-nums sm:table-cell">
                     {b.recovered ?? "–"}
@@ -116,10 +115,10 @@ export function MarketCyclesCard({ dataset, months }: { dataset: Dataset; months
                   <TableCell className="text-right tabular-nums">
                     {b.monthsToRecover === null ? (
                       <span className="rounded bg-red-100 px-1.5 py-0.5 text-red-900 dark:bg-red-400/15 dark:text-red-200">
-                        ongoing
+                        {c.ongoing}
                       </span>
                     ) : (
-                      formatDuration(b.monthsToRecover)
+                      format.duration(b.monthsToRecover)
                     )}
                   </TableCell>
                 </TableRow>
@@ -128,9 +127,8 @@ export function MarketCyclesCard({ dataset, months }: { dataset: Dataset; months
           </Table>
         )}
         <p className="text-xs lg:text-[11px] text-muted-foreground">
-          Based on monthly total returns, so short crashes look milder than in daily closes.
-          {dataset.priceType === "average" &&
-            " This index uses monthly average prices: e.g. 2020 and 2022 stay just above −20 % here."}
+          {c.note}
+          {dataset.priceType === "average" && c.averageNote}
         </p>
       </CardContent>
     </Card>

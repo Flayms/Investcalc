@@ -48,7 +48,7 @@ describe("REQ-001-03 rolling windows in a simulation", () => {
       horizonYears: 25,
       sampling: "rolling",
     });
-    expect(result.error).toMatch(/shorter than/);
+    expect(result.error).toEqual({ kind: "periodShorterThanHorizon", years: expect.any(Number) });
     expect(result.pathCount).toBe(0);
   });
 });
@@ -95,6 +95,8 @@ describe("REQ-001-20 influence of factors", () => {
     expect(impact.factors.map((f) => f.id)).toEqual(["ter", "sofr", "spread", "trading", "taxes"]);
     for (const f of impact.factors) expect(f.cost).toBeGreaterThanOrEqual(0);
     expect(impact.factors.find((f) => f.id === "taxes")?.cost).toBeGreaterThan(0);
+    // Factors are identified, not named: the UI translates the IDs (REQ-012-01).
+    expect(Object.keys(impact.factors[0] ?? {}).sort()).toEqual(["cost", "id"]);
   });
 
   test("REQ-001-20 financing factors are skipped without leverage", () => {

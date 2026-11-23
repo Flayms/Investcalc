@@ -8,9 +8,12 @@ import {
   useCurrencyData,
   useDatasets,
 } from "@/features/data/useDatasets";
-import { EXPLORED, isExplored } from "@/features/explorer/explored";
+import { isExplored, useExplored } from "@/features/explorer/explored";
 import { SliderInsight } from "@/features/explorer/SliderInsight";
 import { type ExplorerView, ValueExplorer } from "@/features/explorer/ValueExplorer";
+import { I18nProvider, useI18n } from "@/features/i18n/i18n";
+import { LanguageToggle } from "@/features/i18n/LanguageToggle";
+import type { Messages } from "@/features/i18n/messages/en";
 import { type MobileView, MobileViewSwitch } from "@/features/layout/MobileViewSwitch";
 import { MarketView } from "@/features/market/MarketView";
 import {
@@ -56,10 +59,10 @@ type AppProps = {
   simulationClient?: SimulationApi;
 };
 
-function initialState(): PersistedState {
+function initialState(t: Messages): PersistedState {
   const restored = loadState(browserStorage());
   if (restored) return restored;
-  const scenarios = initialScenarios();
+  const scenarios = initialScenarios(t.scenarioNames);
   return {
     scenarios,
     selectedKey: scenarios[0]?.key ?? "",
@@ -68,14 +71,24 @@ function initialState(): PersistedState {
   };
 }
 
-export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) {
+export function App(props: AppProps) {
+  return (
+    <I18nProvider>
+      <Dashboard {...props} />
+    </I18nProvider>
+  );
+}
+
+function Dashboard({ loadDataset = fetchDataset, simulationClient }: AppProps) {
+  const { t } = useI18n();
+  const explored = useExplored();
   const datasets = useDatasets(loadDataset);
   const eur = useCurrencyData(loadDataset);
   const simulationData = useMemo(
     () => (datasets.data && eur.data ? { datasets: datasets.data, eur: eur.data } : undefined),
     [datasets.data, eur.data],
   );
-  const [initial] = useState(initialState);
+  const [initial] = useState(() => initialState(t));
   const [scenarios, setScenarios] = useState<Scenario[]>(initial.scenarios);
   const [selectedKey, setSelectedKey] = useState(initial.selectedKey);
   const [global, setGlobal] = useState(initial.global);
@@ -143,7 +156,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
     if (!isExplored(key)) return undefined;
     return (
       <SliderInsight
-        slider={EXPLORED[key]}
+        slider={explored[key]}
         sweep={sweeps[key]}
         goal={goal}
         updating={pending.sweeps[key]}
@@ -154,7 +167,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
       />
     );
   };
-  const status = statusText(pending, selected.params.name);
+  const status = statusText(t, pending, selected.params.name);
   const anyLeveraged = scenarios.some((s) => s.params.leveragedShare > 0);
 
   return (
@@ -166,16 +179,14 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
               <h1 className="text-4xl leading-none">
                 <span className="highlighter">Investcalc</span>
               </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Monte Carlo simulation of ETF savings plans on historical data — leverage, costs and
-                German taxes.
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{t.app.tagline}</p>
             </div>
-            <TabsList aria-label="Views">
-              <TabsTrigger value="simulation">Simulation</TabsTrigger>
-              <TabsTrigger value="market">Market & data</TabsTrigger>
+            <TabsList aria-label={t.app.views}>
+              <TabsTrigger value="simulation">{t.app.simulation}</TabsTrigger>
+              <TabsTrigger value="market">{t.app.marketAndData}</TabsTrigger>
             </TabsList>
             <div className="ml-auto flex items-center gap-3">
+              <LanguageToggle />
               <ThemeToggle />
             </div>
           </div>
@@ -183,10 +194,10 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
 
         {datasets.isError || eur.isError ? (
           <p className="p-6 text-sm text-red-800 dark:text-red-300">
-            Could not load the historical data: {String(datasets.error ?? eur.error)}
+            {t.app.loadError(String(datasets.error ?? eur.error))}
           </p>
         ) : !datasets.data || !eur.data ? (
-          <p className="p-6 text-sm text-muted-foreground">Loading historical data…</p>
+          <p className="p-6 text-sm text-muted-foreground">{t.app.loading}</p>
         ) : (
           <>
             <TabsContent value="simulation">
@@ -200,10 +211,16 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                     onToggleVisible={toggleVisible}
                     onMove={(key, toIndex) => setScenarios(moveScenario(scenarios, key, toIndex))}
                     onAdd={() =>
-                      addScenario({ ...defaultChoices, name: `Scenario ${scenarios.length + 1}` })
+                      addScenario({
+                        ...defaultChoices,
+                        name: t.scenarioNames.numbered(scenarios.length + 1),
+                      })
                     }
                     onDuplicate={() =>
-                      addScenario({ ...selected.params, name: `${selected.params.name} (copy)` })
+                      addScenario({
+                        ...selected.params,
+                        name: t.scenarioNames.copy(selected.params.name),
+                      })
                     }
                     onRemove={removeSelected}
                   />
@@ -219,10 +236,8 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                       datasets={datasets.data}
                       value={shared}
                       onChange={(period) => setShared({ ...shared, ...period })}
-                      currencyFrom={
-                        shared.currency === "EUR"
-                          ? { currency: "euros", year: Number(eur.data.start.slice(0, 4)) }
-                          : undefined
+                      euroFrom={
+                        shared.currency === "EUR" ? Number(eur.data.start.slice(0, 4)) : undefined
                       }
                     />
                     <FieldControl

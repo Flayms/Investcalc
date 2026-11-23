@@ -1,14 +1,16 @@
 import { LoaderCircleIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { useI18n } from "@/features/i18n/i18n";
 import { cn } from "@/lib/utils";
 
 /** Badge for a card whose content is being recalculated (REQ-009-02). */
 export function UpdatingBadge({ updating }: { updating: boolean }) {
+  const { t } = useI18n();
   if (!updating) return null;
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
       <LoaderCircleIcon className="size-3 animate-spin" aria-hidden />
-      Updating
+      {t.common.updating}
     </span>
   );
 }

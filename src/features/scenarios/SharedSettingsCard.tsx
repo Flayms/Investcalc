@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useI18n } from "@/features/i18n/i18n";
 import { FieldControl } from "@/features/scenarios/FieldControl";
 import { type SharedContext, sharedGroups } from "@/features/scenarios/fields";
 import type { SharedSettings } from "@/features/scenarios/scenario";
@@ -11,12 +12,13 @@ type Props = {
 
 /** Product costs, trading costs and taxes: the same for every scenario (REQ-002-02). */
 export function SharedSettingsCard({ shared, context, onChange }: Props) {
+  const { t } = useI18n();
   return (
     <Card className="gap-4">
       <CardHeader>
-        <CardTitle className="text-base">Costs & taxes</CardTitle>
+        <CardTitle className="text-base">{t.sharedSettings.title}</CardTitle>
         <CardDescription className="text-sm lg:text-xs">
-          Shared by all scenarios: facts about your products, broker and tax situation.
+          {t.sharedSettings.description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -24,9 +26,9 @@ export function SharedSettingsCard({ shared, context, onChange }: Props) {
           const fields = group.fields.filter((f) => !f.visible || f.visible(shared, context));
           if (fields.length === 0) return null;
           return (
-            <section key={group.title} className="space-y-4">
+            <section key={group.id} className="space-y-4">
               <h3 className="font-hand text-xl leading-none font-bold text-primary">
-                {group.title}
+                {t.groups[group.id]}
               </h3>
               {fields.map((field) => (
                 <FieldControl

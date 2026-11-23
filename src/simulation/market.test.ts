@@ -63,15 +63,15 @@ describe("REQ-006 market history", () => {
 
   test("REQ-006-01 time frames longer than the history are not available", () => {
     const frames = timeFrames(dataset(Array(25 * 12).fill(0.01)));
-    expect(frames.filter((f) => f.available).map((f) => f.label)).toEqual([
-      "1Y",
-      "3Y",
-      "5Y",
-      "10Y",
-      "20Y",
-      "Max",
+    expect(frames.filter((f) => f.available).map((f) => f.id)).toEqual([
+      "1y",
+      "3y",
+      "5y",
+      "10y",
+      "20y",
+      "max",
     ]);
-    expect(frames.find((f) => f.label === "50Y")?.available).toBe(false);
+    expect(frames.find((f) => f.id === "50y")?.available).toBe(false);
   });
 
   test("REQ-006-03 statistics of the time frame", () => {

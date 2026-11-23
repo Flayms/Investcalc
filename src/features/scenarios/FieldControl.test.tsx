@@ -1,47 +1,46 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { I18nProvider } from "@/features/i18n/i18n";
+import { LANGUAGE_KEY } from "@/features/i18n/language";
+import { en } from "@/features/i18n/messages/en";
 import { FieldControl } from "@/features/scenarios/FieldControl";
-import type { SliderField } from "@/features/scenarios/fields";
+import type { FieldKey, SliderField } from "@/features/scenarios/fields";
 
-const euro: SliderField<"rate"> = {
-  key: "rate",
+const euro: SliderField<"monthlyContribution"> = {
+  key: "monthlyContribution",
   kind: "slider",
-  label: "Monthly investment",
-  help: "",
   min: 0,
   max: 5000,
   step: 25,
   unit: "euro",
 };
-const percent: SliderField<"ter"> = {
-  key: "ter",
+const percent: SliderField<"terUnleveraged"> = {
+  key: "terUnleveraged",
   kind: "slider",
-  label: "TER",
-  help: "",
   min: 0,
   max: 0.02,
   step: 0.0005,
   unit: "percent",
 };
-const months: SliderField<"sma"> = {
-  key: "sma",
+const months: SliderField<"smaMonths"> = {
+  key: "smaMonths",
   kind: "slider",
-  label: "SMA window",
-  help: "",
   min: 2,
   max: 12,
   step: 1,
   unit: "months",
 };
 
-function setup<K extends string>(field: SliderField<K>, value: number) {
+beforeEach(() => localStorage.clear());
+
+function setup<K extends FieldKey>(field: SliderField<K>, value: number) {
   const onChange = vi.fn();
   render(
     <TooltipProvider>
       <FieldControl field={field} value={value} onChange={onChange} />
     </TooltipProvider>,
   );
-  const box = screen.getByRole("textbox", { name: `${field.label} value` });
+  const box = screen.getByRole("textbox", { name: `${en.fields[field.key].label} value` });
   return { onChange, box: box as HTMLInputElement };
 }
 
@@ -94,4 +93,22 @@ test("REQ-003-02 whole-unit settings are rounded", () => {
   const { onChange, box } = setup(months, 10);
   type(box, "7.6");
   expect(onChange).toHaveBeenLastCalledWith(8);
+});
+
+test("REQ-012-04 in German the value box shows a decimal comma and German units", () => {
+  localStorage.setItem(LANGUAGE_KEY, "de");
+  const onChange = vi.fn();
+  render(
+    <I18nProvider>
+      <TooltipProvider>
+        <FieldControl field={percent} value={0.002} onChange={onChange} />
+        <FieldControl field={months} value={10} onChange={onChange} />
+      </TooltipProvider>
+    </I18nProvider>,
+  );
+  const box = screen.getByRole("textbox", { name: "Wert für TER 1×-ETF" }) as HTMLInputElement;
+  expect(box.value).toBe("0,2");
+  expect(screen.getByText("Mon.")).toBeInTheDocument();
+  type(box, "0,07");
+  expect(onChange.mock.calls[0]?.[0]).toBeCloseTo(0.0007, 10);
 });
