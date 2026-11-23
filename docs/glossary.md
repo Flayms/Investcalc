@@ -40,6 +40,8 @@ Domain terms used in code, specs and tests. Use these names consistently; the Ge
 | Leverage factor         | Hebelfaktor                        | Daily-reset multiple L of the index return a leveraged ETF targets                                           | Effective leverage of a mix     |
 | Volatility drag         | Volatilitätsverlust                | Loss of a daily-reset leveraged ETF in volatile markets, ≈ (L²−L)/2 × realised variance                      | TER                             |
 | Realised variance       | Realisierte Varianz                | Sum of a month's squared daily log returns; drives the volatility drag                                       | Volatility (of monthly returns) |
+| Inflation-adjusted      | Inflationsbereinigt                | Amount expressed in purchasing power at the start of the investment (divided by the price rise since then)   | Nominal                         |
+| Gross / net return      | Brutto- / Nettorendite             | Total return with dividends before / after withholding tax; ETFs earn roughly the net return                 | Price return                    |
 | Currency effect         | Währungseffekt                     | Change of the dollar's value in euros in a month; applied once to every fund in euro simulations             | Volatility drag                 |
 | Euro short rate         | Euro-Kurzfristzins (Geldmarktzins) | German 3-month money market rate (euro area after 1999); earned on cash in euro simulations                  | Short rate                      |
 | US total market         | US-Gesamtmarkt                     | All listed US stocks, value weighted (CRSP via Kenneth French's data library), since 1926                    | S&P 500                         |

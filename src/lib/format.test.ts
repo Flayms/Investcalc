@@ -17,7 +17,7 @@ test("REQ-006-03 large gains are shown as a multiple", () => {
   expect(en.gain(13)).toBe("×14");
 });
 
-test("REQ-012-04 English numbers stay as before", () => {
+test("REQ-014-04 English numbers stay as before", () => {
   expect(en.euro(1234.4)).toBe("€1,234");
   expect(en.euroCompact(1_234_567)).toBe("€1.2M");
   expect(en.percent(0.1234)).toBe("12.3 %");
@@ -29,7 +29,7 @@ test("REQ-012-04 English numbers stay as before", () => {
   expect(en.number(1.5, 1)).toBe("1.5");
 });
 
-test("REQ-012-04 German numbers use German formatting", () => {
+test("REQ-014-04 German numbers use German formatting", () => {
   expect(plain(de.euro(1234.4))).toBe("1.234 €");
   expect(plain(de.euroCompact(1_234_567))).toBe("1,2 Mio. €");
   // Intl does not abbreviate German thousands ("800.000 €"), too wide for chart axes.

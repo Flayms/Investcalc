@@ -13,7 +13,7 @@ export const MESSAGES: Record<Language, Messages> = { en, de };
 
 export type I18n = {
   language: Language;
-  /** Switches the UI text and number formats and remembers the choice (REQ-012-01, -02). */
+  /** Switches the UI text and number formats and remembers the choice (REQ-014-01, -02). */
   setLanguage: (language: Language) => void;
   t: Messages;
   format: Format;

@@ -16,7 +16,7 @@ type Shot = {
   explorer?: "Distribution" | "Trade-off";
   /** Only the scenario settings card. */
   settings?: boolean;
-  /** Browser language of the first visit (REQ-012-03). */
+  /** Browser language of the first visit (REQ-014-03). */
   locale?: string;
 };
 

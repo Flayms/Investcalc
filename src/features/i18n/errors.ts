@@ -2,7 +2,7 @@ import type { Messages } from "@/features/i18n/messages/en";
 import type { Format } from "@/lib/format";
 import type { SimulationError } from "@/simulation/simulate";
 
-/** Why a simulation has no result, in the selected language (REQ-012-01). */
+/** Why a simulation has no result, in the selected language (REQ-014-01). */
 export function errorText(t: Messages, format: Format, error: SimulationError): string {
   switch (error.kind) {
     case "periodShorterThanHorizon":

@@ -95,7 +95,7 @@ test("REQ-003-02 whole-unit settings are rounded", () => {
   expect(onChange).toHaveBeenLastCalledWith(8);
 });
 
-test("REQ-012-04 in German the value box shows a decimal comma and German units", () => {
+test("REQ-014-04 in German the value box shows a decimal comma and German units", () => {
   localStorage.setItem(LANGUAGE_KEY, "de");
   const onChange = vi.fn();
   render(

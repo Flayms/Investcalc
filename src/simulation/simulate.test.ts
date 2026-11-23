@@ -13,6 +13,7 @@ const dataset: Dataset = {
   returns: Array.from({ length: 240 }, (_, i) => (i % 7 === 0 ? -0.04 : 0.015)),
   rates: Array(240).fill(0.02),
   variance: Array.from({ length: 240 }, (_, i) => 0.001 + i * 1e-5),
+  inflation: Array(240).fill(0.002),
 };
 
 const scenario = { ...defaultScenario, etfId: "test", fromYear: 2000, toYear: 2019 };
@@ -55,7 +56,8 @@ describe("REQ-001-03 rolling windows in a simulation", () => {
 
 describe("REQ-001-14 percentiles", () => {
   test("REQ-001-14 bands are ordered and final percentiles are reported", () => {
-    const result = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
+    const nominal = { ...scenario, inflationAdjusted: false };
+    const result = runScenario(dataset, nominal, { ...global, sampling: "bootstrap" });
     expect(result.pathCount).toBe(300);
     expect(result.bands).toHaveLength(61);
     for (const b of result.bands) {
@@ -67,6 +69,7 @@ describe("REQ-001-14 percentiles", () => {
     expect(f.p25).toBeLessThanOrEqual(f.p50);
     expect(f.p50).toBeLessThanOrEqual(f.p95);
     expect(result.invested).toBe(scenario.initialInvestment + 60 * scenario.monthlyContribution);
+    expect(result.bands[60]?.paid).toBe(result.invested);
     expect(result.probabilityOfLoss).toBeGreaterThanOrEqual(0);
   });
 
@@ -95,12 +98,24 @@ describe("REQ-001-20 influence of factors", () => {
     expect(impact.factors.map((f) => f.id)).toEqual(["ter", "sofr", "spread", "trading", "taxes"]);
     for (const f of impact.factors) expect(f.cost).toBeGreaterThanOrEqual(0);
     expect(impact.factors.find((f) => f.id === "taxes")?.cost).toBeGreaterThan(0);
-    // Factors are identified, not named: the UI translates the IDs (REQ-012-01).
+    // Factors are identified, not named: the UI translates the IDs (REQ-014-01).
     expect(Object.keys(impact.factors[0] ?? {}).sort()).toEqual(["cost", "id"]);
   });
 
   test("REQ-001-20 financing factors are skipped without leverage", () => {
     const impact = factorImpact(dataset, scenario, { ...global, sampling: "bootstrap" });
     expect(impact.factors.map((f) => f.id)).toEqual(["ter", "trading", "taxes"]);
+  });
+});
+
+describe("REQ-013-03 loss of purchasing power", () => {
+  test("REQ-013-03 the chance of loss compares each path with its real amount paid in", () => {
+    // Prices rise 2 % a month while the index is flat: every path loses purchasing power.
+    const flat = { ...dataset, returns: Array(240).fill(0), inflation: Array(240).fill(0.02) };
+    const g = { ...global, sampling: "rolling" as const };
+    const real = runScenario(flat, { ...scenario, taxesEnabled: false }, g);
+    expect(real.invested).toBeLessThan(60 * scenario.monthlyContribution);
+    expect(real.probabilityOfLoss).toBe(1);
+    expect(real.bands[60]?.paid).toBeCloseTo(real.invested, 6);
   });
 });

@@ -54,7 +54,7 @@ export function ValueInput({ label, unit, min, max, value, onChange, className }
   // While the user types, the box shows their draft instead of the committed value.
   const [draft, setDraft] = useState<string | undefined>();
   const { language, t } = useI18n();
-  // "€500" in English, "500 €" in German (REQ-012-04).
+  // "€500" in English, "500 €" in German (REQ-014-04).
   const prefix: Partial<Record<Unit, string>> = language === "de" ? {} : { euro: "€" };
   const suffix: Partial<Record<Unit, string>> = {
     ...(language === "de" && { euro: "€" }),

@@ -36,9 +36,10 @@ test("REQ-001-03 historical windows on a short history explain why there is no r
   await page.getByRole("combobox", { name: "Path generation" }).click();
   await page.getByRole("option", { name: "Historical windows" }).click();
   await page.getByRole("combobox", { name: "Index" }).click();
-  await page.getByRole("option", { name: "MSCI World" }).click();
+  await page.getByRole("option", { name: "MSCI ACWI (All World)" }).click();
+  // ACWI has about 38 years of history: a 50-year horizon does not fit.
   await page.getByRole("slider", { name: "Horizon" }).focus();
-  for (let i = 0; i < 10; i++) await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("End");
   await expect(page.getByRole("table").getByText(/is shorter than the horizon/)).toBeVisible({
     timeout: 30_000,
   });
@@ -156,7 +157,7 @@ test("REQ-011-01 switching the currency to US dollars recalculates the scenarios
   await expect.poll(() => table.textContent(), { timeout: 30_000 }).not.toBe(inEuros);
 });
 
-test("REQ-012-01 / REQ-012-02 the UI switches to German and stays German after a reload", async ({
+test("REQ-014-01 / REQ-014-02 the UI switches to German and stays German after a reload", async ({
   page,
 }) => {
   await page.goto("/");
@@ -178,9 +179,9 @@ test("REQ-012-01 / REQ-012-02 the UI switches to German and stays German after a
   await expect(page.getByText("Net worth over time")).toBeVisible();
 });
 
-test.describe("REQ-012-03 German browser", () => {
+test.describe("REQ-014-03 German browser", () => {
   test.use({ locale: "de-DE" });
-  test("REQ-012-03 a first visit with a German browser opens in German", async ({ page }) => {
+  test("REQ-014-03 a first visit with a German browser opens in German", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "de");
     await expect(page.getByRole("tab", { name: "Markt & Daten" })).toBeVisible();

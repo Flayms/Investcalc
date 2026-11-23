@@ -9,8 +9,9 @@ Static single-page app, no backend. Simulations run entirely in the browser, off
   - `sampling.ts` historical windows + stationary block bootstrap, `rng.ts` seeded PRNG
   - `leverage.ts` daily-reset leveraged return (volatility drag, financing), `tax.ts` German tax rules
   - `currency.ts` converts a USD dataset for euro investors (exchange rate change and euro short rate per month, `datasetFor` picks the scenario's dataset in its currency)
+  - `history.ts` splices older gross return history onto net series (gross–net gap)
   - `daily.ts` daily returns → monthly return and realised variance, estimate for months without daily data (used by the download script)
-  - `portfolio.ts` month-by-month simulation of one path (contributions, funds, cash, loan, taxes, strategy)
+  - `portfolio.ts` month-by-month simulation of one path (contributions, funds, cash, loan, taxes, strategy); nominal throughout, amounts deflated only when reported (inflation adjustment)
   - `simulate.ts` builds paths from a dataset and aggregates percentiles (bands over time, final value at P1–P99), factor impact
   - `sweep.ts` sweeps one slider (leveraged share, leverage factor, SMA window) over its range on the same paths and picks the best value for a goal
   - `protocol.ts` / `worker.ts` messages between UI and Web Worker (`run`, `sweep`, `factors`); `market.ts` market phase, chart series per time frame, period statistics, bear/bull markets and key indicators
@@ -18,7 +19,7 @@ Static single-page app, no backend. Simulations run entirely in the browser, off
   - **UI language (`features/i18n`):** typed dictionaries, `messages/en.ts` is the source and `Messages = typeof en`, so `de.ts` must have every key (typecheck). `I18nProvider` in `App` holds the language (stored under its own `localStorage` key, defaulting to the browser language) and provides `t` and `format` (`createFormat(language)` in `src/lib/format.ts`) through `useI18n()`; without a provider it is English. Setting labels, help and option labels live in `t.fields[key]`, `fields.ts` only holds keys, ranges and checks. The engine returns IDs, never display text (factor IDs, time frame IDs, `SimulationError` objects), and the UI words them (`errors.ts`). Data files stay English; `t.datasets[id]` translates their names, descriptions and sources (`datasets.ts`).
   - A scenario in the UI only holds the user's _choices_ (`ScenarioChoices`); _shared settings_ (data period, product and trading costs, taxes) are kept once and merged with `toParams` into the engine's `ScenarioParams` before simulating. _Hidden_ scenarios (`hidden: true`) are filtered out before that, so they are neither simulated nor shown; their last result is kept, so showing them again needs no simulation if nothing changed. The engine itself is unaware of the split.
   - The dashboard state (scenarios, selection, simulation and shared settings) is saved to `localStorage` on every change, versioned and validated with Zod on load; invalid state falls back to the defaults.
-- `scripts/fetch-data.ts` — downloads the historical data (Shiller, Kenneth French data library, MSCI daily levels, FRED, Bundesbank exchange rates) into `public/data/*.json` (committed). Each month holds its total return, short rate and realised variance of daily returns; `eur.json` holds the monthly euro/dollar change and the euro short rate.
+- `scripts/fetch-data.ts` — downloads the historical data (Shiller, Kenneth French data library, MSCI daily levels, FRED, Bundesbank exchange rates) into `public/data/*.json` (committed). Each month holds its total return, short rate, inflation and realised variance of daily returns; `eur.json` holds the monthly euro/dollar change, the euro short rate and German inflation. MSCI history before 2001 comes from a pinned public GitHub export of MSCI's gross series.
 - `.github/workflows/deploy.yml` — builds and publishes to GitHub Pages (relative `base` in `vite.config.ts`).
 
 ```mermaid

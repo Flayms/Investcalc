@@ -7,7 +7,7 @@ export type Unit = "percent" | "euro" | "factor" | "months" | "years" | "count";
 /** Settings with a text in the dictionary: label, help, recommendation and option labels. */
 export type FieldKey = keyof Messages["fields"];
 
-/** What the tooltip and label of a setting show, in the selected language (REQ-012-01). */
+/** What the tooltip and label of a setting show, in the selected language (REQ-014-01). */
 export type FieldText = {
   label: string;
   /** Tooltip: what the setting means. */
@@ -271,6 +271,13 @@ export const currencyField: SharedField = {
   key: "currency",
   kind: "select",
   options: ["EUR", "USD"],
+};
+
+/** Inflation adjustment of all results; shown with the currency (REQ-013-01). */
+export const inflationField: SharedField = {
+  key: "inflationAdjusted",
+  kind: "switch",
+  isRecommended: (v) => v,
 };
 
 export const globalFields: GlobalField[] = [

@@ -23,12 +23,12 @@ function strings(value: unknown, path = ""): [string, string][] {
   return [];
 }
 
-test("REQ-012-01 the German dictionary has every English key and nothing else", () => {
+test("REQ-014-01 the German dictionary has every English key and nothing else", () => {
   expect(shape(de)).toEqual(shape(en));
   expect(Object.keys(MESSAGES).sort()).toEqual(["de", "en"]);
 });
 
-test("REQ-012-01 no translation is empty", () => {
+test("REQ-014-01 no translation is empty", () => {
   for (const messages of [en, de]) {
     const empty = strings(messages).filter(([, s]) => s.trim() === "");
     expect(empty).toEqual([]);
@@ -36,7 +36,7 @@ test("REQ-012-01 no translation is empty", () => {
   expect(de.dataBasis.assumptions).toHaveLength(en.dataBasis.assumptions.length);
 });
 
-test("REQ-012-01 the English data texts are those of the data files", () => {
+test("REQ-014-01 the English data texts are those of the data files", () => {
   const files = { sp500, "us-market": usMarket, "msci-world": msciWorld, "msci-acwi": msciAcwi };
   for (const [id, file] of Object.entries(files)) {
     const text = en.datasets[id as keyof typeof files];

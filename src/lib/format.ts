@@ -24,7 +24,7 @@ export type Format = {
   gain: (v: number) => string;
 };
 
-/** Number formats of a language (REQ-012-04); English is the en-US format used before. */
+/** Number formats of a language (REQ-014-04); English is the en-US format used before. */
 export function createFormat(language: Language): Format {
   const locale = LOCALE[language];
   const euro = new Intl.NumberFormat(locale, {

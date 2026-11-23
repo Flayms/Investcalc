@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 /** Each language's name in its own language, so it can be found whatever is selected. */
 const NAMES: Record<Language, string> = { en: "English", de: "Deutsch" };
 
-/** Header switch between English and German (REQ-012-01). */
+/** Header switch between English and German (REQ-014-01). */
 export function LanguageToggle() {
   const { language, setLanguage, t } = useI18n();
   return (

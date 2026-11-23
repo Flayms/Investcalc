@@ -2,6 +2,7 @@ import { Area, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { useI18n } from "@/features/i18n/i18n";
+import { inflationNote } from "@/features/results/annualReturn";
 import { Stale, UpdatingBadge } from "@/features/results/Updating";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
 import type { ScenarioResult } from "@/simulation/simulate";
@@ -36,7 +37,7 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
       if (s.key === selectedKey) {
         row.outer = [b.p10, b.p90];
         row.inner = [b.p25, b.p75];
-        row.paid = s.params.initialInvestment + s.params.monthlyContribution * m;
+        row.paid = b.paid ?? s.params.initialInvestment + s.params.monthlyContribution * m;
       }
     }
     rows.push(row);
@@ -51,7 +52,9 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
         <CardTitle className="flex items-center gap-2 text-base">
           {t.fanChart.title} <UpdatingBadge updating={updating} />
         </CardTitle>
-        <CardDescription className="text-sm lg:text-xs">{t.fanChart.description}</CardDescription>
+        <CardDescription className="text-sm lg:text-xs">
+          {t.fanChart.description} {inflationNote(t, scenarios[0]?.params.inflationAdjusted)}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Stale updating={updating}>

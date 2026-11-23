@@ -26,6 +26,7 @@ export const SHARED_KEYS = [
   "fromYear",
   "toYear",
   "currency",
+  "inflationAdjusted",
   "terUnleveraged",
   "terLeveraged",
   "includeSofr",

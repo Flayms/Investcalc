@@ -227,6 +227,12 @@ export const en = {
         "Euro for investors in Germany: the currency risk of US and world equities is part of your result. US dollar shows the index alone and the longer history.",
       options: { EUR: "Euro", USD: "US dollar" },
     },
+    inflationAdjusted: {
+      label: "Adjust for inflation",
+      help: "Shows all amounts in purchasing power at the start of the investment: each amount is divided by the rise in consumer prices up to its month, following the inflation of the same historical months (German prices in euros, US prices in dollars). Taxes are still computed on nominal gains.",
+      recommendation:
+        "On: over 20–30 years inflation roughly halves what a euro buys, so nominal amounts look much better than they are.",
+    },
     horizonYears: {
       label: "Horizon",
       help: "How long you invest. All scenarios use the same horizon.",
@@ -335,6 +341,7 @@ export const en = {
     description:
       "After selling everything at the end of the horizon and paying all taxes and loans. P5 = only 5 % of the paths ended lower.",
     yearlyReturnNote: "Shown as money-weighted yearly return of each percentile.",
+    inflationNote: "Inflation-adjusted: amounts in purchasing power at the start.",
     unit: "Unit",
     perYear: "% p.a.",
     scenario: "Scenario",
@@ -433,7 +440,7 @@ export const en = {
   dataBasis: {
     title: "Data basis",
     description:
-      "Monthly total returns (dividends reinvested) in USD. Short rate (SOFR proxy): 3-month US T-bill (FRED TB3MS), 1926–1933 the 1-month T-bill, before that the long-term rate.",
+      "Monthly total returns (dividends reinvested) in USD. Short rate (SOFR proxy): 3-month US T-bill (FRED TB3MS), 1926–1933 the 1-month T-bill, before that the long-term rate. US inflation: Shiller's CPI until 1946, then FRED CPIAUCSL.",
     index: "Index",
     period: "Period",
     months: "Months",
@@ -478,19 +485,19 @@ export const en = {
       name: "MSCI World",
       description: "~1,400 large and mid caps in 23 developed countries. No emerging markets.",
       source:
-        "MSCI index 990100, net total return, USD, daily levels (msci.com); month = last level of the month.",
+        "MSCI index 990100, USD. From 2001-01: net total return, daily levels (msci.com), month = last level of the month. 1970-01 – 2000-12: MSCI gross total return (monthly, via github.com/NandayDev/MSCI-Historical-Data) minus the gross–net gap of later years (0.52 % p.a.); variance from daily developed-market returns (Kenneth French) from 1990-07, estimated before.",
     },
     "msci-acwi": {
       name: "MSCI ACWI (All World)",
       description:
         "MSCI World plus ~24 emerging markets (~2,500 stocks). Comparable to FTSE All-World.",
       source:
-        "MSCI index 892400, net total return, USD, daily levels (msci.com); month = last level of the month.",
+        "MSCI index 892400, USD. From 2001-01: net total return, daily levels (msci.com), month = last level of the month. 1988-01 – 2000-12: MSCI gross total return (monthly, via github.com/NandayDev/MSCI-Historical-Data) minus the gross–net gap of later years (0.51 % p.a.); variance from daily developed-market returns (Kenneth French) from 1990-07, estimated before.",
     },
     eur: {
       name: "Euro",
       source:
-        "Exchange rate: Deutsche Bundesbank, DM per US dollar (Frankfurt fixing, converted at 1.95583 DM per euro) until 1998, ECB euro reference rate from 1999; last quote of each month. Euro short rate: 3-month money market rate for Germany (OECD via FRED IR3TIB01DEM156N), latest months carried forward.",
+        "Exchange rate: Deutsche Bundesbank, DM per US dollar (Frankfurt fixing, converted at 1.95583 DM per euro) until 1998, ECB euro reference rate from 1999; last quote of each month. Euro short rate: 3-month money market rate for Germany (OECD via FRED IR3TIB01DEM156N), latest months carried forward. German inflation: OECD consumer price index (FRED DEUCPIALLMINMEI), after its last month the HICP (FRED CP0000DEM086NEST).",
     },
   },
 };

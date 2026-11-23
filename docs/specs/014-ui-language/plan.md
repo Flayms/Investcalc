@@ -1,4 +1,4 @@
-# 012 – UI language: Plan
+# 014 – UI language: Plan
 
 ## Approach
 
@@ -26,12 +26,12 @@ or ICU needs, and TypeScript catches a missing German key at compile time.
 ## Tasks
 
 - [x] Spec and plan (this folder)
-- [x] `createFormat(language)` with German formats (REQ-012-04)
-- [x] Language detection, storage, `<html lang>` (REQ-012-02, REQ-012-03, REQ-012-05)
-- [x] Dictionaries `en` / `de`, provider and hook, `LanguageToggle` in the header (REQ-012-01)
-- [x] Engine: IDs for factors, time frames, sweep reference, errors (REQ-012-01)
-- [x] Translate every component, `fields.ts`, value boxes (REQ-012-01, REQ-012-04)
-- [x] Default scenario names in the first visit's language (REQ-012-06)
-- [x] Inline script in `index.html` (REQ-012-05)
+- [x] `createFormat(language)` with German formats (REQ-014-04)
+- [x] Language detection, storage, `<html lang>` (REQ-014-02, REQ-014-03, REQ-014-05)
+- [x] Dictionaries `en` / `de`, provider and hook, `LanguageToggle` in the header (REQ-014-01)
+- [x] Engine: IDs for factors, time frames, sweep reference, errors (REQ-014-01)
+- [x] Translate every component, `fields.ts`, value boxes (REQ-014-01, REQ-014-04)
+- [x] Default scenario names in the first visit's language (REQ-014-06)
+- [x] Inline script in `index.html` (REQ-014-05)
 - [x] Tests: unit, component, e2e (desktop + German on phones); German screenshots
 - [x] Docs: spec index, architecture, glossary (German column), README, pitfalls

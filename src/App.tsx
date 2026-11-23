@@ -26,7 +26,7 @@ import { FactorImpactCard } from "@/features/results/AnalysisCards";
 import { FanChart } from "@/features/results/FanChart";
 import { ResultsTable } from "@/features/results/ResultsTable";
 import { FieldControl } from "@/features/scenarios/FieldControl";
-import { currencyField } from "@/features/scenarios/fields";
+import { currencyField, inflationField } from "@/features/scenarios/fields";
 import { GlobalSettingsCard } from "@/features/scenarios/GlobalSettingsCard";
 import { HistoricalPeriodField } from "@/features/scenarios/HistoricalPeriodField";
 import { ScenarioBar } from "@/features/scenarios/ScenarioBar";
@@ -246,6 +246,11 @@ function Dashboard({ loadDataset = fetchDataset, simulationClient }: AppProps) {
                       onChange={(currency) =>
                         setShared({ ...shared, currency: currency === "USD" ? "USD" : "EUR" })
                       }
+                    />
+                    <FieldControl
+                      field={inflationField}
+                      value={shared.inflationAdjusted}
+                      onChange={(v) => setShared({ ...shared, inflationAdjusted: v === true })}
                     />
                   </GlobalSettingsCard>
                   <ScenarioEditor

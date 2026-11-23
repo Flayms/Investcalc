@@ -13,6 +13,7 @@ const dataset: Dataset = {
   returns: Array.from({ length: 240 }, (_, i) => (i % 7 === 0 ? -0.04 : 0.015)),
   rates: Array(240).fill(0.02),
   variance: Array.from({ length: 240 }, (_, i) => 0.001 + i * 1e-5),
+  inflation: Array(240).fill(0.002),
 };
 const scenario = { ...defaultScenario, etfId: "test", fromYear: 2000, toYear: 2019 };
 const global = { ...defaultGlobal, horizonYears: 5, paths: 200, sampling: "bootstrap" as const };

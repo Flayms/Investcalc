@@ -228,6 +228,12 @@ export const de: Messages = {
         "Euro für Anleger in Deutschland: Das Währungsrisiko von US- und Welt-Aktien gehört zu deinem Ergebnis. US-Dollar zeigt den Index allein und die längere Historie.",
       options: { EUR: "Euro", USD: "US-Dollar" },
     },
+    inflationAdjusted: {
+      label: "Inflationsbereinigt",
+      help: "Zeigt alle Beträge in Kaufkraft zu Beginn der Anlage: Jeder Betrag wird durch den Anstieg der Verbraucherpreise bis zu seinem Monat geteilt, mit der Inflation derselben historischen Monate (deutsche Preise in Euro, US-Preise in Dollar). Steuern werden weiterhin auf nominale Gewinne berechnet.",
+      recommendation:
+        "Ein: Über 20–30 Jahre halbiert die Inflation ungefähr, was ein Euro kauft; nominale Beträge sehen viel besser aus, als sie sind.",
+    },
     horizonYears: {
       label: "Anlagedauer",
       help: "Wie lange du investierst. Alle Szenarien nutzen dieselbe Anlagedauer.",
@@ -337,6 +343,7 @@ export const de: Messages = {
     description:
       "Nach dem Verkauf aller Anteile am Ende der Anlagedauer und Zahlung aller Steuern und Kredite. P5 = nur 5 % der Pfade endeten niedriger.",
     yearlyReturnNote: "Dargestellt als geldgewichtete Jahresrendite jedes Perzentils.",
+    inflationNote: "Inflationsbereinigt: Beträge in Kaufkraft zu Beginn.",
     unit: "Einheit",
     perYear: "% p. a.",
     scenario: "Szenario",
@@ -434,7 +441,7 @@ export const de: Messages = {
   dataBasis: {
     title: "Datenbasis",
     description:
-      "Monatliche Gesamtrenditen (Dividenden reinvestiert) in USD. Kurzfristzins (Ersatz für SOFR): 3-monatige US-T-Bills (FRED TB3MS), 1926–1933 1-monatige T-Bills, davor der langfristige Zins.",
+      "Monatliche Gesamtrenditen (Dividenden reinvestiert) in USD. Kurzfristzins (Ersatz für SOFR): 3-monatige US-T-Bills (FRED TB3MS), 1926–1933 1-monatige T-Bills, davor der langfristige Zins. US-Inflation: Shillers CPI bis 1946, danach FRED CPIAUCSL.",
     index: "Index",
     period: "Zeitraum",
     months: "Monate",
@@ -479,19 +486,19 @@ export const de: Messages = {
       description:
         "~1.400 große und mittlere Unternehmen in 23 Industrieländern. Keine Schwellenländer.",
       source:
-        "MSCI-Index 990100, Net Total Return, USD, tägliche Stände (msci.com); Monat = letzter Stand des Monats.",
+        "MSCI-Index 990100, USD. Ab 2001-01: Net Total Return, tägliche Stände (msci.com), Monat = letzter Stand des Monats. 1970-01 – 2000-12: MSCI Gross Total Return (monatlich, über github.com/NandayDev/MSCI-Historical-Data) abzüglich der Brutto-Netto-Differenz späterer Jahre (0,52 % p. a.); Varianz aus täglichen Renditen der Industrieländer (Kenneth French) ab 1990-07, davor geschätzt.",
     },
     "msci-acwi": {
       name: "MSCI ACWI (All World)",
       description:
         "MSCI World plus ~24 Schwellenländer (~2.500 Aktien). Vergleichbar mit dem FTSE All-World.",
       source:
-        "MSCI-Index 892400, Net Total Return, USD, tägliche Stände (msci.com); Monat = letzter Stand des Monats.",
+        "MSCI-Index 892400, USD. Ab 2001-01: Net Total Return, tägliche Stände (msci.com), Monat = letzter Stand des Monats. 1988-01 – 2000-12: MSCI Gross Total Return (monatlich, über github.com/NandayDev/MSCI-Historical-Data) abzüglich der Brutto-Netto-Differenz späterer Jahre (0,51 % p. a.); Varianz aus täglichen Renditen der Industrieländer (Kenneth French) ab 1990-07, davor geschätzt.",
     },
     eur: {
       name: "Euro",
       source:
-        "Wechselkurs: Deutsche Bundesbank, DM je US-Dollar (Frankfurter Fixing, umgerechnet mit 1,95583 DM je Euro) bis 1998, EZB-Referenzkurs ab 1999; letzter Kurs jedes Monats. Euro-Kurzfristzins: 3-Monats-Geldmarktzins für Deutschland (OECD über FRED IR3TIB01DEM156N), letzte Monate fortgeschrieben.",
+        "Wechselkurs: Deutsche Bundesbank, DM je US-Dollar (Frankfurter Fixing, umgerechnet mit 1,95583 DM je Euro) bis 1998, EZB-Referenzkurs ab 1999; letzter Kurs jedes Monats. Euro-Kurzfristzins: 3-Monats-Geldmarktzins für Deutschland (OECD über FRED IR3TIB01DEM156N), letzte Monate fortgeschrieben. Deutsche Inflation: OECD-Verbraucherpreisindex (FRED DEUCPIALLMINMEI), nach dessen letztem Monat der HVPI (FRED CP0000DEM086NEST).",
     },
   },
 };

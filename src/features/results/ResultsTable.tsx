@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { errorText } from "@/features/i18n/errors";
 import { type I18n, useI18n } from "@/features/i18n/i18n";
-import { annualReturn } from "@/features/results/annualReturn";
+import { inflationNote, yearlyReturn } from "@/features/results/annualReturn";
 import { DistributionChart, type ResultUnit } from "@/features/results/DistributionChart";
 import { columnHeat, type Heat, heatStyle } from "@/features/results/heatmap";
 import { Stale, staleClass, UpdatingBadge } from "@/features/results/Updating";
@@ -46,7 +46,7 @@ function percentileValue(
   unit: ResultUnit,
   horizonYears: number,
 ): number {
-  return unit === "eur" ? r.final[p] : annualReturn(r.final[p], s.params, horizonYears);
+  return unit === "eur" ? r.final[p] : yearlyReturn(r.final[p], s.params, r.invested, horizonYears);
 }
 
 const formatValue = ({ format }: I18n, v: number, unit: ResultUnit) =>
@@ -103,7 +103,7 @@ function ResultCard({
         [t.common.paidIn, format.euro(r.invested)],
         [
           t.results.medianPerYear,
-          format.percent(annualReturn(r.final.p50, scenario.params, horizonYears)),
+          format.percent(yearlyReturn(r.final.p50, scenario.params, r.invested, horizonYears)),
         ],
         [t.results.lossShort, format.percent(r.probabilityOfLoss)],
         [t.results.fees, format.euro(r.medianFees)],
@@ -196,7 +196,8 @@ export function ResultsTable({
           {t.results.title} <UpdatingBadge updating={anyUpdating} />
         </CardTitle>
         <CardDescription className="text-sm lg:text-xs">
-          {t.results.description} {unit === "pa" && t.results.yearlyReturnNote}
+          {t.results.description} {unit === "pa" && t.results.yearlyReturnNote}{" "}
+          {inflationNote(t, scenarios[0]?.params.inflationAdjusted)}
         </CardDescription>
         <CardAction>
           <UnitSwitch unit={unit} onChange={setUnit} />
@@ -301,7 +302,9 @@ export function ResultsTable({
                         {format.euro(r.invested)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {format.percent(annualReturn(r.final.p50, s.params, horizonYears))}
+                        {format.percent(
+                          yearlyReturn(r.final.p50, s.params, r.invested, horizonYears),
+                        )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {format.percent(r.probabilityOfLoss)}

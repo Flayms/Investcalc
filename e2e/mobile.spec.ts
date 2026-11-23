@@ -104,10 +104,10 @@ test("REQ-005-01 / REQ-005-05 scenarios can be reordered by touch (press and hol
   ]);
 });
 
-test.describe("REQ-012-01 German on phones", () => {
+test.describe("REQ-014-01 German on phones", () => {
   test.use({ locale: "de-DE" });
   for (const view of ["Ergebnisse", "Einstellungen"]) {
-    test(`REQ-012-01 the longer German text causes no sideways scrolling (${view})`, async ({
+    test(`REQ-014-01 the longer German text causes no sideways scrolling (${view})`, async ({
       page,
     }) => {
       await page.goto("/");
