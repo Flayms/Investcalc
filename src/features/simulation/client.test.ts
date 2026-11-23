@@ -66,7 +66,7 @@ describe("REQ-009-03 outdated work is skipped", () => {
     const client = new SimulationClient(transport);
     void settled(client.run([], defaultGlobal));
     const a = settled(client.sweep(dataset, defaultScenario, defaultGlobal, "leverage"));
-    void settled(client.sweep(dataset, defaultScenario, defaultGlobal, "smaMonths"));
+    void settled(client.sweep(dataset, defaultScenario, defaultGlobal, "smaDays"));
     answer(posted[0]);
     await vi.waitFor(() => expect(posted).toHaveLength(2));
     answer(posted[1]);

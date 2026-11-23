@@ -1,8 +1,8 @@
 import type { Messages } from "@/features/i18n/messages/en";
 import type { ScenarioChoices, SharedSettings } from "@/features/scenarios/scenario";
-import type { GlobalSettings } from "@/simulation/params";
+import { type GlobalSettings, SMA_DAYS } from "@/simulation/params";
 
-export type Unit = "percent" | "euro" | "factor" | "months" | "years" | "count";
+export type Unit = "percent" | "euro" | "factor" | "days" | "months" | "years" | "count";
 
 /** Settings with a text in the dictionary: label, help, recommendation and option labels. */
 export type FieldKey = keyof Messages["fields"];
@@ -118,12 +118,12 @@ export const scenarioGroups: FieldGroup[] = [
         options: ["buyAndHold", "sma"],
       },
       {
-        key: "smaMonths",
+        key: "smaDays",
         kind: "slider",
-        min: 2,
-        max: 12,
-        step: 1,
-        unit: "months",
+        min: SMA_DAYS.min,
+        max: SMA_DAYS.max,
+        step: SMA_DAYS.step,
+        unit: "days",
         visible: (s) => s.strategy === "sma",
       },
       {

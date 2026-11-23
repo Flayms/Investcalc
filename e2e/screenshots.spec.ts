@@ -44,6 +44,18 @@ const shots: Shot[] = [
     element: (page) => page.locator("[data-explored]").first(),
   },
   {
+    name: "sma-window",
+    device: desktop,
+    select: "2× with 200-day SMA",
+    element: (page) => page.locator("[data-explored]", { hasText: "SMA window" }),
+  },
+  {
+    name: "data-basis",
+    device: wide,
+    view: "Market & data",
+    element: card("Data basis"),
+  },
+  {
     name: "market",
     device: desktop,
     view: "Market & data",

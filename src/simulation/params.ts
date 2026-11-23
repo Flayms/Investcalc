@@ -2,6 +2,9 @@ import { z } from "zod";
 import { datasetIds } from "@/simulation/dataset";
 
 /** Everything the user can set per scenario. Rates are fractions (0.01 = 1 %). */
+/** Range of the SMA window in trading days (REQ-015-06). */
+export const SMA_DAYS = { min: 50, max: 250, step: 10 } as const;
+
 export const scenarioSchema = z.object({
   name: z.string().min(1),
   etfId: z.enum(datasetIds).or(z.string()),
@@ -32,7 +35,8 @@ export const scenarioSchema = z.object({
   baseRate: z.number().min(0),
 
   strategy: z.enum(["buyAndHold", "sma"]),
-  smaMonths: z.number().int().min(2).max(12),
+  /** SMA window in trading days (REQ-015-06). */
+  smaDays: z.number().int().min(SMA_DAYS.min).max(SMA_DAYS.max),
 
   borrowFromFuture: z.boolean(),
   loanMonths: z.number().int().min(1),
@@ -79,7 +83,7 @@ export const defaultScenario: ScenarioParams = {
   allowance: 1000,
   baseRate: 0.025,
   strategy: "buyAndHold",
-  smaMonths: 10,
+  smaDays: 200,
   borrowFromFuture: false,
   loanMonths: 60,
   loanRate: 0.06,

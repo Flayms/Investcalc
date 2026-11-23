@@ -97,6 +97,8 @@ distribution of outcomes as percentiles and lets the user compare several settin
 
 #### REQ-001-12 SMA timing
 
+**Deprecated:** replaced by REQ-015-01 (daily signal) and REQ-015-03 (months without daily data).
+
 - **Given** the SMA strategy with a window of n months
 - **When** the index closes a month below its n-month SMA
 - **Then** all ETF holdings are sold into cash (earning the short rate), contributions are held in cash
@@ -208,7 +210,7 @@ distribution of outcomes as percentiles and lets the user compare several settin
 | REQ-001-09 | `tax.test.ts` › REQ-001-09 (exemption, allowance, loss carry-forward, disabled); `portfolio.test.ts` › final sale taxed                             | pass   |
 | REQ-001-10 | `tax.test.ts` › REQ-001-10 (formula, cap); `portfolio.test.ts` › Vorabpauschale not taxed again at sale                                             | pass   |
 | REQ-001-11 | `portfolio.test.ts` › REQ-001-11 sum of contributions / annuity due                                                                                 | pass   |
-| REQ-001-12 | `portfolio.test.ts` › REQ-001-12 sells below the SMA… / signals from monthly-average prices act one month later                                     | pass   |
+| REQ-001-12 | Deprecated, see REQ-015-01 / REQ-015-03                                                                                                             | –      |
 | REQ-001-13 | `portfolio.test.ts` › REQ-001-13 (ends like savings plan, rising markets, loan repaid incl. interest)                                               | pass   |
 | REQ-001-14 | `stats.test.ts`, `simulate.test.ts` › REQ-001-14 bands ordered; e2e `REQ-001-14 simulates the default scenarios in a worker…`                       | pass   |
 | REQ-001-15 | `App.test.tsx` › REQ-001-15 duplicate/rename/remove; `simulate.test.ts` › same seed gives identical results                                         | pass   |

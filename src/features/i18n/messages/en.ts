@@ -22,7 +22,7 @@ export const en = {
   scenarioNames: {
     buyAndHold: "1× buy and hold",
     leveraged: "2× buy and hold",
-    leveragedSma: "2× with 10-month SMA",
+    leveragedSma: "2× with 200-day SMA",
     numbered: (n: number) => `Scenario ${n}`,
     copy: (name: string) => `${name} (copy)`,
   },
@@ -53,6 +53,7 @@ export const en = {
   },
   /** Units after a typed value. */
   units: {
+    days: "d",
     months: "mo",
     years: "y",
   },
@@ -140,15 +141,15 @@ export const en = {
     },
     strategy: {
       label: "Timing",
-      help: "Buy and hold never sells. SMA sells everything when the index closes a month below its simple moving average and buys back when it closes above.",
+      help: "Buy and hold never sells. SMA sells everything when the index closes below its simple moving average and buys back when it closes above.",
       recommendation:
         "Buy and hold for 1×. SMA can reduce crash risk of leveraged ETFs but triggers taxes and costs.",
       options: { buyAndHold: "Buy and hold", sma: "SMA trend filter" },
     },
-    smaMonths: {
+    smaDays: {
       label: "SMA window",
-      help: "Length of the simple moving average in months (10 months ≈ 200 trading days).",
-      recommendation: "10 months (classic 200-day line).",
+      help: "Length of the simple moving average in trading days. The signal is checked at every daily close and acted on at the next close. Months without daily data (S&P 500, MSCI before 1990-07) are checked once a month, at the month's close, and count as 21 trading days.",
+      recommendation: "200 days (the classic 200-day line).",
     },
     borrowFromFuture: {
       label: "Borrow from your future self",
@@ -278,7 +279,7 @@ export const en = {
     tradeoff: "Trade-off",
     exploredSlider: "Explored slider",
     optimiseFor: "Optimise for",
-    months: (n: number) => `${n} months`,
+    days: (n: number) => `${n} days`,
     assumeShare: (percent: number) => `${percent} % in the leveraged ETF`,
     assumeLeverage: (factor: number) => `a ${factor}× leveraged ETF`,
     assumeSma: "the SMA trend filter",
@@ -446,7 +447,9 @@ export const en = {
     months: "Months",
     cagr: "CAGR",
     volatility: "Volatility",
-    dailyFrom: "Daily data from",
+    dailyFrom: "Daily variance from",
+    dailySignalFrom: "Daily SMA signal from",
+    monthlySignal: "monthly",
     source: "Source",
     euro: (from: string, to: string) => `Euro (${from} – ${to})`,
     euroText:
@@ -460,7 +463,7 @@ export const en = {
     assumptionsTitle: "Assumptions & limits",
     assumptions: [
       "Returns in euros (or US dollars, see the currency setting); leveraged ETFs are dollar-based, their currency effect is not leveraged. Inflation is ignored.",
-      "S&P 500 uses monthly average prices (smooths monthly returns); SMA signals act one month later.",
+      "S&P 500 uses monthly average prices (smooths monthly returns); its SMA signal is checked monthly and acts one month later. Elsewhere the SMA signal is checked at every daily close and acted on at the next close.",
       "Leveraged ETFs: daily reset, drag from the realised variance of the same month's daily returns (estimated where no daily data exists), financing on (L − 1).",
       "German taxes: 26.375 %, 30 % Teilfreistellung, allowance, Vorabpauschale, loss carry-forward.",
       "Past returns do not guarantee future returns. Not investment advice.",
@@ -479,25 +482,25 @@ export const en = {
       description:
         "All listed US stocks, value weighted (~4,000 companies, like a total market ETF). Month-end data since 1926.",
       source:
-        "Kenneth French data library (CRSP value-weighted market, Mkt-RF + RF), monthly total returns; variance from daily returns.",
+        "Kenneth French data library (CRSP value-weighted market, Mkt-RF + RF), monthly total returns; variance and SMA signal from daily returns (scaled to the month's return).",
     },
     "msci-world": {
       name: "MSCI World",
       description: "~1,400 large and mid caps in 23 developed countries. No emerging markets.",
       source:
-        "MSCI index 990100, USD. From 2001-01: net total return, daily levels (msci.com), month = last level of the month. 1970-01 – 2000-12: MSCI gross total return (monthly, via github.com/NandayDev/MSCI-Historical-Data) minus the gross–net gap of later years (0.52 % p.a.); variance from daily developed-market returns (Kenneth French) from 1990-07, estimated before.",
+        "MSCI index 990100, USD. From 2001-01: net total return, daily levels (msci.com), month = last level of the month. 1970-01 – 2000-12: MSCI gross total return (monthly, via github.com/NandayDev/MSCI-Historical-Data) minus the gross–net gap of later years (0.52 % p.a.); variance and SMA signal from daily developed-market returns (Kenneth French, scaled to the month's return) from 1990-07, estimated before.",
     },
     "msci-acwi": {
       name: "MSCI ACWI (All World)",
       description:
         "MSCI World plus ~24 emerging markets (~2,500 stocks). Comparable to FTSE All-World.",
       source:
-        "MSCI index 892400, USD. From 2001-01: net total return, daily levels (msci.com), month = last level of the month. 1988-01 – 2000-12: MSCI gross total return (monthly, via github.com/NandayDev/MSCI-Historical-Data) minus the gross–net gap of later years (0.51 % p.a.); variance from daily developed-market returns (Kenneth French) from 1990-07, estimated before.",
+        "MSCI index 892400, USD. From 2001-01: net total return, daily levels (msci.com), month = last level of the month. 1988-01 – 2000-12: MSCI gross total return (monthly, via github.com/NandayDev/MSCI-Historical-Data) minus the gross–net gap of later years (0.51 % p.a.); variance and SMA signal from daily developed-market returns (Kenneth French, scaled to the month's return) from 1990-07, estimated before.",
     },
     eur: {
       name: "Euro",
       source:
-        "Exchange rate: Deutsche Bundesbank, DM per US dollar (Frankfurt fixing, converted at 1.95583 DM per euro) until 1998, ECB euro reference rate from 1999; last quote of each month. Euro short rate: 3-month money market rate for Germany (OECD via FRED IR3TIB01DEM156N), latest months carried forward. German inflation: OECD consumer price index (FRED DEUCPIALLMINMEI), after its last month the HICP (FRED CP0000DEM086NEST).",
+        "Exchange rate: Deutsche Bundesbank, DM per US dollar (Frankfurt fixing, converted at 1.95583 DM per euro) until 1998, ECB euro reference rate from 1999; last quote of each month, every daily fixing for the SMA signal. Euro short rate: 3-month money market rate for Germany (OECD via FRED IR3TIB01DEM156N), latest months carried forward. German inflation: OECD consumer price index (FRED DEUCPIALLMINMEI), after its last month the HICP (FRED CP0000DEM086NEST).",
     },
   },
 };

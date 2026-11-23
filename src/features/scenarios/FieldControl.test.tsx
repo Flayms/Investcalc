@@ -22,12 +22,12 @@ const percent: SliderField<"terUnleveraged"> = {
   step: 0.0005,
   unit: "percent",
 };
-const months: SliderField<"smaMonths"> = {
-  key: "smaMonths",
+const months: SliderField<"loanMonths"> = {
+  key: "loanMonths",
   kind: "slider",
-  min: 2,
-  max: 12,
-  step: 1,
+  min: 6,
+  max: 240,
+  step: 6,
   unit: "months",
 };
 

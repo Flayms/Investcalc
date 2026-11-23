@@ -87,6 +87,9 @@ export function nextColorIndex(scenarios: Scenario[]): number {
   return 0;
 }
 
+/** First-visit scenarios use the index with daily data for its whole history (REQ-015-09). */
+const firstVisit: ScenarioChoices = { ...defaultChoices, etfId: "us-market" };
+
 /** The scenarios of a first visit, named in the language of the first visit. */
 export function initialScenarios(
   names: Pick<
@@ -95,17 +98,17 @@ export function initialScenarios(
   > = en.scenarioNames,
 ): Scenario[] {
   return [
-    { key: "s1", colorIndex: 0, params: { ...defaultChoices, name: names.buyAndHold } },
+    { key: "s1", colorIndex: 0, params: { ...firstVisit, name: names.buyAndHold } },
     {
       key: "s2",
       colorIndex: 1,
-      params: { ...defaultChoices, name: names.leveraged, leveragedShare: 1, leverage: 2 },
+      params: { ...firstVisit, name: names.leveraged, leveragedShare: 1, leverage: 2 },
     },
     {
       key: "s3",
       colorIndex: 2,
       params: {
-        ...defaultChoices,
+        ...firstVisit,
         name: names.leveragedSma,
         leveragedShare: 1,
         leverage: 2,

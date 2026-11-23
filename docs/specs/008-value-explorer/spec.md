@@ -17,7 +17,7 @@ user choose what "best" means, and ties each diagram visibly to its slider.
 - **Given** the selected scenario
 - **When** its results are shown
 - **Then** for each explored slider (share in leveraged ETF 0–100 %, leverage factor 1×–3×, SMA
-  window 2–12 months) the scenario is simulated on the same paths for a range of values covering
+  window 50–250 trading days, REQ-015-06) the scenario is simulated on the same paths for a range of values covering
   the slider's range, with all other settings unchanged
 - **And** each value reports the distribution of the final value after taxes (P5, P10, P25, P50,
   P75, P90, P95) and the chance of ending below the amount paid in

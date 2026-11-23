@@ -1,12 +1,17 @@
 import type { Dataset } from "@/simulation/dataset";
-import { type GlobalSettings, type ScenarioParams, WARMUP_MONTHS } from "@/simulation/params";
+import {
+  type GlobalSettings,
+  type ScenarioParams,
+  SMA_DAYS,
+  WARMUP_MONTHS,
+} from "@/simulation/params";
 import { simulatePath } from "@/simulation/portfolio";
 import { buildPaths, lossShare, pathOptions, type SimulationError } from "@/simulation/simulate";
 import { median, percentile } from "@/simulation/stats";
 
 /** Sliders the value explorer can sweep (REQ-008-01). */
-export type SweepParam = "leveragedShare" | "leverage" | "smaMonths";
-export const SWEEP_PARAMS: SweepParam[] = ["leveragedShare", "leverage", "smaMonths"];
+export type SweepParam = "leveragedShare" | "leverage" | "smaDays";
+export const SWEEP_PARAMS: SweepParam[] = ["leveragedShare", "leverage", "smaDays"];
 
 const range = (from: number, to: number, step: number) =>
   Array.from({ length: Math.round((to - from) / step) + 1 }, (_, i) =>
@@ -17,7 +22,7 @@ const range = (from: number, to: number, step: number) =>
 export const SWEEP_VALUES: Record<SweepParam, number[]> = {
   leveragedShare: range(0, 1, 0.1),
   leverage: range(1, 3, 0.25),
-  smaMonths: range(2, 12, 1),
+  smaDays: range(SMA_DAYS.min, SMA_DAYS.max, 20),
 };
 
 /** Paths used for each sweep; all values share the same paths. */
@@ -51,7 +56,7 @@ export type ParameterSweep = {
 function assumptionsFor(param: SweepParam, s: ScenarioParams): Partial<ScenarioParams> {
   if (param === "leverage" && s.leveragedShare === 0) return { leveragedShare: 1 };
   if (param === "leveragedShare" && s.leverage === 1) return { leverage: 2 };
-  if (param === "smaMonths" && s.strategy !== "sma") return { strategy: "sma" };
+  if (param === "smaDays" && s.strategy !== "sma") return { strategy: "sma" };
   return {};
 }
 
@@ -89,7 +94,7 @@ export function sweepParameter(
   const base = { ...s, ...assumed };
   const points = SWEEP_VALUES[param].map((value) => simulate({ ...base, [param]: value }, value));
   const reference =
-    param === "smaMonths"
+    param === "smaDays"
       ? { strategy: "buyAndHold" as const, point: simulate({ ...base, strategy: "buyAndHold" }, 0) }
       : undefined;
   return { param, points, invested, assumed, reference };

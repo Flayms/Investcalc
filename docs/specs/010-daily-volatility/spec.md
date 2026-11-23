@@ -56,7 +56,7 @@ total returns since 1926, and replaces the long-term rate that stood in for the 
 ## Out of scope
 
 - Simulating day by day (paths stay monthly).
-- Daily SMA signals (e.g. 200-day), intra-month gap risk / fund knock-out.
+- Daily SMA signals (e.g. 200-day), now covered by spec 015; intra-month gap risk / fund knock-out.
 - Currency conversion to EUR and inflation adjustment.
 - Longer MSCI history (the MSCI API serves data only from 2000-12-29).
 

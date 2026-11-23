@@ -17,6 +17,7 @@ Domain terms used in code, specs and tests. Use these names consistently; the Ge
 | Historical window     | Historisches Zeitfenster                | A path that replays a contiguous real period of the history                                              | Random slicing          |
 | Random slicing        | Zufällige Ausschnitte (Block-Bootstrap) | Path generation by stationary block bootstrap: random contiguous blocks of history stitched together     | Historical window       |
 | Warm-up               | Vorlauf                                 | Months of history before the horizon, used only to compute SMA signals                                   | Horizon                 |
+| Trading day           | Handelstag                              | A day with an index close; months without daily data count as 21 trading days for the SMA                | SMA                     |
 | Net worth             | Vermögen                                | Holdings + cash − loan − unpaid taxes at a point in time, before the final sale                          | Final value after tax   |
 | Final value after tax | Endwert nach Steuern                    | Net worth after selling everything at the end and paying all taxes                                       | Net worth               |
 | Distribution          | Verteilung                              | Final value after tax at every percentile from P1 to P99, plotted against the percentile                 | Percentile band         |
@@ -47,7 +48,7 @@ Domain terms used in code, specs and tests. Use these names consistently; the Ge
 | US total market         | US-Gesamtmarkt                     | All listed US stocks, value weighted (CRSP via Kenneth French's data library), since 1926                    | S&P 500                         |
 | SOFR                    | SOFR                               | Secured Overnight Financing Rate; short rate leveraged ETFs pay on borrowed money (proxy: 3-month T-bill)    | Financing spread                |
 | Financing spread        | Finanzierungsaufschlag             | Swap cost above SOFR on the borrowed part of a leveraged ETF                                                 | SOFR                            |
-| SMA                     | SMA (gleitender Durchschnitt)      | Simple moving average of the index level over n months; SMA strategy is invested only above it               |                                 |
+| SMA                     | SMA (gleitender Durchschnitt)      | Simple moving average of the last n daily index closes; the SMA strategy is invested only above it           | Trading day                     |
 | Borrow from future self | Kredit bei deinem zukünftigen Ich  | Strategy: borrow the present value of future contributions, invest it now, repay with the contributions      | Lump sum                        |
 | Market phase            | Marktphase                         | Bull (< 10 % below all-time high), correction (10–20 %), bear (≥ 20 %)                                       |                                 |
 | Bear market             | Bärenmarkt                         | Decline of ≥ 20 % from an all-time high; runs from that peak to the lowest point before the high is regained | Correction                      |

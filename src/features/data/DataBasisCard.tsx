@@ -51,6 +51,10 @@ export function DataBasisCard({ datasets, eur }: Props) {
                     <dt className="text-xs text-muted-foreground">{db.dailyFrom}</dt>
                     <dd className="tabular-nums">{d.dailyFrom ?? "–"}</dd>
                   </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">{db.dailySignalFrom}</dt>
+                    <dd className="tabular-nums">{d.daily?.from ?? db.monthlySignal}</dd>
+                  </div>
                 </dl>
                 <p className="text-xs text-muted-foreground">{text.source}</p>
               </article>
@@ -66,6 +70,7 @@ export function DataBasisCard({ datasets, eur }: Props) {
               <TableHead className="text-right">{db.cagr}</TableHead>
               <TableHead className="text-right">{db.volatility}</TableHead>
               <TableHead>{db.dailyFrom}</TableHead>
+              <TableHead>{db.dailySignalFrom}</TableHead>
               <TableHead>{db.source}</TableHead>
             </TableRow>
           </TableHeader>
@@ -90,6 +95,9 @@ export function DataBasisCard({ datasets, eur }: Props) {
                     {format.percent(s.volatility)}
                   </TableCell>
                   <TableCell className="align-top tabular-nums">{d.dailyFrom ?? "–"}</TableCell>
+                  <TableCell className="align-top tabular-nums">
+                    {d.daily?.from ?? db.monthlySignal}
+                  </TableCell>
                   <TableCell className="max-w-72 whitespace-normal align-top text-muted-foreground">
                     {text.source}
                   </TableCell>

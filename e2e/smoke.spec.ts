@@ -63,14 +63,14 @@ test("REQ-002-05 market and data basis are on their own view", async ({ page }) 
   await expect(page.getByText("Data basis")).toBeVisible();
 });
 
-const order = ["2× with 10-month SMA", "1× buy and hold", "2× buy and hold"];
+const order = ["2× with 200-day SMA", "1× buy and hold", "2× buy and hold"];
 
 test("REQ-005-01 scenarios can be reordered by mouse drag and the order survives a reload", async ({
   page,
 }) => {
   await page.goto("/");
   const tabs = page.getByRole("tablist", { name: "Scenarios" });
-  const from = await tabs.getByRole("tab", { name: "2× with 10-month SMA" }).boundingBox();
+  const from = await tabs.getByRole("tab", { name: "2× with 200-day SMA" }).boundingBox();
   const to = await tabs.getByRole("tab", { name: "1× buy and hold" }).boundingBox();
   if (!from || !to) throw new Error("tabs not laid out");
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -87,9 +87,9 @@ test("REQ-005-04 scenarios can be reordered with the keyboard", async ({ page })
   const tabs = page.getByRole("tablist", { name: "Scenarios" });
   // Each step is announced to screen readers; waiting for it also waits for dnd-kit's measuring.
   const announced = page.locator("[id^=DndLiveRegion]");
-  await page.getByRole("button", { name: "Reorder 2× with 10-month SMA" }).focus();
+  await page.getByRole("button", { name: "Reorder 2× with 200-day SMA" }).focus();
   await page.keyboard.press("Space");
-  await expect(announced).toHaveText(/Picked up 2× with 10-month SMA, position 3 of 3/);
+  await expect(announced).toHaveText(/Picked up 2× with 200-day SMA, position 3 of 3/);
   // dnd-kit measures the tabs in the frame after pick-up; a person never types faster than that.
   await page.waitForTimeout(150);
   await page.keyboard.press("ArrowLeft");
@@ -118,7 +118,7 @@ test("REQ-005-05 a click selects without moving", async ({ page }) => {
   await expect(tabs.getByRole("tab")).toHaveText([
     "1× buy and hold",
     "2× buy and hold",
-    "2× with 10-month SMA",
+    "2× with 200-day SMA",
   ]);
 });
 

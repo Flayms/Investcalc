@@ -1,4 +1,4 @@
-import { estimatedVariance, monthlyFromDaily, varianceScale } from "@/simulation/daily";
+import { dailyBlock, estimatedVariance, monthlyFromDaily, varianceScale } from "@/simulation/daily";
 import { leveragedReturn } from "@/simulation/leverage";
 import { createRng } from "@/simulation/rng";
 
@@ -76,5 +76,43 @@ describe("REQ-010-02 months without daily data", () => {
 
   test("REQ-010-02 the estimate is the scaled squared log return of the month", () => {
     expect(estimatedVariance(-0.1, 1.3)).toBeCloseTo(1.3 * Math.log(0.9) ** 2, 12);
+  });
+});
+
+describe("REQ-015-04 daily index data", () => {
+  const days = [
+    { month: "2000-01", day: 3, r: 0.01 },
+    { month: "2000-01", day: 4, r: -0.02 },
+    { month: "2000-02", day: 1, r: 0.03 },
+  ];
+
+  test("REQ-015-04 the block holds trading days per month, day of month and daily returns", () => {
+    const block = dailyBlock(days);
+    expect(block.from).toBe("2000-01");
+    expect(block.days).toEqual([2, 1]);
+    expect(block.dayOfMonth).toEqual([3, 4, 1]);
+    expect(block.returns).toEqual([0.01, -0.02, 0.03]);
+  });
+
+  test("REQ-015-04 the daily returns of a month compound to that month's return", () => {
+    const monthly = new Map([
+      ["2000-01", 0.005],
+      ["2000-02", 0.02],
+    ]);
+    const block = dailyBlock(days, (ym) => monthly.get(ym));
+    const compound = (rs: number[]) => rs.reduce((a, r) => a * (1 + r), 1) - 1;
+    expect(compound(block.returns.slice(0, 2))).toBeCloseTo(0.005, 12);
+    expect(compound(block.returns.slice(2))).toBeCloseTo(0.02, 12);
+    // The shape of the month is kept: the second day is still the worse one.
+    expect(block.returns[1]).toBeLessThan(block.returns[0] ?? 0);
+  });
+
+  test("REQ-015-04 months without a monthly return keep their daily returns", () => {
+    const block = dailyBlock(days, (ym) => (ym === "2000-01" ? 0 : undefined));
+    expect(block.returns[2]).toBe(0.03);
+  });
+
+  test("REQ-015-04 gaps between months are rejected", () => {
+    expect(() => dailyBlock([...days, { month: "2000-04", day: 3, r: 0 }])).toThrow(/2000-03/);
   });
 });

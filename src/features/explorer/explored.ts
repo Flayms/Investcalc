@@ -20,7 +20,7 @@ export type ExploredSlider = {
 const ICONS: Record<SweepParam, LucideIcon> = {
   leveragedShare: ChartPieIcon,
   leverage: GaugeIcon,
-  smaMonths: ActivityIcon,
+  smaDays: ActivityIcon,
 };
 
 const sliderField = (key: SweepParam) => {
@@ -34,7 +34,7 @@ export function exploredSliders(t: Messages, format: Format): Record<SweepParam,
   const formats: Record<SweepParam, (v: number) => string> = {
     leveragedShare: (v) => `${Math.round(v * 100)} %`,
     leverage: format.factor,
-    smaMonths: t.explorer.months,
+    smaDays: t.explorer.days,
   };
   const slider = (param: SweepParam): ExploredSlider => {
     const f = sliderField(param);
@@ -44,7 +44,7 @@ export function exploredSliders(t: Messages, format: Format): Record<SweepParam,
   return {
     leveragedShare: slider("leveragedShare"),
     leverage: slider("leverage"),
-    smaMonths: slider("smaMonths"),
+    smaDays: slider("smaDays"),
   };
 }
 

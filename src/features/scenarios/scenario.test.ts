@@ -61,3 +61,13 @@ test("REQ-005-01 moving a scenario shifts the others and keeps its color", () =>
   expect(moveScenario(s, "s1", 9).map((x) => x.key)).toEqual(["s2", "s3", "s1"]);
   expect(moveScenario(s, "nope", 0)).toBe(s);
 });
+
+test("REQ-015-09 the first-visit scenarios use the US total market", () => {
+  expect(initialScenarios().map((s) => s.params.etfId)).toEqual([
+    "us-market",
+    "us-market",
+    "us-market",
+  ]);
+  const sma = initialScenarios().find((s) => s.params.strategy === "sma");
+  expect(sma?.params.smaDays).toBe(200);
+});
