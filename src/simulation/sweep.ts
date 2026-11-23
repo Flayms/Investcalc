@@ -1,7 +1,7 @@
 import type { Dataset } from "@/simulation/dataset";
 import { type GlobalSettings, type ScenarioParams, WARMUP_MONTHS } from "@/simulation/params";
 import { simulatePath } from "@/simulation/portfolio";
-import { buildPaths, lossShare, pathOptions } from "@/simulation/simulate";
+import { buildPaths, lossShare, pathOptions, type SimulationError } from "@/simulation/simulate";
 import { median, percentile } from "@/simulation/stats";
 
 /** Sliders the value explorer can sweep (REQ-008-01). */
@@ -43,8 +43,8 @@ export type ParameterSweep = {
   /** Settings changed so that the slider has an effect (REQ-008-02). */
   assumed: Partial<ScenarioParams>;
   /** A point to compare against, e.g. buy and hold for the SMA window. */
-  reference?: { label: string; point: SweepPoint };
-  error?: string;
+  reference?: { strategy: ScenarioParams["strategy"]; point: SweepPoint };
+  error?: SimulationError;
 };
 
 /** The smallest change that makes `param` matter for the scenario (REQ-008-02). */
@@ -66,7 +66,7 @@ export function sweepParameter(
   const global = { ...g, paths: Math.min(g.paths, SWEEP_MAX_PATHS) };
   const { paths, error } = buildPaths(dataset, s, global);
   if (error || paths.length === 0)
-    return { param, points: [], invested: 0, assumed, error: error ?? "No paths." };
+    return { param, points: [], invested: 0, assumed, error: error ?? { kind: "noPaths" } };
   const options = pathOptions(dataset);
   let invested = 0;
   const simulate = (params: ScenarioParams, value: number): SweepPoint => {
@@ -90,7 +90,7 @@ export function sweepParameter(
   const points = SWEEP_VALUES[param].map((value) => simulate({ ...base, [param]: value }, value));
   const reference =
     param === "smaMonths"
-      ? { label: "Buy and hold", point: simulate({ ...base, strategy: "buyAndHold" }, 0) }
+      ? { strategy: "buyAndHold" as const, point: simulate({ ...base, strategy: "buyAndHold" }, 0) }
       : undefined;
   return { param, points, invested, assumed, reference };
 }

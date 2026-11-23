@@ -11,7 +11,8 @@ import { ChartTooltipBox, ChartTooltipRow } from "@/components/ChartTooltipBox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCompact, formatGain, formatPercent, formatSignedPercent } from "@/lib/format";
+import { dataText } from "@/features/i18n/datasets";
+import { useI18n } from "@/features/i18n/i18n";
 import { cn } from "@/lib/utils";
 import type { Dataset } from "@/simulation/dataset";
 import {
@@ -22,29 +23,21 @@ import {
   marketStatus,
   periodStats,
   type TimeFrame,
+  type TimeFrameId,
 } from "@/simulation/market";
 
-const PHASES: Record<
-  MarketPhase,
-  { label: string; className: string; icon: typeof TrendingUpIcon; text: string }
-> = {
+const PHASES: Record<MarketPhase, { className: string; icon: typeof TrendingUpIcon }> = {
   bull: {
-    label: "Bull market",
     className: "bg-emerald-100 text-emerald-900 dark:bg-emerald-400/15 dark:text-emerald-200",
     icon: TrendingUpIcon,
-    text: "Less than 10 % below the all-time high.",
   },
   correction: {
-    label: "Correction",
     className: "bg-amber-100 text-amber-900 dark:bg-amber-400/15 dark:text-amber-200",
     icon: TriangleAlertIcon,
-    text: "10–20 % below the all-time high.",
   },
   bear: {
-    label: "Bear market",
     className: "bg-red-100 text-red-900 dark:bg-red-400/15 dark:text-red-200",
     icon: TrendingDownIcon,
-    text: "20 % or more below the all-time high.",
   },
 };
 
@@ -75,7 +68,7 @@ type Props = {
   onDatasetChange: (id: string) => void;
   frames: TimeFrame[];
   frame: TimeFrame;
-  onFrameChange: (label: string) => void;
+  onFrameChange: (id: TimeFrameId) => void;
 };
 
 export function MarketStatusCard({
@@ -90,6 +83,9 @@ export function MarketStatusCard({
   const ind = useMemo(() => indicators(dataset), [dataset]);
   const bears = useMemo(() => bearMarkets(dataset), [dataset]);
   const phase = PHASES[status.phase];
+  const { language, t, format } = useI18n();
+  const phaseText = t.market.phases[status.phase];
+  const indexName = dataText(t, dataset).name;
   const chart = useMemo(() => chartSeries(dataset, frame.months, SMA_CHART), [dataset, frame]);
   const stats = useMemo(() => periodStats(dataset, frame.months), [dataset, frame]);
   const log = frame.months > LOG_SCALE_MONTHS;
@@ -106,22 +102,22 @@ export function MarketStatusCard({
       inFrame: b.troughIndex > offset,
     }))
     .filter((b) => b.inFrame);
-  const range = frame.label === "Max" ? `since ${from}` : `last ${frame.months / 12} years`;
+  const range = frame.years === undefined ? t.market.since(from) : t.market.lastYears(frame.years);
 
   return (
     <Card className="gap-4">
       <CardHeader className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <CardTitle className="text-base">Current market</CardTitle>
+          <CardTitle className="text-base">{t.market.title}</CardTitle>
           <CardDescription className="text-sm lg:text-xs">
-            Based on the latest data month ({status.lastMonth}), total return in USD.
+            {t.market.description(status.lastMonth)}
           </CardDescription>
         </div>
         <Tabs value={dataset.id} onValueChange={onDatasetChange} className="w-full sm:w-auto">
-          <TabsList aria-label="Index" className="w-full sm:w-auto">
+          <TabsList aria-label={t.market.index} className="w-full sm:w-auto">
             {Object.values(datasets).map((d) => (
               <TabsTrigger key={d.id} value={d.id} className="text-sm lg:text-xs">
-                {d.name}
+                {dataText(t, d).name}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -134,16 +130,16 @@ export function MarketStatusCard({
               className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-sm font-semibold ${phase.className}`}
             >
               <phase.icon className="size-4" aria-hidden />
-              {phase.label}
+              {phaseText.label}
             </span>
-            <span className="text-sm lg:text-xs text-muted-foreground">{phase.text}</span>
+            <span className="text-sm lg:text-xs text-muted-foreground">{phaseText.text}</span>
           </div>
           <div>
             <div className="text-sm lg:text-xs text-muted-foreground">
-              Distance from all-time high
+              {t.market.distanceFromHigh}
             </div>
             <div className="text-2xl font-semibold tabular-nums">
-              {formatSignedPercent(status.drawdown)}
+              {format.signedPercent(status.drawdown)}
             </div>
           </div>
           <ul className="space-y-1.5 text-sm">
@@ -160,85 +156,82 @@ export function MarketStatusCard({
                     aria-hidden
                   />
                 )}
-                <span>
-                  {s.above ? "Above" : "Below"} {s.months}-month SMA
-                </span>
+                <span>{s.above ? t.market.aboveSma(s.months) : t.market.belowSma(s.months)}</span>
                 <span className="ml-auto tabular-nums text-muted-foreground">
-                  {formatSignedPercent(s.distance)}
+                  {format.signedPercent(s.distance)}
                 </span>
               </li>
             ))}
           </ul>
           <section aria-labelledby="key-indicators" className="space-y-3 border-t pt-4">
             <h3 id="key-indicators" className="text-sm font-semibold">
-              Key indicators
+              {t.market.keyIndicators}
             </h3>
             <dl className="grid grid-cols-4 gap-2">
-              {ind.trailing.map((t) => (
-                <div key={t.years}>
+              {ind.trailing.map((r) => (
+                <div key={r.years}>
                   <dt className="text-sm lg:text-xs text-muted-foreground">
-                    {t.years}Y{t.years > 1 && " p.a."}
+                    {t.market.trailing(r.years)}
                   </dt>
                   <dd
                     className={cn(
                       "font-semibold tabular-nums",
-                      t.cagr !== null && signClass(t.cagr),
+                      r.cagr !== null && signClass(r.cagr),
                     )}
                   >
-                    {t.cagr === null ? "–" : formatSignedPercent(t.cagr)}
+                    {r.cagr === null ? "–" : format.signedPercent(r.cagr)}
                   </dd>
                 </div>
               ))}
             </dl>
             <dl className="space-y-1.5 text-sm">
               <div className="flex items-baseline gap-2">
-                <dt>Volatility 12 months</dt>
+                <dt>{t.market.volatility12m}</dt>
                 <dd className="ml-auto text-right tabular-nums">
-                  {formatPercent(ind.volatility12m)}{" "}
+                  {format.percent(ind.volatility12m)}{" "}
                   <span className="text-muted-foreground">
-                    (long-term {formatPercent(ind.volatilityLongTerm)})
+                    {t.market.longTerm(format.percent(ind.volatilityLongTerm))}
                   </span>
                 </dd>
               </div>
               <div className="flex items-baseline gap-2">
-                <dt>Short rate</dt>
-                <dd className="ml-auto tabular-nums">{formatPercent(ind.shortRate)}</dd>
+                <dt>{t.market.shortRate}</dt>
+                <dd className="ml-auto tabular-nums">{format.percent(ind.shortRate)}</dd>
               </div>
             </dl>
             <p className="text-xs lg:text-[11px] text-muted-foreground">
-              High volatility raises the drag of leveraged ETFs; the short rate (3-month T-bill,
-              SOFR proxy) is what they pay on borrowed money. The SMA strategy is invested while the
-              index is above its SMA. Not investment advice.
+              {t.market.indicatorsNote}
             </p>
           </section>
         </div>
         <div className="min-w-0 space-y-3">
-          <Tabs value={frame.label} onValueChange={onFrameChange}>
-            <TabsList aria-label="Time frame" className="w-full sm:w-auto">
+          <Tabs value={frame.id} onValueChange={(id) => onFrameChange(id as TimeFrameId)}>
+            <TabsList aria-label={t.market.timeFrame} className="w-full sm:w-auto">
               {frames.map((f) => (
                 <TabsTrigger
-                  key={f.label}
-                  value={f.label}
+                  key={f.id}
+                  value={f.id}
                   disabled={!f.available}
                   className="text-sm lg:text-xs"
                 >
-                  {f.label}
+                  {t.market.timeFrameTab(f.years)}
                 </TabsTrigger>
               ))}
             </TabsList>
           </Tabs>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <span className="h-0.5 w-4 rounded bg-(--series-1)" aria-hidden /> {dataset.name} (
-              {range}, start = 100{log && ", log scale"})
+              <span className="h-0.5 w-4 rounded bg-(--series-1)" aria-hidden />{" "}
+              {t.market.indexLegend(indexName, range, log)}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-4 border-t-2 border-dashed border-muted-foreground" aria-hidden />{" "}
-              {SMA_CHART}-month SMA
+              {t.market.sma(SMA_CHART)}
             </span>
             {shaded.length > 0 && (
               <span className="flex items-center gap-1.5">
-                <span className="h-3 w-4 rounded-sm bg-red-500/20" aria-hidden /> Bear market
+                <span className="h-3 w-4 rounded-sm bg-red-500/20" aria-hidden />{" "}
+                {t.market.bearMarket}
               </span>
             )}
           </div>
@@ -249,11 +242,11 @@ export function MarketStatusCard({
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                width={44}
+                width={language === "de" ? 60 : 44}
                 scale={log ? "log" : "auto"}
                 domain={log ? [lo, hi] : ["auto", "auto"]}
                 ticks={log ? logTicks(lo, hi) : undefined}
-                tickFormatter={(v: number) => formatCompact(v)}
+                tickFormatter={(v: number) => format.compact(v)}
                 allowDataOverflow={log}
               />
               {shaded.map((b) => (
@@ -276,7 +269,7 @@ export function MarketStatusCard({
                           key={String(p.dataKey)}
                           color={String(p.color)}
                           name={p.name}
-                          value={Number(p.value).toFixed(1)}
+                          value={format.number(Number(p.value), 1)}
                         />
                       ))}
                     </ChartTooltipBox>
@@ -285,7 +278,7 @@ export function MarketStatusCard({
               />
               <Line
                 dataKey="index"
-                name={dataset.name}
+                name={indexName}
                 stroke="var(--series-1)"
                 strokeWidth={2}
                 dot={false}
@@ -293,7 +286,7 @@ export function MarketStatusCard({
               />
               <Line
                 dataKey="sma"
-                name={`${SMA_CHART}-month SMA`}
+                name={t.market.sma(SMA_CHART)}
                 stroke="var(--muted-foreground)"
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
@@ -302,22 +295,38 @@ export function MarketStatusCard({
               />
             </LineChart>
           </ChartContainer>
-          <section aria-label="Selected time frame">
+          <section aria-label={t.market.selectedTimeFrame}>
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: "Total return", value: stats.totalReturn, signed: true },
-                { label: "CAGR", value: stats.cagr, signed: true },
-                { label: "Volatility", value: stats.volatility, signed: false },
-                { label: "Max drawdown", value: stats.maxDrawdown, signed: true },
+                {
+                  label: t.market.totalReturn,
+                  value: stats.totalReturn,
+                  signed: true,
+                  text: format.gain(stats.totalReturn),
+                },
+                {
+                  label: t.market.cagr,
+                  value: stats.cagr,
+                  signed: true,
+                  text: format.signedPercent(stats.cagr),
+                },
+                {
+                  label: t.market.volatility,
+                  value: stats.volatility,
+                  signed: false,
+                  text: format.percent(stats.volatility),
+                },
+                {
+                  label: t.market.maxDrawdown,
+                  value: stats.maxDrawdown,
+                  signed: true,
+                  text: format.signedPercent(stats.maxDrawdown),
+                },
               ].map((s) => (
                 <div key={s.label}>
                   <dt className="text-sm lg:text-xs text-muted-foreground">{s.label}</dt>
                   <dd className={cn("font-semibold tabular-nums", s.signed && signClass(s.value))}>
-                    {s.label === "Total return"
-                      ? formatGain(s.value)
-                      : s.signed
-                        ? formatSignedPercent(s.value)
-                        : formatPercent(s.value)}
+                    {s.text}
                   </dd>
                 </div>
               ))}

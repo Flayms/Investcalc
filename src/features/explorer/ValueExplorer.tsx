@@ -21,11 +21,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
-import { EXPLORED, type ExploredSlider, GOALS } from "@/features/explorer/explored";
+import { type ExploredSlider, GOALS, useExplored } from "@/features/explorer/explored";
+import { errorText } from "@/features/i18n/errors";
+import { type I18n, useI18n } from "@/features/i18n/i18n";
 import { Stale, UpdatingBadge } from "@/features/results/Updating";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
 import type { Sweeps } from "@/features/simulation/useSimulation";
-import { formatEuro, formatEuroCompact, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ScenarioParams } from "@/simulation/params";
 import {
@@ -89,34 +90,29 @@ function Segmented<T extends string>({
   );
 }
 
-const ASSUMPTION_TEXT: Partial<Record<keyof ScenarioParams, (v: unknown) => string>> = {
-  leveragedShare: (v) => `${Math.round(Number(v) * 100)} % in the leveraged ETF`,
-  leverage: (v) => `a ${Number(v)}× leveraged ETF`,
-  strategy: () => "the SMA trend filter",
-};
-
 /** Sentence about the settings the sweep had to assume (REQ-008-02). */
-function assumptionNote(sweep: ParameterSweep) {
-  const parts = Object.entries(sweep.assumed).map(([k, v]) =>
-    ASSUMPTION_TEXT[k as keyof ScenarioParams]?.(v),
-  );
+function assumptionNote({ t }: I18n, sweep: ParameterSweep) {
+  const text: Partial<Record<keyof ScenarioParams, (v: unknown) => string>> = {
+    leveragedShare: (v) => t.explorer.assumeShare(Math.round(Number(v) * 100)),
+    leverage: (v) => t.explorer.assumeLeverage(Number(v)),
+    strategy: () => t.explorer.assumeSma,
+  };
+  const parts = Object.entries(sweep.assumed).flatMap(([k, v]) => {
+    const part = text[k as keyof ScenarioParams]?.(v);
+    return part === undefined ? [] : [part];
+  });
   if (parts.length === 0) return undefined;
-  return `This slider has no effect with the scenario's current settings, so the explorer assumes ${parts.join(" and ")}.`;
+  return t.explorer.assumptionNote(parts);
 }
 
 /** The goal's figure of a point, e.g. "€400,000". */
-const amount = (goal: Goal, p: SweepPoint) =>
+const amount = ({ format }: I18n, goal: Goal, p: SweepPoint) =>
   goal === "loss"
-    ? formatPercent(p.lossProbability, 0)
-    : formatEuro(goal === "badCase" ? p.p10 : p.p50);
+    ? format.percent(p.lossProbability, 0)
+    : format.euro(goal === "badCase" ? p.p10 : p.p50);
 
-const NOUN: Record<Goal, string> = {
-  median: "median",
-  badCase: "in the bad case (P10)",
-  loss: "chance of loss",
-};
-
-const metric = (goal: Goal, p: SweepPoint) => `${amount(goal, p)} ${NOUN[goal]}`;
+const metric = (i18n: I18n, goal: Goal, p: SweepPoint) =>
+  `${amount(i18n, goal, p)} ${i18n.t.explorer.metric[goal]}`;
 
 /** The closest swept point to the scenario's current value. */
 function currentPoint(sweep: ParameterSweep, current: number) {
@@ -140,10 +136,11 @@ function Takeaway({
   current?: number;
   onApply: (value: number) => void;
 }) {
+  const i18n = useI18n();
+  const { t, format } = i18n;
   const best = bestPoint(sweep.points, goal);
   const now = current === undefined ? undefined : currentPoint(sweep, current);
   if (!best) return null;
-  const goalLabel = GOALS.find((g) => g.id === goal)?.label.toLowerCase();
   const same = best.value === now?.value;
   return (
     <div
@@ -151,27 +148,28 @@ function Takeaway({
       data-testid="explorer-takeaway"
     >
       <p className="text-sm">
-        <span className="font-semibold">
-          {slider.format(best.value)} has the {goalLabel}
-        </span>
-        : {metric(goal, best)}
+        <span className="font-semibold">{t.explorer.has[goal](slider.format(best.value))}</span>:{" "}
+        {metric(i18n, goal, best)}
         {!now ? (
           <>
-            {goal !== "median" && `, median ${formatEuro(best.p50)}`}
-            {goal !== "loss" && `, ${formatPercent(best.lossProbability, 0)} chance of loss`}.
+            {goal !== "median" && t.explorer.alsoMedian(format.euro(best.p50))}
+            {goal !== "loss" && t.explorer.alsoLoss(format.percent(best.lossProbability, 0))}.
           </>
         ) : same ? (
-          <> — that is your current setting.</>
+          t.explorer.isCurrent
         ) : (
           <>
-            {" "}
-            vs {amount(goal, now)} at your current {slider.format(now.value)}.{" "}
+            {t.explorer.vsCurrent(amount(i18n, goal, now), slider.format(now.value))}{" "}
             {[
-              goal !== "median" && `Median ${formatEuro(best.p50)} vs ${formatEuro(now.p50)}`,
+              goal !== "median" &&
+                t.explorer.compareMedian(format.euro(best.p50), format.euro(now.p50)),
               goal !== "badCase" &&
-                `bad case (P10) ${formatEuro(best.p10)} vs ${formatEuro(now.p10)}`,
+                t.explorer.compareBadCase(format.euro(best.p10), format.euro(now.p10)),
               goal !== "loss" &&
-                `chance of loss ${formatPercent(best.lossProbability, 0)} vs ${formatPercent(now.lossProbability, 0)}`,
+                t.explorer.compareLoss(
+                  format.percent(best.lossProbability, 0),
+                  format.percent(now.lossProbability, 0),
+                ),
             ]
               .filter(Boolean)
               .join(", ")
@@ -182,7 +180,7 @@ function Takeaway({
       </p>
       {now && !same && (
         <Button size="sm" variant="outline" onClick={() => onApply(best.value)}>
-          Use {slider.format(best.value)}
+          {t.explorer.use(slider.format(best.value))}
         </Button>
       )}
     </div>
@@ -198,16 +196,27 @@ function PointTooltip({
   p: SweepPoint;
   invested: number;
 }) {
+  const { t, format } = useI18n();
   return (
     <ChartTooltipBox className="text-xs">
       <div className="mb-1 font-medium">
         {slider.label}: {slider.format(p.value)}
       </div>
-      <div>Good case (P90): {formatEuro(p.p90)}</div>
-      <div className="font-medium">Median: {formatEuro(p.p50)}</div>
-      <div>Bad case (P10): {formatEuro(p.p10)}</div>
-      <div>Chance of loss: {formatPercent(p.lossProbability, 1)}</div>
-      <div className="text-muted-foreground">Paid in: {formatEuro(invested)}</div>
+      <div>
+        {t.explorer.goodCase}: {format.euro(p.p90)}
+      </div>
+      <div className="font-medium">
+        {t.common.median}: {format.euro(p.p50)}
+      </div>
+      <div>
+        {t.explorer.badCase}: {format.euro(p.p10)}
+      </div>
+      <div>
+        {t.explorer.chanceOfLoss}: {format.percent(p.lossProbability, 1)}
+      </div>
+      <div className="text-muted-foreground">
+        {t.common.paidIn}: {format.euro(invested)}
+      </div>
     </ChartTooltipBox>
   );
 }
@@ -233,15 +242,16 @@ function DistributionView({
     inner: [p.p25, p.p75],
   }));
   const ref = sweep.reference;
+  const { language, t, format } = useI18n();
   return (
     <>
       <ul
         className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm lg:text-xs text-muted-foreground"
-        aria-label="Legend"
+        aria-label={t.common.legend}
       >
         <li className="flex items-center gap-1.5">
           <span className="h-0.5 w-4 rounded" style={{ background: color }} aria-hidden />
-          Median
+          {t.common.median}
         </li>
         <li className="flex items-center gap-1.5">
           <span className="flex h-2.5 w-6 overflow-hidden rounded-sm" aria-hidden>
@@ -253,12 +263,12 @@ function DistributionView({
         </li>
         <li className="flex items-center gap-1.5">
           <span className="w-4 border-t-2 border-dashed border-muted-foreground" aria-hidden />
-          Paid in
+          {t.common.paidIn}
         </li>
         {ref && (
           <li className="flex items-center gap-1.5">
             <span className="w-4 border-t-2 border-dotted border-foreground/60" aria-hidden />
-            {ref.label} (median)
+            {t.explorer.medianOf(t.fields.strategy.options[ref.strategy])}
           </li>
         )}
       </ul>
@@ -266,7 +276,7 @@ function DistributionView({
         config={{}}
         className="aspect-auto h-64 w-full text-sm lg:text-xs"
         role="img"
-        aria-label={`Final value after taxes by ${slider.label}`}
+        aria-label={t.explorer.finalValueBy(slider.label)}
       >
         <ComposedChart data={rows} margin={{ left: 12, right: 16, top: 20, bottom: 12 }}>
           <CartesianGrid vertical={false} strokeOpacity={0.5} />
@@ -283,12 +293,12 @@ function DistributionView({
             scale="log"
             domain={["auto", "auto"]}
             allowDataOverflow
-            tickFormatter={formatEuroCompact}
+            tickFormatter={format.euroCompact}
             tickLine={false}
             axisLine={false}
-            width={72}
+            width={language === "de" ? 84 : 72}
             label={{
-              value: "Final value after taxes (log)",
+              value: t.explorer.finalValueLog,
               angle: -90,
               position: "insideLeft",
               offset: -4,
@@ -351,7 +361,12 @@ function DistributionView({
               x={current}
               stroke="var(--foreground)"
               strokeWidth={1.5}
-              label={{ value: "Current", position: "top", fontSize: 12, fill: "var(--foreground)" }}
+              label={{
+                value: t.common.current,
+                position: "top",
+                fontSize: 12,
+                fill: "var(--foreground)",
+              }}
             />
           )}
           {best && best.value !== current && (
@@ -360,7 +375,7 @@ function DistributionView({
               stroke="var(--muted-foreground)"
               strokeDasharray="2 3"
               label={{
-                value: "Best",
+                value: t.common.best,
                 position: "top",
                 fontSize: 12,
                 fill: "var(--muted-foreground)",
@@ -377,9 +392,7 @@ function DistributionView({
         </ComposedChart>
       </ChartContainer>
       <p className="mt-2 text-xs lg:text-[11px] text-muted-foreground">
-        Each band holds the middle 90 %, 80 % and 50 % of the paths. A wider band means less
-        certainty; a value pays off when its median rises without its bad end sinking below what you
-        paid in.
+        {t.explorer.distributionNote}
       </p>
     </>
   );
@@ -401,33 +414,34 @@ function TradeoffView({
 }) {
   const rows = sweep.points.map((p) => ({ ...p, loss: p.lossProbability }));
   const highlight = (p: SweepPoint) => p.value === current || p.value === best?.value;
+  const { language, t, format } = useI18n();
   return (
     <>
       <ul
         className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm lg:text-xs text-muted-foreground"
-        aria-label="Legend"
+        aria-label={t.common.legend}
       >
         <li className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-full" style={{ background: color }} aria-hidden />
-          One {slider.label.toLowerCase()} value
+          {t.explorer.oneValue(slider.label)}
         </li>
         <li className="flex items-center gap-1.5">
           <span className="size-3 rounded-full border-2 border-foreground" aria-hidden />
-          Current
+          {t.common.current}
         </li>
         <li className="flex items-center gap-1.5">
           <span
             className="size-3 rounded-full border-2 border-dashed border-muted-foreground"
             aria-hidden
           />
-          Best
+          {t.common.best}
         </li>
       </ul>
       <ChartContainer
         config={{}}
         className="aspect-auto h-64 w-full text-sm lg:text-xs"
         role="img"
-        aria-label={`Median against chance of loss by ${slider.label}`}
+        aria-label={t.explorer.medianVsLossBy(slider.label)}
       >
         <ScatterChart margin={{ left: 12, right: 52, top: 16, bottom: 12 }}>
           <CartesianGrid strokeOpacity={0.5} />
@@ -435,11 +449,11 @@ function TradeoffView({
             dataKey="loss"
             type="number"
             domain={[0, "auto"]}
-            tickFormatter={(v: number) => formatPercent(v, 0)}
+            tickFormatter={(v: number) => format.percent(v, 0)}
             tickLine={false}
             axisLine={false}
             label={{
-              value: "Chance of loss (less is better)",
+              value: t.explorer.lossAxis,
               position: "insideBottom",
               offset: -8,
               fontSize: 12,
@@ -450,12 +464,12 @@ function TradeoffView({
             type="number"
             scale="log"
             domain={["auto", "auto"]}
-            tickFormatter={formatEuroCompact}
+            tickFormatter={format.euroCompact}
             tickLine={false}
             axisLine={false}
-            width={72}
+            width={language === "de" ? 84 : 72}
             label={{
-              value: "Median final value (log)",
+              value: t.explorer.medianLog,
               angle: -90,
               position: "insideLeft",
               offset: -4,
@@ -521,10 +535,7 @@ function TradeoffView({
           />
         </ScatterChart>
       </ChartContainer>
-      <p className="mt-2 text-xs lg:text-[11px] text-muted-foreground">
-        Up and to the left is better: more median for less risk. Where the line turns flat or bends
-        right, extra risk no longer buys extra median.
-      </p>
+      <p className="mt-2 text-xs lg:text-[11px] text-muted-foreground">{t.explorer.tradeoffNote}</p>
     </>
   );
 }
@@ -543,7 +554,10 @@ export function ValueExplorer({
   view,
   onViewChange,
 }: Props) {
-  const slider = EXPLORED[param];
+  const explored = useExplored();
+  const i18n = useI18n();
+  const { t } = i18n;
+  const slider = explored[param];
   const sweep = sweeps[param];
   const color = scenarioColor(scenario);
   const params = scenario.params;
@@ -551,7 +565,7 @@ export function ValueExplorer({
   const applicable = sweep ? Object.keys(sweep.assumed).length === 0 : false;
   const current = applicable ? params[param] : undefined;
   const best = sweep ? bestPoint(sweep.points, goal) : undefined;
-  const note = sweep && assumptionNote(sweep);
+  const note = sweep && assumptionNote(i18n, sweep);
   const updating = pending[param];
   return (
     <Card
@@ -560,28 +574,31 @@ export function ValueExplorer({
     >
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          Value explorer: which setting pays off? <UpdatingBadge updating={updating} />
+          {t.explorer.title} <UpdatingBadge updating={updating} />
         </CardTitle>
         <CardDescription className="text-sm lg:text-xs">
-          “{params.name}” simulated for every value of one slider, all else unchanged, on the same
-          paths (up to 500). Final value after taxes.
+          {t.explorer.description(params.name)}
         </CardDescription>
         <CardAction>
           <Segmented
-            label="Diagram"
+            label={t.explorer.diagram}
             value={view}
             onChange={onViewChange}
             options={[
-              { id: "distribution", label: "Distribution" },
-              { id: "tradeoff", label: "Trade-off" },
+              { id: "distribution", label: t.explorer.distribution },
+              { id: "tradeoff", label: t.explorer.tradeoff },
             ]}
           />
         </CardAction>
       </CardHeader>
       <CardContent>
-        <div role="tablist" aria-label="Explored slider" className="mb-3 flex flex-wrap gap-2">
+        <div
+          role="tablist"
+          aria-label={t.explorer.exploredSlider}
+          className="mb-3 flex flex-wrap gap-2"
+        >
           {SWEEP_PARAMS.map((p) => {
-            const s = EXPLORED[p];
+            const s = explored[p];
             const Icon = s.icon;
             return (
               <button
@@ -604,20 +621,22 @@ export function ValueExplorer({
           })}
         </div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="text-sm lg:text-xs text-muted-foreground">Optimise for</span>
+          <span className="text-sm lg:text-xs text-muted-foreground">{t.explorer.optimiseFor}</span>
           <Segmented
-            label="Optimise for"
+            label={t.explorer.optimiseFor}
             value={goal}
             onChange={onGoalChange}
-            options={GOALS.map((g) => ({ id: g.id, label: g.short, title: g.help }))}
+            options={GOALS.map((g) => ({ id: g, label: t.goals[g].short, title: t.goals[g].help }))}
           />
         </div>
         {!sweep ? (
           <p className="text-sm lg:text-xs text-muted-foreground">
-            {updating ? "Analysing…" : "No data."}
+            {updating ? t.common.analysing : t.common.noData}
           </p>
         ) : sweep.error ? (
-          <p className="text-sm lg:text-xs text-amber-800 dark:text-amber-300">{sweep.error}</p>
+          <p className="text-sm lg:text-xs text-amber-800 dark:text-amber-300">
+            {errorText(t, i18n.format, sweep.error)}
+          </p>
         ) : (
           <Stale updating={updating}>
             {note && <p className="mb-2 text-sm lg:text-xs text-muted-foreground">{note}</p>}

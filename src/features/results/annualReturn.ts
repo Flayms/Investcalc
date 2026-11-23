@@ -1,3 +1,4 @@
+import type { Messages } from "@/features/i18n/messages/en";
 import type { ScenarioParams } from "@/simulation/params";
 
 type Plan = Pick<ScenarioParams, "initialInvestment" | "monthlyContribution">;
@@ -50,5 +51,5 @@ export function yearlyReturn(
 }
 
 /** Says what the amounts mean when they are inflation-adjusted (REQ-013-06). */
-export const inflationNote = (adjusted: boolean | undefined) =>
-  adjusted ? "Inflation-adjusted: amounts in purchasing power at the start." : "";
+export const inflationNote = (t: Messages, adjusted: boolean | undefined) =>
+  adjusted ? t.results.inflationNote : "";

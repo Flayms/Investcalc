@@ -25,6 +25,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/features/i18n/i18n";
 import { MAX_SCENARIOS, type Scenario, scenarioColor } from "@/features/scenarios/scenario";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,7 @@ function ScenarioTab({ scenario: s, selected, onSelect, onToggleVisible }: TabPr
   } = useSortable({ id: s.key });
   const visible = !s.hidden;
   const name = s.params.name;
+  const { t } = useI18n();
   return (
     <div
       ref={setNodeRef}
@@ -80,8 +82,8 @@ function ScenarioTab({ scenario: s, selected, onSelect, onToggleVisible }: TabPr
         ref={setActivatorNodeRef}
         {...attributes}
         aria-roledescription="sortable"
-        aria-label={`Reorder ${name}`}
-        title="Drag to reorder (or focus and press Space, then the arrow keys)"
+        aria-label={t.scenarioBar.reorder(name)}
+        title={t.scenarioBar.reorderHint}
         className="cursor-grab self-stretch rounded-l-md pl-1.5 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
       >
         <GripVerticalIcon className="size-3.5" aria-hidden />
@@ -108,9 +110,9 @@ function ScenarioTab({ scenario: s, selected, onSelect, onToggleVisible }: TabPr
       </button>
       <button
         type="button"
-        aria-label={`Show ${name}`}
+        aria-label={t.scenarioBar.show(name)}
         aria-pressed={visible}
-        title={visible ? "Hide from chart and table" : "Show in chart and table"}
+        title={visible ? t.scenarioBar.hideHint : t.scenarioBar.showHint}
         onClick={onToggleVisible}
         className="mr-1 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
       >
@@ -135,6 +137,8 @@ export function ScenarioBar({
   onRemove,
 }: Props) {
   const full = scenarios.length >= MAX_SCENARIOS;
+  const { t } = useI18n();
+  const text = t.scenarioBar;
   const sensors = useSensors(
     // A click or a tap without moving selects instead of dragging (REQ-005-05).
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -147,17 +151,17 @@ export function ScenarioBar({
   const positionOf = (id: string | number) => scenarios.findIndex((s) => s.key === id) + 1;
   const announcements: Announcements = {
     onDragStart: ({ active }) =>
-      `Picked up ${nameOf(active.id)}, position ${positionOf(active.id)} of ${scenarios.length}.`,
+      text.pickedUp(nameOf(active.id), positionOf(active.id), scenarios.length),
     // Nothing to say while it is still over its own place.
     onDragOver: ({ active, over }) =>
       over && over.id !== active.id
-        ? `${nameOf(active.id)} moved to position ${positionOf(over.id)}.`
+        ? text.movedTo(nameOf(active.id), positionOf(over.id))
         : undefined,
     onDragEnd: ({ active, over }) =>
       over
-        ? `${nameOf(active.id)} dropped at position ${positionOf(over.id)}.`
-        : `${nameOf(active.id)} dropped.`,
-    onDragCancel: ({ active }) => `Moving ${nameOf(active.id)} cancelled.`,
+        ? text.droppedAt(nameOf(active.id), positionOf(over.id))
+        : text.dropped(nameOf(active.id)),
+    onDragCancel: ({ active }) => text.cancelled(nameOf(active.id)),
   };
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
@@ -175,13 +179,12 @@ export function ScenarioBar({
         accessibility={{
           announcements,
           screenReaderInstructions: {
-            draggable:
-              "To reorder, press Space or Enter, move with the arrow keys, then press Space or Enter again. Escape cancels.",
+            draggable: text.instructions,
           },
         }}
       >
         <SortableContext items={scenarios.map((s) => s.key)} strategy={rectSortingStrategy}>
-          <div role="tablist" aria-label="Scenarios" className="flex flex-wrap gap-2">
+          <div role="tablist" aria-label={text.scenarios} className="flex flex-wrap gap-2">
             {scenarios.map((s) => (
               <ScenarioTab
                 key={s.key}
@@ -196,17 +199,17 @@ export function ScenarioBar({
       </DndContext>
       <div className="ml-auto flex gap-1">
         <Button size="sm" variant="outline" onClick={onAdd} disabled={full}>
-          <PlusIcon /> New
+          <PlusIcon /> {text.new}
         </Button>
         <Button size="sm" variant="outline" onClick={onDuplicate} disabled={full}>
-          <CopyIcon /> Duplicate
+          <CopyIcon /> {text.duplicate}
         </Button>
         <Button
           size="sm"
           variant="outline"
           onClick={onRemove}
           disabled={scenarios.length <= 1}
-          aria-label="Remove scenario"
+          aria-label={text.remove}
         >
           <Trash2Icon />
         </Button>

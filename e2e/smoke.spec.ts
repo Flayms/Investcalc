@@ -156,3 +156,34 @@ test("REQ-011-01 switching the currency to US dollars recalculates the scenarios
   await expect(page.getByText(/In euros from 1960/)).toHaveCount(0);
   await expect.poll(() => table.textContent(), { timeout: 30_000 }).not.toBe(inEuros);
 });
+
+test("REQ-014-01 / REQ-014-02 the UI switches to German and stays German after a reload", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page
+    .getByRole("group", { name: "Language" })
+    .getByRole("button", { name: "Deutsch" })
+    .click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "de");
+  await expect(page.getByText("Vermögen im Zeitverlauf")).toBeVisible();
+  const table = page.getByRole("table").filter({ hasText: "P(Verlust)" });
+  await expect(table.getByRole("cell", { name: "2.000", exact: true })).toHaveCount(3, {
+    timeout: 30_000,
+  });
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("lang", "de");
+  await expect(page.getByText("Vermögen im Zeitverlauf")).toBeVisible();
+  await page.getByRole("button", { name: "English" }).click();
+  await expect(page.getByText("Net worth over time")).toBeVisible();
+});
+
+test.describe("REQ-014-03 German browser", () => {
+  test.use({ locale: "de-DE" });
+  test("REQ-014-03 a first visit with a German browser opens in German", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "de");
+    await expect(page.getByRole("tab", { name: "Markt & Daten" })).toBeVisible();
+  });
+});

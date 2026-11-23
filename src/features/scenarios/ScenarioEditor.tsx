@@ -9,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { dataText } from "@/features/i18n/datasets";
+import { useI18n } from "@/features/i18n/i18n";
 import { FieldControl, HelpTooltip } from "@/features/scenarios/FieldControl";
 import { scenarioGroups } from "@/features/scenarios/fields";
 import { type Scenario, type ScenarioChoices, scenarioColor } from "@/features/scenarios/scenario";
@@ -25,6 +27,7 @@ type Props = {
 export function ScenarioEditor({ scenario, datasets, onChange, sliderFooter }: Props) {
   const p = scenario.params;
   const set = (patch: Partial<ScenarioChoices>) => onChange({ ...p, ...patch });
+  const { t } = useI18n();
 
   return (
     <Card className="gap-4">
@@ -35,16 +38,16 @@ export function ScenarioEditor({ scenario, datasets, onChange, sliderFooter }: P
             style={{ background: scenarioColor(scenario) }}
             aria-hidden
           />
-          Scenario settings
+          {t.scenarioEditor.title}
         </CardTitle>
         <CardDescription className="text-sm lg:text-xs">
-          What you choose per scenario. Costs, taxes and the data period are shared.
+          {t.scenarioEditor.description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="space-y-1.5">
           <Label htmlFor="scenario-name" className="text-sm lg:text-xs font-medium">
-            Name
+            {t.scenarioEditor.name}
           </Label>
           <Input
             id="scenario-name"
@@ -55,16 +58,18 @@ export function ScenarioEditor({ scenario, datasets, onChange, sliderFooter }: P
         </div>
 
         <section className="space-y-4">
-          <h3 className="font-hand text-xl leading-none font-bold text-primary">Index</h3>
+          <h3 className="font-hand text-xl leading-none font-bold text-primary">
+            {t.scenarioEditor.index}
+          </h3>
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <Label htmlFor="etf" className="text-sm lg:text-xs font-medium">
-                Index
+                {t.scenarioEditor.index}
               </Label>
               <HelpTooltip
-                label="Index"
-                help="MSCI World: developed markets only (~23 countries, ~70 % USA). MSCI ACWI (≈ FTSE All-World): World + emerging markets. S&P 500: 500 large US companies."
-                recommendation="S&P 500 for the longest history (since 1871, many crashes); MSCI data only starts in 2001."
+                label={t.scenarioEditor.index}
+                help={t.scenarioEditor.indexHelp}
+                recommendation={t.scenarioEditor.indexRecommendation}
               />
             </div>
             <Select value={p.etfId} onValueChange={(etfId) => set({ etfId })}>
@@ -74,7 +79,7 @@ export function ScenarioEditor({ scenario, datasets, onChange, sliderFooter }: P
               <SelectContent>
                 {Object.values(datasets).map((d) => (
                   <SelectItem key={d.id} value={d.id} className="text-sm lg:text-xs">
-                    {d.name}
+                    {dataText(t, d).name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -85,9 +90,9 @@ export function ScenarioEditor({ scenario, datasets, onChange, sliderFooter }: P
         {scenarioGroups.map((group) => {
           const fields = group.fields.filter((f) => !f.visible || f.visible(p));
           return (
-            <section key={group.title} className="space-y-4">
+            <section key={group.id} className="space-y-4">
               <h3 className="font-hand text-xl leading-none font-bold text-primary">
-                {group.title}
+                {t.groups[group.id]}
               </h3>
               {fields.map((field) => (
                 <FieldControl

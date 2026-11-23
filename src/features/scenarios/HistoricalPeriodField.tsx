@@ -1,5 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { dataText } from "@/features/i18n/datasets";
+import { useI18n } from "@/features/i18n/i18n";
 import { HelpTooltip } from "@/features/scenarios/FieldControl";
 import type { SharedSettings } from "@/features/scenarios/scenario";
 import { type Dataset, firstYear, lastYear } from "@/simulation/dataset";
@@ -9,12 +11,13 @@ type Props = {
   datasets: Record<string, Dataset>;
   value: Period;
   onChange: (period: Period) => void;
-  /** First year of the history in the chosen currency, if it starts later (REQ-011-04). */
-  currencyFrom?: { currency: string; year: number };
+  /** First year of the history in euros, when simulating in euros (REQ-011-04). */
+  euroFrom?: number;
 };
 
 /** One historical period for all scenarios, spanning all indices (REQ-002-02). */
-export function HistoricalPeriodField({ datasets, value, onChange, currencyFrom }: Props) {
+export function HistoricalPeriodField({ datasets, value, onChange, euroFrom }: Props) {
+  const { t } = useI18n();
   const all = Object.values(datasets);
   const min = Math.min(...all.map(firstYear));
   const max = Math.max(...all.map(lastYear));
@@ -25,18 +28,18 @@ export function HistoricalPeriodField({ datasets, value, onChange, currencyFrom 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <Label className="text-sm lg:text-xs font-medium">Historical period</Label>
+        <Label className="text-sm lg:text-xs font-medium">{t.historicalPeriod.label}</Label>
         <HelpTooltip
-          label="Historical period"
-          help="Only months inside this period are used to generate paths. Indices with a shorter history use the part of the period they cover."
-          recommendation="The full period: more market regimes make the distribution more robust."
+          label={t.historicalPeriod.label}
+          help={t.historicalPeriod.help}
+          recommendation={t.historicalPeriod.recommendation}
         />
         <span className="ml-auto text-sm lg:text-xs tabular-nums text-muted-foreground">
           {from}–{to}
         </span>
       </div>
       <Slider
-        aria-label="Historical period"
+        aria-label={t.historicalPeriod.label}
         min={min}
         max={max}
         step={1}
@@ -48,12 +51,15 @@ export function HistoricalPeriodField({ datasets, value, onChange, currencyFrom 
       />
       {shortest.length > 0 && (
         <p className="text-xs lg:text-[11px] text-muted-foreground">
-          {shortest.map((d) => `${d.name} from ${firstYear(d)}`).join(", ")}.
+          {shortest
+            .map((d) => t.historicalPeriod.indexFrom(dataText(t, d).name, firstYear(d)))
+            .join(", ")}
+          .
         </p>
       )}
-      {currencyFrom && currencyFrom.year > from && (
+      {euroFrom !== undefined && euroFrom > from && (
         <p className="text-xs lg:text-[11px] text-muted-foreground">
-          In {currencyFrom.currency} from {currencyFrom.year}: earlier months have no exchange rate.
+          {t.historicalPeriod.euroFrom(euroFrom)}
         </p>
       )}
     </div>
