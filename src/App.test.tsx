@@ -1,7 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { App } from "@/App";
-import type { SimulationClient } from "@/features/simulation/client";
+import { browserStorage, saveState } from "@/features/persistence/persistence";
+import { defaultShared, initialScenarios } from "@/features/scenarios/scenario";
+import type { SimulationApi } from "@/features/simulation/client";
+import { defaultGlobal } from "@/simulation/params";
+import { SWEEP_VALUES, type SweepParam } from "@/simulation/sweep";
 
 import msciAcwi from "../public/data/msci-acwi.json?raw";
 import msciWorld from "../public/data/msci-world.json?raw";
@@ -13,12 +17,13 @@ const loadDataset = async (id: string) => JSON.parse(raw[id] ?? "null");
 /** Simulations are covered by engine tests; here they never finish so the UI stays cheap. */
 const idleClient = {
   run: () => new Promise(() => {}),
-  analyze: () => new Promise(() => {}),
-} as unknown as Pick<SimulationClient, "run" | "analyze">;
+  sweep: () => new Promise(() => {}),
+  factors: () => new Promise(() => {}),
+} as unknown as SimulationApi;
 
 beforeEach(() => localStorage.clear());
 
-function renderApp(simulationClient: Pick<SimulationClient, "run" | "analyze"> = idleClient) {
+function renderApp(simulationClient: SimulationApi = idleClient) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
@@ -245,8 +250,9 @@ test("REQ-002-02 shared settings are edited once and apply to all scenarios", as
       calls.push(jobs);
       return new Promise(() => {});
     },
-    analyze: () => new Promise(() => {}),
-  } as unknown as Pick<SimulationClient, "run" | "analyze">;
+    sweep: () => new Promise(() => {}),
+    factors: () => new Promise(() => {}),
+  } as unknown as SimulationApi;
   renderApp(recording);
   const editor = (await screen.findByText("Scenario settings")).closest(
     "[data-slot=card]",
@@ -287,8 +293,9 @@ test("REQ-002-03 the best final value of each percentile is marked", async () =>
   const client = {
     run: (jobs: { key: string }[]) =>
       Promise.resolve(Object.fromEntries(jobs.map((j, i) => [j.key, result(1000 * (i + 1))]))),
-    analyze: () => new Promise(() => {}),
-  } as unknown as Pick<SimulationClient, "run" | "analyze">;
+    sweep: () => new Promise(() => {}),
+    factors: () => new Promise(() => {}),
+  } as unknown as SimulationApi;
   renderApp(client);
   const card = (await screen.findByText(/Final value after taxes — percentiles/)).closest(
     "[data-slot=card]",
@@ -332,8 +339,9 @@ function resolvingClient() {
       calls.push(jobs);
       return Promise.resolve(Object.fromEntries(jobs.map((j) => [j.key, fakeResult()])));
     },
-    analyze: () => new Promise(() => {}),
-  } as unknown as Pick<SimulationClient, "run" | "analyze">;
+    sweep: () => new Promise(() => {}),
+    factors: () => new Promise(() => {}),
+  } as unknown as SimulationApi;
   return { client, calls };
 }
 
@@ -400,40 +408,41 @@ const tabNames = () =>
     .getAllByRole("tab")
     .map((t) => t.textContent);
 
-test("REQ-005-01 dragging a tab onto another moves it there", async () => {
+test("REQ-005-02 / REQ-005-04 there are no move buttons; each tab has a drag handle", async () => {
   renderApp();
-  const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
-  const third = within(tabs).getByRole("tab", { name: /2× with 10-month SMA/ });
-  const first = within(tabs).getByRole("tab", { name: /1× buy and hold/ });
-  const dataTransfer = { setData: () => {}, getData: () => "", effectAllowed: "", dropEffect: "" };
-  fireEvent.dragStart(third, { dataTransfer });
-  fireEvent.dragOver(first, { dataTransfer });
-  fireEvent.drop(first, { dataTransfer });
-  fireEvent.dragEnd(third, { dataTransfer });
-  expect(tabNames()).toEqual(["2× with 10-month SMA", "1× buy and hold", "2× buy and hold"]);
+  await screen.findByRole("tablist", { name: "Scenarios" });
+  expect(screen.queryByRole("button", { name: "Move left" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Move right" })).not.toBeInTheDocument();
+  const handle = screen.getByRole("button", { name: "Reorder 2× buy and hold" });
+  expect(handle).toHaveAttribute("aria-roledescription", "sortable");
+  expect(handle).toHaveAttribute("tabindex", "0");
 });
 
-test("REQ-005-02 move buttons swap the selected scenario with its neighbour", async () => {
+test("REQ-005-05 clicking a tab selects it and moves nothing", async () => {
   renderApp();
-  const left = await screen.findByRole("button", { name: "Move left" });
-  const right = screen.getByRole("button", { name: "Move right" });
-  expect(left).toBeDisabled();
-  fireEvent.click(right);
-  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
-  const tabs = screen.getByRole("tablist", { name: "Scenarios" });
-  expect(within(tabs).getByRole("tab", { selected: true })).toHaveTextContent("1× buy and hold");
-  fireEvent.click(right);
-  expect(right).toBeDisabled();
-  fireEvent.click(left);
-  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
+  const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
+  const second = within(tabs).getByRole("tab", { name: /2× buy and hold/ });
+  fireEvent.mouseDown(second);
+  fireEvent.mouseUp(second);
+  fireEvent.click(second);
+  expect(second).toHaveAttribute("aria-selected", "true");
+  expect(tabNames()).toEqual(["1× buy and hold", "2× buy and hold", "2× with 10-month SMA"]);
 });
 
 test("REQ-005-03 legend and results table follow the scenario order", async () => {
+  const [s1, s2, s3] = initialScenarios();
+  if (!s1 || !s2 || !s3) throw new Error("no scenarios");
+  saveState(browserStorage(), {
+    scenarios: [s2, s1, s3],
+    selectedKey: "s1",
+    global: defaultGlobal,
+    shared: defaultShared,
+  });
   const { client } = resolvingClient();
   renderApp(client);
+  await screen.findByRole("tablist", { name: "Scenarios" });
+  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
   const legend = await screen.findByRole("list", { name: "Legend" });
-  await within(legend).findByText("2× buy and hold");
-  fireEvent.click(screen.getByRole("button", { name: "Move right" }));
   await vi.waitFor(() =>
     expect(
       within(legend)
@@ -450,15 +459,6 @@ test("REQ-005-03 legend and results table follow the scenario order", async () =
         .map((a) => within(a).getByRole("heading").textContent),
     ).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]),
   );
-});
-
-test("REQ-005-03 the order survives a reload", async () => {
-  const first = renderApp();
-  fireEvent.click(await screen.findByRole("button", { name: "Move right" }));
-  first.unmount();
-  renderApp();
-  await screen.findByRole("tablist", { name: "Scenarios" });
-  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
 });
 
 test("REQ-007-01 a chart plots the final value against the percentile for every scenario", async () => {
@@ -502,4 +502,177 @@ test("REQ-007-02 percentiles can be shown as yearly return", async () => {
 
   fireEvent.click(within(unit).getByRole("button", { name: "€" }));
   expect(p50()).toHaveTextContent("€4");
+});
+
+/** Sweeps whose median peaks at the given value of each slider. */
+function sweepingClient(peaks: Record<SweepParam, number>) {
+  const sweepCalls: { param: SweepParam; scenario: Record<string, unknown> }[] = [];
+  const client = {
+    run: (jobs: { key: string }[]) =>
+      Promise.resolve(Object.fromEntries(jobs.map((j) => [j.key, fakeResult()]))),
+    sweep: (_d: unknown, scenario: Record<string, unknown>, _g: unknown, param: SweepParam) => {
+      sweepCalls.push({ param, scenario });
+      const points = SWEEP_VALUES[param].map((value) => {
+        const p50 = 1000 - Math.abs(value - peaks[param]) * 100;
+        return {
+          value,
+          p5: p50 / 4,
+          p10: p50 / 2,
+          p25: p50 * 0.8,
+          p50,
+          p75: p50 * 1.2,
+          p90: p50 * 1.5,
+          p95: p50 * 2,
+          lossProbability: value / 100,
+        };
+      });
+      return Promise.resolve({ param, points, invested: 500, assumed: {} });
+    },
+    factors: () => new Promise(() => {}),
+  } as unknown as SimulationApi;
+  return { client, sweepCalls };
+}
+
+const leverageSlider = () => screen.getByRole("slider", { name: "Leverage factor" });
+
+test("REQ-008-05 explored sliders show their goal curve and apply the best value", async () => {
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  renderApp(client);
+  const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
+  fireEvent.click(within(tabs).getByRole("tab", { name: /2× buy and hold/ }));
+  const insight = await screen.findByTestId("insight-leverage");
+  expect(
+    await within(insight).findByRole("img", {
+      name: "Median by Leverage factor; best at 2.50×",
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByTestId("insight-leveragedShare")).toBeInTheDocument();
+  // SMA window is hidden for buy and hold, so it has no insight here.
+  expect(screen.queryByTestId("insight-smaMonths")).not.toBeInTheDocument();
+  // Monthly investment is not explored.
+  expect(screen.getAllByTestId(/^insight-/)).toHaveLength(2);
+
+  expect(leverageSlider()).toHaveAttribute("aria-valuenow", "2");
+  fireEvent.click(within(insight).getByRole("button", { name: "Use 2.50×" }));
+  expect(leverageSlider()).toHaveAttribute("aria-valuenow", "2.5");
+});
+
+test("REQ-008-05 Explore opens the slider's diagram in the explorer", async () => {
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  renderApp(client);
+  const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
+  fireEvent.click(within(tabs).getByRole("tab", { name: /2× buy and hold/ }));
+  const explorer = screen.getByText(/Value explorer/).closest("[data-slot=card]") as HTMLElement;
+  const sliders = within(explorer).getByRole("tablist", { name: "Explored slider" });
+  // Tabs carry the sliders' own labels.
+  expect(
+    within(sliders)
+      .getAllByRole("tab")
+      .map((t) => t.textContent),
+  ).toEqual(["Share in leveraged ETF", "Leverage factor", "SMA window"]);
+  fireEvent.click(
+    within(await screen.findByTestId("insight-leveragedShare")).getByRole("button", {
+      name: "Explore Share in leveraged ETF",
+    }),
+  );
+  expect(within(sliders).getByRole("tab", { selected: true })).toHaveTextContent(
+    "Share in leveraged ETF",
+  );
+  expect(
+    await within(explorer).findByRole("img", {
+      name: "Final value after taxes by Share in leveraged ETF",
+    }),
+  ).toBeInTheDocument();
+});
+
+test("REQ-008-03 the goal applies to the explorer and the slider curves", async () => {
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  renderApp(client);
+  const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
+  fireEvent.click(within(tabs).getByRole("tab", { name: /2× buy and hold/ }));
+  const explorer = screen.getByText(/Value explorer/).closest("[data-slot=card]") as HTMLElement;
+  expect(await within(explorer).findByTestId("explorer-takeaway")).toHaveTextContent(
+    /2\.50× has the highest median/,
+  );
+  const goals = within(explorer).getByRole("group", { name: "Optimise for" });
+  fireEvent.click(within(goals).getByRole("button", { name: "Chance of loss" }));
+  // Chance of loss grows with the value in the fake sweep, so the lowest factor wins.
+  expect(within(explorer).getByTestId("explorer-takeaway")).toHaveTextContent(
+    /1\.00× has the lowest chance of loss/,
+  );
+  expect(
+    within(screen.getByTestId("insight-leverage")).getByRole("img", {
+      name: "Chance of loss by Leverage factor; best at 1.00×",
+    }),
+  ).toBeInTheDocument();
+});
+
+test("REQ-008-04 the explorer switches between distribution and trade-off diagrams", async () => {
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  renderApp(client);
+  const explorer = (await screen.findByText(/Value explorer/)).closest(
+    "[data-slot=card]",
+  ) as HTMLElement;
+  await within(explorer).findByRole("img", { name: /Final value after taxes by/ });
+  const legend = within(explorer).getByRole("list", { name: "Legend" });
+  for (const label of [/Median/, /P5–P95/, /P10–P90/, /P25–P75/, /Paid in/])
+    expect(legend).toHaveTextContent(label);
+  fireEvent.click(within(explorer).getByRole("button", { name: "Trade-off" }));
+  expect(
+    within(explorer).getByRole("img", { name: /Median against chance of loss by/ }),
+  ).toBeInTheDocument();
+});
+
+test("REQ-009-01 a status that stays in view says what is running", async () => {
+  renderApp();
+  await screen.findByRole("tablist", { name: "Scenarios" });
+  const status = await vi.waitFor(() => {
+    const s = screen
+      .getAllByRole("status")
+      .find((el) => /Simulating 3 scenarios/.test(el.textContent ?? ""));
+    if (!s) throw new Error("no status");
+    return s;
+  });
+  expect(status.className).toMatch(/fixed/);
+});
+
+test("REQ-009-01 the status disappears when everything is up to date", async () => {
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  const done = { ...client, factors: () => Promise.resolve({ baseline: 1, factors: [] }) };
+  renderApp(done as unknown as SimulationApi);
+  await screen.findByTestId("explorer-takeaway");
+  await vi.waitFor(() =>
+    expect(
+      screen.getAllByRole("status").some((el) => /Simulating|Analysing/.test(el.textContent ?? "")),
+    ).toBe(false),
+  );
+});
+
+test("REQ-009-02 results stay visible but marked while they are recalculated", async () => {
+  let release: () => void = () => {};
+  let calls = 0;
+  const client = {
+    run: (jobs: { key: string }[]) => {
+      calls++;
+      const value = Object.fromEntries(jobs.map((j) => [j.key, fakeResult()]));
+      if (calls === 1) return Promise.resolve(value);
+      return new Promise((resolve) => {
+        release = () => resolve(value);
+      });
+    },
+    sweep: () => new Promise(() => {}),
+    factors: () => new Promise(() => {}),
+  } as unknown as SimulationApi;
+  renderApp(client);
+  const card = await resultsCard();
+  await within(card).findAllByRole("article");
+  await vi.waitFor(() => expect(within(card).queryByText("Updating")).not.toBeInTheDocument());
+  fireEvent.click(screen.getByRole("switch", { name: "Apply German taxes" }));
+  expect(await within(card).findByText("Updating")).toBeInTheDocument();
+  expect(card.querySelector("[aria-busy=true]")).not.toBeNull();
+  // The previous results are still there.
+  expect(within(card).getAllByRole("article")).toHaveLength(3);
+  await vi.waitFor(() => expect(calls).toBe(2));
+  release();
+  await vi.waitFor(() => expect(within(card).queryByText("Updating")).not.toBeInTheDocument());
 });

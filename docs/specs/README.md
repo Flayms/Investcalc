@@ -13,6 +13,8 @@ One folder per feature: `docs/specs/NNN-name/` with `spec.md` and, for tier 3 wo
 | [005-scenario-order](005-scenario-order/spec.md)                     | UI: reorder scenarios                                 | Implemented |
 | [006-market-history](006-market-history/spec.md)                     | Market: time frame, bear/bull markets, indicators     | Implemented |
 | [007-final-value-distribution](007-final-value-distribution/spec.md) | UI: final value vs. percentile chart, % p.a. unit     | Implemented |
+| [008-value-explorer](008-value-explorer/spec.md)                     | Best value of leverage, share and SMA sliders         | Implemented |
+| [009-simulation-feedback](009-simulation-feedback/spec.md)           | UI: visible progress, stale results, skipped work     | Implemented |
 
 ## Conventions
 

@@ -41,7 +41,9 @@ results easier to read.
 - **And** on small screens, where results are shown as one card per scenario, the same shading and marks apply to the percentiles in the cards
 - **And** with a single scenario no shading is applied
 
-### REQ-002-04 Leverage explorer explains itself
+### REQ-002-04 Leverage explorer explains itself (deprecated)
+
+> Deprecated by REQ-008-02 – REQ-008-04: the value explorer states the best value in plain words, no longer assumes 100 % leveraged and explains any assumption it has to make.
 
 - **Given** the leverage explorer of the selected scenario has results
 - **When** it is shown
@@ -76,5 +78,5 @@ results easier to read.
 | REQ-002-01 | `persistence.test.ts` › REQ-002-01 (round trip, missing, invalid, other version); `scenario.test.ts` › new keys never collide; `App.test.tsx` › REQ-002-01 (restored after remount, corrupt state); e2e `REQ-002-01 scenarios survive a page reload` | pass   |
 | REQ-002-02 | `scenario.test.ts` › REQ-002-02 merges shared settings; `App.test.tsx` › REQ-002-02 shared settings apply to all scenarios                                                                                                                           | pass   |
 | REQ-002-03 | `heatmap.test.ts` › REQ-002-03; `App.test.tsx` › REQ-002-03 best value marked per percentile (table and cards)                                                                                                                                       | pass   |
-| REQ-002-04 | `AnalysisCards.test.tsx` › REQ-002-04 (takeaway vs 1×, 100 % note, legend incl. paid in); axis labels and paid-in line checked in `docs/screenshots/home.png`                                                                                        | pass   |
+| REQ-002-04 | deprecated → REQ-008-03, REQ-008-04                                                                                                                                                                                                                  | –      |
 | REQ-002-05 | `App.test.tsx` › REQ-002-05 market and data basis on their own view; e2e `REQ-002-05 …`                                                                                                                                                              | pass   |

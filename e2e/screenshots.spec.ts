@@ -10,6 +10,12 @@ type Shot = {
   hide?: string;
   frame?: string;
   unit?: string;
+  /** Scenario to select before the shot. */
+  select?: string;
+  /** Only the value explorer, in this diagram. */
+  explorer?: "Distribution" | "Trade-off";
+  /** Only the scenario settings card. */
+  settings?: boolean;
 };
 
 const shots: Shot[] = [
@@ -18,28 +24,59 @@ const shots: Shot[] = [
   { name: "home-mobile", device: iPhone },
   { name: "scenario-hidden", device: desktop, hide: "2× buy and hold" },
   { name: "results-yearly-return", device: desktop, unit: "% p.a." },
+  {
+    name: "value-explorer",
+    device: desktop,
+    select: "2× buy and hold",
+    explorer: "Distribution",
+  },
+  {
+    name: "value-explorer-tradeoff",
+    device: desktop,
+    select: "2× buy and hold",
+    explorer: "Trade-off",
+  },
+  { name: "slider-insight", device: desktop, select: "2× buy and hold", settings: true },
   { name: "market", device: desktop, view: "Market & data" },
   { name: "market-history", device: desktop, view: "Market & data", frame: "Max" },
 ];
 
-for (const { name, device, view, hide, frame, unit } of shots) {
+for (const { name, device, view, hide, frame, unit, select, explorer, settings } of shots) {
   test.describe(name, () => {
     test.use(device);
     test(`screenshot: ${name}`, async ({ page }) => {
       await page.goto("/");
       if (hide) await page.getByRole("button", { name: `Show ${hide}` }).click();
+      if (select)
+        await page
+          .getByRole("tablist", { name: "Scenarios" })
+          .getByRole("tab", { name: select })
+          .click();
       if (view) {
         await page.getByRole("tab", { name: view }).click();
         await expect(page.getByText("Data basis")).toBeVisible();
         if (frame) await page.getByRole("tab", { name: frame, exact: true }).click();
       } else {
         // Wait for the simulation and the analysis of the selected scenario.
-        await expect(page.getByTestId("leverage-takeaway")).toBeVisible({ timeout: 60_000 });
-        await expect(page.getByText("Simulating…").first()).toBeHidden({ timeout: 60_000 });
+        await expect(page.getByTestId("explorer-takeaway")).toBeVisible({ timeout: 60_000 });
+        await expect(
+          page.getByRole("status").filter({ hasText: /Simulating|Analysing/ }),
+        ).toHaveCount(0, { timeout: 60_000 });
         if (unit) await page.getByRole("button", { name: unit, exact: true }).click();
         await page.mouse.move(0, 0);
       }
-      await page.screenshot({ path: `docs/screenshots/${name}.png`, fullPage: true });
+      const path = `docs/screenshots/${name}.png`;
+      if (explorer) {
+        const card = page.locator("#value-explorer");
+        await card.getByRole("button", { name: explorer }).click();
+        await card.screenshot({ path });
+      } else if (settings) {
+        await page
+          .locator("[data-slot=card]", { hasText: "Scenario settings" })
+          .screenshot({ path });
+      } else {
+        await page.screenshot({ path, fullPage: true });
+      }
     });
   });
 }

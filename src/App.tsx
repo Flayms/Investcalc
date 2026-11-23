@@ -1,9 +1,11 @@
-import { LoaderCircleIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DataBasisCard } from "@/features/data/DataBasisCard";
 import { type DatasetLoader, fetchDataset, useDatasets } from "@/features/data/useDatasets";
+import { EXPLORED, isExplored } from "@/features/explorer/explored";
+import { SliderInsight } from "@/features/explorer/SliderInsight";
+import { type ExplorerView, ValueExplorer } from "@/features/explorer/ValueExplorer";
 import { type MobileView, MobileViewSwitch } from "@/features/layout/MobileViewSwitch";
 import { MarketView } from "@/features/market/MarketView";
 import {
@@ -12,7 +14,7 @@ import {
   type PersistedState,
   saveState,
 } from "@/features/persistence/persistence";
-import { FactorImpactCard, LeverageExplorer } from "@/features/results/AnalysisCards";
+import { FactorImpactCard } from "@/features/results/AnalysisCards";
 import { FanChart } from "@/features/results/FanChart";
 import { ResultsTable } from "@/features/results/ResultsTable";
 import { GlobalSettingsCard } from "@/features/scenarios/GlobalSettingsCard";
@@ -30,18 +32,21 @@ import {
   type ResolvedScenario,
   type Scenario,
   type ScenarioChoices,
+  scenarioColor,
   toParams,
 } from "@/features/scenarios/scenario";
-import type { SimulationClient } from "@/features/simulation/client";
+import type { SimulationApi } from "@/features/simulation/client";
+import { SimulationStatus, statusText } from "@/features/simulation/SimulationStatus";
 import { useSimulation } from "@/features/simulation/useSimulation";
 import { ThemeToggle } from "@/features/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { defaultGlobal } from "@/simulation/params";
+import type { Goal, SweepParam } from "@/simulation/sweep";
 
 type AppProps = {
   loadDataset?: DatasetLoader;
   /** Injected in tests; defaults to a Web Worker client. */
-  simulationClient?: Pick<SimulationClient, "run" | "analyze">;
+  simulationClient?: SimulationApi;
 };
 
 function initialState(): PersistedState {
@@ -80,7 +85,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
     () => ({ ...selected, params: toParams(selected.params, shared) }),
     [selected, shared],
   );
-  const { results, running, analysis, analysing } = useSimulation(
+  const { results, sweeps, factors, pending } = useSimulation(
     datasets.data,
     resolved,
     resolvedSelected,
@@ -102,6 +107,43 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
     setScenarios(rest);
     if (rest[0]) setSelectedKey(rest[0].key);
   };
+  const running = pending.run;
+  const [goal, setGoal] = useState<Goal>("median");
+  const [explorerParam, setExplorerParam] = useState<SweepParam>("leverage");
+  const [explorerView, setExplorerView] = useState<ExplorerView>("distribution");
+  const [explorerHighlight, setExplorerHighlight] = useState(false);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  /** Opens a slider's diagram in the value explorer and brings it into view (REQ-008-05). */
+  const explore = (param: SweepParam) => {
+    setExplorerParam(param);
+    setMobileView("results");
+    setExplorerHighlight(true);
+    clearTimeout(highlightTimer.current);
+    highlightTimer.current = setTimeout(() => setExplorerHighlight(false), 1500);
+    requestAnimationFrame(() =>
+      document
+        .getElementById("value-explorer")
+        ?.scrollIntoView?.({ behavior: "smooth", block: "start" }),
+    );
+  };
+  const applyValue = (param: SweepParam, value: number) =>
+    updateSelected({ ...selected.params, [param]: value });
+  const sliderFooter = (key: keyof ScenarioChoices) => {
+    if (!isExplored(key)) return undefined;
+    return (
+      <SliderInsight
+        slider={EXPLORED[key]}
+        sweep={sweeps[key]}
+        goal={goal}
+        updating={pending.sweeps[key]}
+        value={selected.params[key]}
+        color={scenarioColor(selected)}
+        onApply={(v) => applyValue(key, v)}
+        onExplore={() => explore(key)}
+      />
+    );
+  };
+  const status = statusText(pending, resolved.length, selected.params.name);
   const anyLeveraged = scenarios.some((s) => s.params.leveragedShare > 0);
 
   return (
@@ -123,14 +165,6 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
               <TabsTrigger value="market">Market & data</TabsTrigger>
             </TabsList>
             <div className="ml-auto flex items-center gap-3">
-              {running && (
-                <span
-                  className="hidden lg:flex items-center gap-1.5 text-sm text-muted-foreground"
-                  role="status"
-                >
-                  <LoaderCircleIcon className="size-3.5 animate-spin" aria-hidden /> Simulating…
-                </span>
-              )}
               <ThemeToggle />
             </div>
           </div>
@@ -180,6 +214,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                     scenario={selected}
                     datasets={datasets.data}
                     onChange={updateSelected}
+                    sliderFooter={sliderFooter}
                   />
                   <SharedSettingsCard
                     shared={shared}
@@ -193,26 +228,37 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                     mobileView === "settings" && "hidden lg:flex",
                   )}
                 >
-                  <FanChart scenarios={resolved} results={results} selectedKey={selected.key} />
+                  <FanChart
+                    scenarios={resolved}
+                    results={results}
+                    selectedKey={selected.key}
+                    updating={running}
+                  />
                   <ResultsTable
                     scenarios={resolved}
                     results={results}
                     selectedKey={selected.key}
                     horizonYears={global.horizonYears}
+                    updating={running}
                   />
-                  <div className="grid gap-4 sm:gap-6 xl:grid-cols-2">
-                    <LeverageExplorer
-                      scenario={resolvedSelected}
-                      analysis={analysis}
-                      loading={analysing}
-                      invested={results[selected.key]?.invested}
-                    />
-                    <FactorImpactCard
-                      scenario={resolvedSelected}
-                      analysis={analysis}
-                      loading={analysing}
-                    />
-                  </div>
+                  <ValueExplorer
+                    scenario={resolvedSelected}
+                    sweeps={sweeps}
+                    pending={pending.sweeps}
+                    param={explorerParam}
+                    onParamChange={setExplorerParam}
+                    goal={goal}
+                    onGoalChange={setGoal}
+                    onApply={applyValue}
+                    highlight={explorerHighlight}
+                    view={explorerView}
+                    onViewChange={setExplorerView}
+                  />
+                  <FactorImpactCard
+                    scenario={resolvedSelected}
+                    factors={factors}
+                    updating={pending.factors}
+                  />
                 </div>
               </main>
             </TabsContent>
@@ -225,6 +271,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
           </>
         )}
       </Tabs>
+      <SimulationStatus text={status} />
     </TooltipProvider>
   );
 }

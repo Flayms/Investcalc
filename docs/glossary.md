@@ -20,6 +20,10 @@ Domain terms used in code, specs and tests. Use these names consistently.
 | Net worth             | Holdings + cash − loan − unpaid taxes at a point in time, before the final sale                        | Final value after tax   |
 | Final value after tax | Net worth after selling everything at the end and paying all taxes                                     | Net worth               |
 | Distribution          | Final value after tax at every percentile from P1 to P99, plotted against the percentile               | Percentile band         |
+| Sweep                 | Simulations of one scenario for every value of one slider, all else unchanged, on the same paths       | Simulation              |
+| Value explorer        | View of a sweep: distribution and trade-off diagrams, the best value for the chosen goal               | Factor impact           |
+| Goal                  | What "best" means in the value explorer: highest median, best bad case (P10) or lowest chance of loss  | Strategy                |
+| Chance of loss        | Share of paths whose final value after tax is below the amount paid in (P(loss))                       |                         |
 | Yearly return (p.a.)  | Money-weighted yearly return that turns the amount paid in into a given final value                    | CAGR of the index       |
 
 ## Investing

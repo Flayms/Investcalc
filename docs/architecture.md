@@ -9,9 +9,10 @@ Static single-page app, no backend. Simulations run entirely in the browser, off
   - `sampling.ts` historical windows + stationary block bootstrap, `rng.ts` seeded PRNG
   - `leverage.ts` daily-reset leveraged return (volatility drag, financing), `tax.ts` German tax rules
   - `portfolio.ts` month-by-month simulation of one path (contributions, funds, cash, loan, taxes, strategy)
-  - `simulate.ts` builds paths from a dataset and aggregates percentiles (bands over time, final value at P1–P99), leverage sweep, factor impact
-  - `protocol.ts` / `worker.ts` messages between UI and Web Worker; `market.ts` market phase, chart series per time frame, period statistics, bear/bull markets and key indicators
-- `src/features/` — UI by feature: `data` (loading, data basis), `scenarios` (settings, field metadata with tooltips and recommendations), `simulation` (worker client, hook), `results` (charts, tables, heatmap shading; the € / % p.a. unit of the percentiles is local UI state, the yearly return is derived in `annualReturn.ts`), `market` (`MarketView` holds the selected index and time frame shared by the status and the bear/bull market cards), `persistence` (dashboard state in `localStorage`), `theme` (light/dark switch, stored in `localStorage`, defaulting to the system preference).
+  - `simulate.ts` builds paths from a dataset and aggregates percentiles (bands over time, final value at P1–P99), factor impact
+  - `sweep.ts` sweeps one slider (leveraged share, leverage factor, SMA window) over its range on the same paths and picks the best value for a goal
+  - `protocol.ts` / `worker.ts` messages between UI and Web Worker (`run`, `sweep`, `factors`); `market.ts` market phase, chart series per time frame, period statistics, bear/bull markets and key indicators
+- `src/features/` — UI by feature: `data` (loading, data basis), `scenarios` (settings, drag-and-drop scenario bar with @dnd-kit, field metadata with tooltips and recommendations), `simulation` (worker client with a queue that drops superseded requests and runs the scenario simulation before analyses; hook keeping previous results while recalculating; floating status), `explorer` (value explorer card and the small goal curve under each explored slider; both share the slider's label, icon and range from `fields.ts`), `results` (charts, tables, heatmap shading; the € / % p.a. unit of the percentiles is local UI state, the yearly return is derived in `annualReturn.ts`), `market` (`MarketView` holds the selected index and time frame shared by the status and the bear/bull market cards), `persistence` (dashboard state in `localStorage`), `theme` (light/dark switch, stored in `localStorage`, defaulting to the system preference).
   - A scenario in the UI only holds the user's _choices_ (`ScenarioChoices`); _shared settings_ (data period, product and trading costs, taxes) are kept once and merged with `toParams` into the engine's `ScenarioParams` before simulating. _Hidden_ scenarios (`hidden: true`) are filtered out before that, so they are neither simulated nor shown. The engine itself is unaware of the split.
   - The dashboard state (scenarios, selection, simulation and shared settings) is saved to `localStorage` on every change, versioned and validated with Zod on load; invalid state falls back to the defaults.
 - `scripts/fetch-data.ts` — downloads the historical data into `public/data/*.json` (committed).
@@ -41,6 +42,7 @@ flowchart LR
 | Tooling | Biome                   | Lint + format                                                    |
 | Tooling | Vitest                  | Unit testing                                                     |
 | Tooling | Playwright              | Browser testing and README/PR screenshots                        |
+| UI      | @dnd-kit                | Sortable scenario tabs (mouse, touch, keyboard)                  |
 | Misc    | TanStack Query          | Loading and caching ETF return data                              |
 | Misc    | Zod                     | Validating loaded data, strategy parameters and URL-shared state |
 
