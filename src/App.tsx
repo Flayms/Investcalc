@@ -80,7 +80,6 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
       scenarios.filter((s) => !s.hidden).map((s) => ({ ...s, params: toParams(s.params, shared) })),
     [scenarios, shared],
   );
-  // Memoised on its own so editing another scenario does not re-run the analysis.
   const resolvedSelected = useMemo<ResolvedScenario>(
     () => ({ ...selected, params: toParams(selected.params, shared) }),
     [selected, shared],
@@ -107,7 +106,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
     setScenarios(rest);
     if (rest[0]) setSelectedKey(rest[0].key);
   };
-  const running = pending.run;
+  const running = pending.run.length > 0;
   const [goal, setGoal] = useState<Goal>("median");
   const [explorerParam, setExplorerParam] = useState<SweepParam>("leverage");
   const [explorerView, setExplorerView] = useState<ExplorerView>("distribution");
@@ -143,7 +142,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
       />
     );
   };
-  const status = statusText(pending, resolved.length, selected.params.name);
+  const status = statusText(pending, selected.params.name);
   const anyLeveraged = scenarios.some((s) => s.params.leveragedShare > 0);
 
   return (
@@ -239,7 +238,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                     results={results}
                     selectedKey={selected.key}
                     horizonYears={global.horizonYears}
-                    updating={running}
+                    updating={pending.run}
                   />
                   <ValueExplorer
                     scenario={resolvedSelected}

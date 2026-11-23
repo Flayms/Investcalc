@@ -13,13 +13,17 @@ export function UpdatingBadge({ updating }: { updating: boolean }) {
   );
 }
 
+/** Dims content that is being recalculated (REQ-009-02). */
+export const staleClass = (updating: boolean) =>
+  cn("transition-opacity duration-300", updating && "opacity-50");
+
 /** Keeps the previous content visible but dimmed while it is recalculated (REQ-009-02). */
 export function Stale({ updating, children }: { updating: boolean; children: ReactNode }) {
   return (
     <div
       aria-busy={updating}
       data-updating={updating || undefined}
-      className={cn("transition-opacity duration-300", updating && "opacity-50")}
+      className={staleClass(updating)}
     >
       {children}
     </div>
