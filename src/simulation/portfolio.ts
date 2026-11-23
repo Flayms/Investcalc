@@ -7,6 +7,8 @@ export type PathMonth = MonthMarket & {
   fx?: number;
   /** Annualised rate earned on cash; defaults to `rate`. */
   cashRate?: number;
+  /** Change of consumer prices in the investor's currency this month. */
+  inflation?: number;
 };
 
 export type PathResult = {
@@ -16,6 +18,8 @@ export type PathResult = {
   finalAfterTax: number;
   /** Own money paid in (initial investment + contributions). */
   invested: number;
+  /** Own money paid in by the end of each month (index 0 = start). */
+  paidIn: Float64Array;
   fees: number;
   taxes: number;
 };
@@ -102,6 +106,11 @@ export function simulatePath(
   let fees = 0;
   let taxes = 0;
   let lossCarry = 0;
+  // Price level relative to the start; amounts are reported in purchasing power at the start when
+  // inflation-adjusted (REQ-013-01). Taxes and the simulation itself stay nominal (REQ-013-04).
+  let price = 1;
+  const report = (amount: number) => (p.inflationAdjusted ? amount / price : amount);
+  let paid = p.initialInvestment;
   let yearFundGains = 0;
   let yearInterest = 0;
   let inMarket = p.strategy === "buyAndHold" || aboveSma(warmup - 1);
@@ -128,7 +137,7 @@ export function simulatePath(
       cash -= amount;
       f.value += amount - cost;
       f.basis += amount;
-      fees += cost;
+      fees += report(cost);
     }
   };
 
@@ -139,7 +148,7 @@ export function simulatePath(
       const proceeds = f.value - cost;
       yearFundGains += proceeds - f.basis - f.vapTaxed;
       cash += proceeds;
-      fees += cost;
+      fees += report(cost);
       f.value = 0;
       f.basis = 0;
       f.vapTaxed = 0;
@@ -155,7 +164,7 @@ export function simulatePath(
       tax,
     );
     lossCarry = result.lossCarry;
-    taxes += result.tax;
+    taxes += report(result.tax);
     const paid = Math.min(cash, result.tax);
     cash -= paid;
     taxDebt += result.tax - paid;
@@ -168,11 +177,13 @@ export function simulatePath(
   };
 
   const netWorth = new Float64Array(horizon + 1);
-  const worth = () => fund1x.value + fundLev.value + cash - loan - taxDebt;
+  const paidIn = new Float64Array(horizon + 1);
+  const worth = () => report(fund1x.value + fundLev.value + cash - loan - taxDebt);
 
   if (inMarket) invest();
   for (const f of funds) f.yearStartValue = f.value;
   netWorth[0] = worth();
+  paidIn[0] = paid;
 
   for (let m = 1; m <= horizon; m++) {
     const k = warmup + m - 1;
@@ -181,6 +192,8 @@ export function simulatePath(
 
     // Start of month: contribution, then debts, then invest.
     cash += p.monthlyContribution;
+    paid += report(p.monthlyContribution);
+    paidIn[m] = paid;
     const debtPaid = Math.min(cash, taxDebt);
     cash -= debtPaid;
     taxDebt -= debtPaid;
@@ -205,6 +218,7 @@ export function simulatePath(
     const interest = (cash * (month.cashRate ?? month.rate)) / 12;
     cash += interest;
     yearInterest += interest;
+    price *= 1 + (month.inflation ?? 0);
 
     // End of month: timing signal, year end, final liquidation.
     if (p.strategy === "sma") {
@@ -232,8 +246,9 @@ export function simulatePath(
 
   return {
     netWorth,
-    finalAfterTax: cash - loan - taxDebt,
-    invested: p.initialInvestment + p.monthlyContribution * horizon,
+    finalAfterTax: report(cash - loan - taxDebt),
+    invested: paid,
+    paidIn,
     fees,
     taxes,
   };

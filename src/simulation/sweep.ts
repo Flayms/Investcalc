@@ -1,8 +1,8 @@
 import type { Dataset } from "@/simulation/dataset";
 import { type GlobalSettings, type ScenarioParams, WARMUP_MONTHS } from "@/simulation/params";
 import { simulatePath } from "@/simulation/portfolio";
-import { buildPaths, pathOptions } from "@/simulation/simulate";
-import { percentile } from "@/simulation/stats";
+import { buildPaths, lossShare, pathOptions } from "@/simulation/simulate";
+import { median, percentile } from "@/simulation/stats";
 
 /** Sliders the value explorer can sweep (REQ-008-01). */
 export type SweepParam = "leveragedShare" | "leverage" | "smaMonths";
@@ -71,7 +71,7 @@ export function sweepParameter(
   let invested = 0;
   const simulate = (params: ScenarioParams, value: number): SweepPoint => {
     const results = paths.map((path) => simulatePath(path, WARMUP_MONTHS, params, options));
-    invested = results[0]?.invested ?? 0;
+    invested = median(results.map((r) => r.invested));
     const finals = Float64Array.from(results, (r) => r.finalAfterTax).sort();
     const at = (p: number) => percentile(finals, p);
     return {
@@ -83,7 +83,7 @@ export function sweepParameter(
       p75: at(0.75),
       p90: at(0.9),
       p95: at(0.95),
-      lossProbability: finals.filter((f) => f < invested).length / finals.length,
+      lossProbability: lossShare(results),
     };
   };
   const base = { ...s, ...assumed };

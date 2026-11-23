@@ -1,6 +1,6 @@
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
-import { annualReturn } from "@/features/results/annualReturn";
+import { yearlyReturn } from "@/features/results/annualReturn";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
 import { formatEuro, formatEuroCompact, formatPercent } from "@/lib/format";
 import { DISTRIBUTION_PERCENTILES, type ScenarioResult } from "@/simulation/simulate";
@@ -30,9 +30,10 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
   const rows: Row[] = DISTRIBUTION_PERCENTILES.map((p, i) => {
     const row = { p } as Row;
     for (const s of shown) {
-      const v = results[s.key]?.distribution?.[i];
-      if (v === undefined) continue;
-      row[s.key] = pa ? annualReturn(v, s.params, horizonYears) : v;
+      const r = results[s.key];
+      const v = r?.distribution?.[i];
+      if (!r || v === undefined) continue;
+      row[s.key] = pa ? yearlyReturn(v, s.params, r.invested, horizonYears) : v;
     }
     return row;
   });

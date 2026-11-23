@@ -62,3 +62,9 @@ test("REQ-011-06 state saved before the currency setting loads with the euro", (
   localStorage.setItem("investcalc:state", JSON.stringify({ ...state(), version: 1, shared }));
   expect(loadState(localStorage)?.shared.currency).toBe("EUR");
 });
+
+test("REQ-013-06 state saved before the inflation setting loads with it switched on", () => {
+  const { inflationAdjusted: _, ...shared } = state().shared;
+  localStorage.setItem("investcalc:state", JSON.stringify({ ...state(), version: 1, shared }));
+  expect(loadState(localStorage)?.shared.inflationAdjusted).toBe(true);
+});

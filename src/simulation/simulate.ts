@@ -12,6 +12,8 @@ export type Band = {
   p50: number;
   p75: number;
   p90: number;
+  /** Average own money paid in by this month (inflation-adjusted when the results are). */
+  paid: number;
 };
 
 export type FinalPercentiles = {
@@ -37,6 +39,13 @@ export type ScenarioResult = {
   medianFees: number;
   medianTaxes: number;
 };
+
+/**
+ * Share of paths ending below their own money paid in. Inflation-adjusted, each path has its own
+ * real amount paid in (REQ-013-03).
+ */
+export const lossShare = (results: PathResult[]) =>
+  results.filter((r) => r.finalAfterTax < r.invested).length / results.length;
 
 export const pathOptions = (dataset: Dataset) => ({
   signalLagMonths: dataset.priceType === "average" ? 1 : 0,
@@ -67,6 +76,7 @@ export function buildPaths(dataset: Dataset, s: ScenarioParams, g: GlobalSetting
       variance: dataset.variance[i] ?? 0,
       fx: dataset.fx?.[i] ?? 0,
       cashRate: dataset.cashRates?.[i] ?? dataset.rates[i] ?? 0,
+      inflation: dataset.inflation[i] ?? 0,
     });
   }
   const pick = (indices: number[]) => indices.map((i) => history[i] as PathMonth);
@@ -140,27 +150,33 @@ export function runScenario(
   }
   const options = pathOptions(dataset);
   const results: PathResult[] = paths.map((path) => simulatePath(path, WARMUP_MONTHS, s, options));
-  const first = results[0];
-  if (!first) throw new Error("no paths");
+  if (results.length === 0) throw new Error("no paths");
   const horizon = g.horizonYears * 12;
   const column = new Float64Array(results.length);
+  // Paid in only differs between paths when it is inflation-adjusted; then the average is shown.
+  const firstPaid = results[0]?.paidIn;
   const bands: Band[] = [];
   for (let m = 0; m <= horizon; m++) {
-    results.forEach((r, i) => {
-      column[i] = r.netWorth[m] ?? 0;
-    });
-    const sorted = sortedCopy(column);
+    for (let i = 0; i < results.length; i++) column[i] = results[i]?.netWorth[m] ?? 0;
+    column.sort();
+    let paid = firstPaid?.[m] ?? 0;
+    if (s.inflationAdjusted) {
+      paid = 0;
+      for (const r of results) paid += r.paidIn[m] ?? 0;
+      paid /= results.length;
+    }
     bands.push({
       month: m,
-      p10: percentile(sorted, 0.1),
-      p25: percentile(sorted, 0.25),
-      p50: percentile(sorted, 0.5),
-      p75: percentile(sorted, 0.75),
-      p90: percentile(sorted, 0.9),
+      paid,
+      p10: percentile(column, 0.1),
+      p25: percentile(column, 0.25),
+      p50: percentile(column, 0.5),
+      p75: percentile(column, 0.75),
+      p90: percentile(column, 0.9),
     });
   }
   const finals = results.map((r) => r.finalAfterTax);
-  const invested = first.invested;
+  const invested = median(results.map((r) => r.invested));
   const sortedFinals = sortedCopy(finals);
   return {
     pathCount: results.length,
@@ -169,7 +185,7 @@ export function runScenario(
     final: finalPercentiles(finals),
     distribution: DISTRIBUTION_PERCENTILES.map((p) => percentile(sortedFinals, p / 100)),
     invested,
-    probabilityOfLoss: finals.filter((f) => f < invested).length / finals.length,
+    probabilityOfLoss: lossShare(results),
     medianFees: median(results.map((r) => r.fees)),
     medianTaxes: median(results.map((r) => r.taxes)),
   };

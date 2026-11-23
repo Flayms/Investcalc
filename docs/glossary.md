@@ -40,6 +40,8 @@ Domain terms used in code, specs and tests. Use these names consistently.
 | Leverage factor         | Daily-reset multiple L of the index return a leveraged ETF targets                                           | Effective leverage of a mix     |
 | Volatility drag         | Loss of a daily-reset leveraged ETF in volatile markets, ≈ (L²−L)/2 × realised variance                      | TER                             |
 | Realised variance       | Sum of a month's squared daily log returns; drives the volatility drag                                       | Volatility (of monthly returns) |
+| Inflation-adjusted      | Amount expressed in purchasing power at the start of the investment (divided by the price rise since then)   | Nominal                         |
+| Gross / net return      | Total return with dividends before / after withholding tax; ETFs earn roughly the net return                 | Price return                    |
 | Currency effect         | Change of the dollar's value in euros in a month; applied once to every fund in euro simulations             | Volatility drag                 |
 | Euro short rate         | German 3-month money market rate (euro area after 1999); earned on cash in euro simulations                  | Short rate                      |
 | US total market         | All listed US stocks, value weighted (CRSP via Kenneth French's data library), since 1926                    | S&P 500                         |

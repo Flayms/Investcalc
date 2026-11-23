@@ -71,6 +71,19 @@ test("REQ-011-01 scenarios are simulated in euros by default", async () => {
   expect(currency).toHaveTextContent("Euro");
 });
 
+test("REQ-013-01 results are inflation-adjusted by default and can be switched to nominal", async () => {
+  const { client } = resolvingClient();
+  renderApp(client);
+  const toggle = await screen.findByRole("switch", { name: "Adjust for inflation" });
+  expect(toggle).toBeChecked();
+  expect(
+    (await screen.findAllByText(/amounts in purchasing power at the start/)).length,
+  ).toBeGreaterThanOrEqual(2);
+  fireEvent.click(toggle);
+  expect(toggle).not.toBeChecked();
+  expect(screen.queryByText(/amounts in purchasing power at the start/)).not.toBeInTheDocument();
+});
+
 test("REQ-011-04 the historical period says from when the history in euros starts", async () => {
   renderApp();
   expect(await screen.findByText(/In euros from 1960/)).toBeInTheDocument();
@@ -84,6 +97,18 @@ test("REQ-011-07 the data basis names the exchange rate and euro short rate sour
   expect(within(card).getByText(/Bundesbank/)).toBeInTheDocument();
   expect(within(card).getByText(/ECB/)).toBeInTheDocument();
   expect(within(card).getByText(/3-month money market rate/)).toBeInTheDocument();
+});
+
+test("REQ-012-01 MSCI World starts in 1970 and MSCI ACWI in 1988", async () => {
+  renderApp();
+  await openMarketAndData();
+  const heading = await screen.findByText("Data basis");
+  const table = within(heading.closest("[data-slot=card]") as HTMLElement).getByRole("table");
+  const world = within(table).getByRole("row", { name: /^MSCI World/ });
+  expect(within(world).getByText(/^1970-01 –/)).toBeInTheDocument();
+  expect(within(world).getByText("1990-07")).toBeInTheDocument();
+  const acwi = within(table).getByRole("row", { name: /^MSCI ACWI/ });
+  expect(within(acwi).getByText(/^1988-01 –/)).toBeInTheDocument();
 });
 
 test("REQ-010-03 the data basis lists the US total market from 1926-07", async () => {
@@ -106,8 +131,7 @@ test("REQ-010-02 the data basis states from which month daily data is used", asy
   expect(within(table).getByRole("columnheader", { name: "Daily data from" })).toBeInTheDocument();
   const sp = within(table).getByRole("row", { name: /^S&P 500/ });
   expect(within(sp).getByText("1926-07")).toBeInTheDocument();
-  const world = within(table).getByRole("row", { name: /^MSCI World/ });
-  expect(within(world).getByText("2001-01")).toBeInTheDocument();
+  expect(within(table).getAllByRole("cell", { name: /^\d{4}-\d{2}$/ }).length).toBe(4);
 });
 
 test("REQ-001-15 scenarios can be duplicated, renamed and removed", async () => {
@@ -185,7 +209,7 @@ test("REQ-006-01 time frames longer than the history cannot be picked", async ()
   await openMarketAndData();
   await screen.findByRole("tablist", { name: "Time frame" });
   expect(screen.getByRole("tab", { name: "50Y" })).toBeEnabled();
-  pickTab("Index", "MSCI World");
+  pickTab("Index", "MSCI ACWI (All World)");
   expect(screen.getByRole("tab", { name: "50Y" })).toBeDisabled();
 });
 
@@ -702,7 +726,8 @@ test("REQ-009-01 the status disappears when everything is up to date", async () 
   const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
   const done = { ...client, factors: () => Promise.resolve({ baseline: 1, factors: [] }) };
   renderApp(done as unknown as SimulationApi);
-  await screen.findByTestId("explorer-takeaway");
+  // Analyses start 500 ms after the data has loaded and been validated.
+  await screen.findByTestId("explorer-takeaway", {}, { timeout: 5000 });
   await vi.waitFor(() =>
     expect(
       screen.getAllByRole("status").some((el) => /Simulating|Analysing/.test(el.textContent ?? "")),

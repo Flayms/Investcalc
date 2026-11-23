@@ -5,7 +5,7 @@ const monthIndex = (ym: string) => Number(ym.slice(0, 4)) * 12 + Number(ym.slice
 
 /**
  * The dataset as seen by a euro investor: only the months covered by both (REQ-011-04), with the
- * exchange rate change and the euro short rate of each month attached. Returns, rates and variance
+ * exchange rate change, the euro short rate and German inflation of each month (REQ-013-02). Returns, rates and variance
  * stay in US dollars: leverage and financing apply to them, the currency effect once (REQ-011-02).
  */
 export function inCurrency(dataset: Dataset, eur: CurrencyData): Dataset {
@@ -24,6 +24,7 @@ export function inCurrency(dataset: Dataset, eur: CurrencyData): Dataset {
     variance: dataset.variance.slice(from, to),
     fx: indices.map(fx),
     cashRates: indices.map((i) => eur.rates[i - offset] ?? 0),
+    inflation: indices.map((i) => eur.inflation[i - offset] ?? 0),
   };
 }
 
