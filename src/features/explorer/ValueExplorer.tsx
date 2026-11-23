@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ChartTooltipBox } from "@/components/ChartTooltipBox";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -197,7 +198,7 @@ function PointTooltip({
 }) {
   const { t, format } = useI18n();
   return (
-    <div className="rounded-md border bg-background px-3 py-2 text-xs shadow-md">
+    <ChartTooltipBox className="text-xs">
       <div className="mb-1 font-medium">
         {slider.label}: {slider.format(p.value)}
       </div>
@@ -216,7 +217,7 @@ function PointTooltip({
       <div className="text-muted-foreground">
         {t.common.paidIn}: {format.euro(invested)}
       </div>
-    </div>
+    </ChartTooltipBox>
   );
 }
 

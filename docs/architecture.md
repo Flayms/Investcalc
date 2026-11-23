@@ -5,6 +5,7 @@ Static single-page app, no backend. Simulations run entirely in the browser, off
 - `src/main.tsx` — entry; mounts `App` inside the TanStack Query provider and the sonner `Toaster`, loads the fonts (`@fontsource/caveat` for handwritten headings, `@fontsource/nunito` for body text and numbers).
 - `src/index.css` — theme: light and dark CSS variables (shadcn tokens, the categorical `--series-N` scenario colors and the `--heat-N` / `--heat-ink-N` table ramp, each stepped per theme) and the notebook look (ruled paper, hand-drawn outlines, tape, highlighter). The notebook rules are unlayered on purpose so they override the utility classes of the shadcn primitives without forking them. The dark theme is the `.dark` class on `<html>`, set before first paint by an inline script in `index.html` and toggled by `features/theme`; the same script sets `<html lang>`.
 - `src/components/ui/` — shadcn/ui components (generated with `bunx shadcn@latest add <name>`, excluded from Biome).
+- `src/components/ChartTooltipBox.tsx` — themed tooltip surface and series row shared by all Recharts tooltips (never use the default tooltip, it is white in the dark theme).
 - `src/simulation/` — the simulation engine: pure, framework-free TypeScript so it can be unit-tested and run inside a Web Worker.
   - `sampling.ts` historical windows + stationary block bootstrap, `rng.ts` seeded PRNG
   - `leverage.ts` daily-reset leveraged return (volatility drag, financing), `tax.ts` German tax rules
