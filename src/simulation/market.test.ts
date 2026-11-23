@@ -19,6 +19,7 @@ const dataset = (returns: number[]): Dataset => ({
   start: "2000-01",
   returns,
   rates: returns.map(() => 0.02),
+  variance: returns.map(() => 0.002),
 });
 
 describe("REQ-001-18 market status", () => {

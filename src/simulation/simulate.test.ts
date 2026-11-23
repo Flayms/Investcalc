@@ -1,6 +1,6 @@
 import type { Dataset } from "@/simulation/dataset";
 import { defaultGlobal, defaultScenario } from "@/simulation/params";
-import { factorImpact, runScenario } from "@/simulation/simulate";
+import { buildPaths, factorImpact, runScenario } from "@/simulation/simulate";
 
 const dataset: Dataset = {
   id: "test",
@@ -12,6 +12,7 @@ const dataset: Dataset = {
   start: "2000-01",
   returns: Array.from({ length: 240 }, (_, i) => (i % 7 === 0 ? -0.04 : 0.015)),
   rates: Array(240).fill(0.02),
+  variance: Array.from({ length: 240 }, (_, i) => 0.001 + i * 1e-5),
 };
 
 const scenario = { ...defaultScenario, etfId: "test", fromYear: 2000, toYear: 2019 };
@@ -27,6 +28,16 @@ describe("REQ-001-02 data period", () => {
     );
     expect(all.pathCount).toBe(240 - 72 + 1);
     expect(recent.pathCount).toBe(120 - 72 + 1);
+  });
+});
+
+describe("REQ-010-01 drag from the same month's daily variance", () => {
+  test("REQ-010-01 every path month carries the dataset's variance of that month", () => {
+    const { paths } = buildPaths(dataset, scenario, { ...global, sampling: "rolling" });
+    paths[5]?.forEach((month, k) => {
+      expect(month.variance).toBe(dataset.variance[5 + k]);
+    });
+    expect(paths[5]?.[0]?.variance).toBe(0.001 + 5 * 1e-5);
   });
 });
 
