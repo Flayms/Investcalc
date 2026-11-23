@@ -17,7 +17,7 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
         <CardTitle className="text-base">Data basis</CardTitle>
         <CardDescription className="text-sm lg:text-xs">
           Monthly total returns (dividends reinvested) in USD. Short rate (SOFR proxy): 3-month US
-          T-bill (FRED TB3MS), before 1934 the long-term rate.
+          T-bill (FRED TB3MS), 1926–1933 the 1-month T-bill, before that the long-term rate.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -28,7 +28,7 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
               <article key={d.id} className="rounded-lg border p-3 text-sm">
                 <h3 className="font-medium">{d.name}</h3>
                 <p className="text-muted-foreground">{d.description}</p>
-                <dl className="my-2 grid grid-cols-3 gap-x-3">
+                <dl className="my-2 grid grid-cols-2 gap-x-3 gap-y-1">
                   <div>
                     <dt className="text-xs text-muted-foreground">Period</dt>
                     <dd className="tabular-nums">
@@ -42,6 +42,10 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
                   <div>
                     <dt className="text-xs text-muted-foreground">Volatility</dt>
                     <dd className="tabular-nums">{formatPercent(s.volatility)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Daily data from</dt>
+                    <dd className="tabular-nums">{d.dailyFrom ?? "–"}</dd>
                   </div>
                 </dl>
                 <p className="text-xs text-muted-foreground">{d.source}</p>
@@ -57,6 +61,7 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
               <TableHead className="text-right">Months</TableHead>
               <TableHead className="text-right">CAGR</TableHead>
               <TableHead className="text-right">Volatility</TableHead>
+              <TableHead>Daily data from</TableHead>
               <TableHead>Source</TableHead>
             </TableRow>
           </TableHeader>
@@ -79,6 +84,7 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
                   <TableCell className="text-right align-top tabular-nums">
                     {formatPercent(s.volatility)}
                   </TableCell>
+                  <TableCell className="align-top tabular-nums">{d.dailyFrom ?? "–"}</TableCell>
                   <TableCell className="max-w-72 whitespace-normal align-top text-muted-foreground">
                     {d.source}
                   </TableCell>
@@ -105,12 +111,12 @@ export function DataBasisCard({ datasets }: { datasets: Record<string, Dataset> 
             <ul className="list-disc space-y-0.5 pl-4">
               <li>Amounts in €, returns in USD: currency effects and inflation are ignored.</li>
               <li>
-                S&P 500 uses monthly average prices (understates volatility slightly); SMA signals
-                act one month later.
+                S&P 500 uses monthly average prices (smooths monthly returns); SMA signals act one
+                month later.
               </li>
               <li>
-                Leveraged ETFs: daily reset, drag from trailing 12-month realised variance,
-                financing on (L − 1).
+                Leveraged ETFs: daily reset, drag from the realised variance of the same month's
+                daily returns (estimated where no daily data exists), financing on (L − 1).
               </li>
               <li>
                 German taxes: 26.375 %, 30 % Teilfreistellung, allowance, Vorabpauschale, loss

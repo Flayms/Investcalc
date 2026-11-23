@@ -18,7 +18,7 @@ distribution of outcomes as percentiles and lets the user compare several settin
 
 - **Given** the app has loaded
 - **When** the user opens the ETF selection of a scenario
-- **Then** S&P 500, MSCI World and MSCI ACWI (All World) are available
+- **Then** S&P 500, US total market (REQ-010-03), MSCI World and MSCI ACWI (All World) are available
 - **And** each shows its source, available period, CAGR and volatility
 
 #### REQ-001-02 Data period
@@ -186,9 +186,9 @@ distribution of outcomes as percentiles and lets the user compare several settin
 ## Assumptions
 
 - Index returns are in USD and amounts are shown in €; currency effects are ignored.
-- S&P 500 data uses Shiller's monthly _average_ prices, which understates volatility slightly.
-- The 3-month T-bill rate (FRED TB3MS) is used as SOFR proxy; before 1934 the long-term rate.
-- Volatility drag uses the trailing 12-month realised variance of monthly returns.
+- S&P 500 data uses Shiller's monthly _average_ prices, which smooth monthly returns.
+- The 3-month T-bill rate (FRED TB3MS) is used as SOFR proxy; 1926–1933 the 1-month T-bill, before that the long-term rate (REQ-010-04).
+- Volatility drag uses the realised variance of the same month's daily returns (spec 010).
 - Leveraged ETFs are treated as equity funds (30 % Teilfreistellung).
 - Taxes on the Vorabpauschale are paid from the next contributions.
 - One simulated year = 12 months from the start; the allowance resets every simulated year.
@@ -197,7 +197,7 @@ distribution of outcomes as percentiles and lets the user compare several settin
 
 | REQ        | Test                                                                                                                                                | Result |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| REQ-001-01 | `App.test.tsx` › REQ-001-01 the data basis lists all three indices…                                                                                 | pass   |
+| REQ-001-01 | `App.test.tsx` › REQ-001-01 the data basis lists all indices…                                                                                       | pass   |
 | REQ-001-02 | `simulate.test.ts` › REQ-001-02 rolling windows only use months inside the selected period                                                          | pass   |
 | REQ-001-03 | `sampling.test.ts` › REQ-001-03 …; `simulate.test.ts` › too short history yields a message; e2e `REQ-001-03 historical windows on a short history…` | pass   |
 | REQ-001-04 | `sampling.test.ts` › REQ-001-04 same seed / contiguous blocks with mean length                                                                      | pass   |

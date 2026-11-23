@@ -10,8 +10,14 @@ import { SWEEP_VALUES, type SweepParam } from "@/simulation/sweep";
 import msciAcwi from "../public/data/msci-acwi.json?raw";
 import msciWorld from "../public/data/msci-world.json?raw";
 import sp500 from "../public/data/sp500.json?raw";
+import usMarket from "../public/data/us-market.json?raw";
 
-const raw: Record<string, string> = { sp500, "msci-world": msciWorld, "msci-acwi": msciAcwi };
+const raw: Record<string, string> = {
+  sp500,
+  "us-market": usMarket,
+  "msci-world": msciWorld,
+  "msci-acwi": msciAcwi,
+};
 const loadDataset = async (id: string) => JSON.parse(raw[id] ?? "null");
 
 /** Simulations are covered by engine tests; here they never finish so the UI stays cheap. */
@@ -45,7 +51,7 @@ test("renders the app title", async () => {
   expect(screen.getByRole("heading", { name: "Investcalc" })).toBeInTheDocument();
 });
 
-test("REQ-001-01 the data basis lists all three indices with period, CAGR and volatility", async () => {
+test("REQ-001-01 the data basis lists all indices with period, CAGR and volatility", async () => {
   renderApp();
   await openMarketAndData();
   const heading = await screen.findByText("Data basis");
@@ -56,6 +62,30 @@ test("REQ-001-01 the data basis lists all three indices with period, CAGR and vo
   }
   expect(within(table).getByText(/1871-01 –/)).toBeInTheDocument();
   expect(within(table).getAllByText(/%$/).length).toBeGreaterThanOrEqual(6);
+});
+
+test("REQ-010-03 the data basis lists the US total market from 1926-07", async () => {
+  renderApp();
+  await openMarketAndData();
+  const heading = await screen.findByText("Data basis");
+  const card = heading.closest("[data-slot=card]") as HTMLElement;
+  const row = within(within(card).getByRole("table")).getByRole("row", {
+    name: /^US total market/,
+  });
+  expect(within(row).getByText(/^1926-07 –/)).toBeInTheDocument();
+});
+
+test("REQ-010-02 the data basis states from which month daily data is used", async () => {
+  renderApp();
+  await openMarketAndData();
+  const heading = await screen.findByText("Data basis");
+  const card = heading.closest("[data-slot=card]") as HTMLElement;
+  const table = within(card).getByRole("table");
+  expect(within(table).getByRole("columnheader", { name: "Daily data from" })).toBeInTheDocument();
+  const sp = within(table).getByRole("row", { name: /^S&P 500/ });
+  expect(within(sp).getByText("1926-07")).toBeInTheDocument();
+  const world = within(table).getByRole("row", { name: /^MSCI World/ });
+  expect(within(world).getByText("2001-01")).toBeInTheDocument();
 });
 
 test("REQ-001-15 scenarios can be duplicated, renamed and removed", async () => {
@@ -175,7 +205,12 @@ test("REQ-006-04 an ongoing bear market is marked as such", async () => {
   const cutOff = async (id: string) => {
     const d = JSON.parse(raw[id] ?? "null");
     return id === "sp500"
-      ? { ...d, returns: d.returns.slice(0, 1658), rates: d.rates.slice(0, 1658) }
+      ? {
+          ...d,
+          returns: d.returns.slice(0, 1658),
+          rates: d.rates.slice(0, 1658),
+          variance: d.variance.slice(0, 1658),
+        }
       : d;
   };
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

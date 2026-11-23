@@ -11,11 +11,18 @@ export const datasetSchema = z.object({
   start: z.string().regex(/^\d{4}-\d{2}$/),
   returns: z.array(z.number()),
   rates: z.array(z.number()),
+  /** Realised variance of daily log returns per month (sum of squares, not annualised). */
+  variance: z.array(z.number()),
+  /** "YYYY-MM" of the first month whose variance comes from daily data; earlier months are estimated. */
+  dailyFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(),
 });
 
 export type Dataset = z.infer<typeof datasetSchema>;
 
-export const datasetIds = ["sp500", "msci-world", "msci-acwi"] as const;
+export const datasetIds = ["sp500", "us-market", "msci-world", "msci-acwi"] as const;
 export type DatasetId = (typeof datasetIds)[number];
 
 /** "YYYY-MM" of the month with the given index. */

@@ -1,5 +1,6 @@
 [
   { "id": "sp500", "name": "S&P 500" },
+  { "id": "us-market", "name": "US total market" },
   { "id": "msci-world", "name": "MSCI World" },
   { "id": "msci-acwi", "name": "MSCI ACWI (All World)" }
 ]

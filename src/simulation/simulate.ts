@@ -1,5 +1,4 @@
 import { type Dataset, monthLabel } from "@/simulation/dataset";
-import { trailingVariance } from "@/simulation/leverage";
 import { type GlobalSettings, type ScenarioParams, WARMUP_MONTHS } from "@/simulation/params";
 import { type PathMonth, type PathResult, simulatePath } from "@/simulation/portfolio";
 import { createRng } from "@/simulation/rng";
@@ -60,13 +59,12 @@ export function buildPaths(dataset: Dataset, s: ScenarioParams, g: GlobalSetting
     to: monthLabel(dataset, Math.max(from, to - 1)),
   };
 
-  const variance = trailingVariance(dataset.returns);
   const history: PathMonth[] = [];
   for (let i = from; i < to; i++) {
     history.push({
       r: dataset.returns[i] ?? 0,
       rate: dataset.rates[i] ?? 0,
-      variance: variance[i] ?? 0,
+      variance: dataset.variance[i] ?? 0,
     });
   }
   const pick = (indices: number[]) => indices.map((i) => history[i] as PathMonth);
