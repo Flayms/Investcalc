@@ -319,6 +319,20 @@ export type GlobalField = Field<keyof GlobalSettings> & {
   visible?: (g: GlobalSettings) => boolean;
 };
 
+/** Currency of the simulation; shown with the historical period (REQ-011-01). */
+export const currencyField: SharedField = {
+  key: "currency",
+  kind: "select",
+  label: "Currency",
+  help: "Currency you invest and pay taxes in. In euros, every month's index return is converted with that month's change of the euro/dollar rate (before 1999 via the D-Mark). Leveraged ETFs apply their leverage to the dollar return; the currency effect is not leveraged. Cash earns the German / euro money market rate.",
+  recommendation:
+    "Euro for investors in Germany: the currency risk of US and world equities is part of your result. US dollar shows the index alone and the longer history.",
+  options: [
+    { value: "EUR", label: "Euro" },
+    { value: "USD", label: "US dollar" },
+  ],
+};
+
 export const globalFields: GlobalField[] = [
   {
     key: "horizonYears",

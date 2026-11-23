@@ -163,3 +163,39 @@ describe("REQ-001-13 borrow from your future self", () => {
     expect(result.finalAfterTax).toBeCloseTo(principal + 12_000, 4);
   });
 });
+
+describe("REQ-011-01 currency effect", () => {
+  const inEur = (n: number, r: number, fx: number, cashRate = 0): PathMonth[] =>
+    Array.from({ length: n }, () => ({ r, rate: 0, variance: 0, fx, cashRate }));
+
+  test("REQ-011-01 a fund's return is converted with the month's exchange rate change", () => {
+    const result = simulatePath(withWarmup(inEur(1, 0.01, 0.05)), WARMUP, plain);
+    expect(result.finalAfterTax).toBeCloseTo(1000 * 1.01 * 1.05, 6);
+  });
+
+  test("REQ-011-02 the currency effect of a leveraged ETF is not leveraged", () => {
+    const result = simulatePath(withWarmup(inEur(1, 0.01, 0.05)), WARMUP, {
+      ...plain,
+      leveragedShare: 1,
+      leverage: 3,
+      includeSofr: false,
+    });
+    expect(result.finalAfterTax).toBeCloseTo(1000 * 1.01 ** 3 * 1.05, 6);
+  });
+
+  test("REQ-011-03 cash earns the cash rate of the month", () => {
+    // SMA strategy out of the market: index falling, so the contribution stays in cash.
+    const result = simulatePath([...months(WARMUP, -0.01), ...inEur(1, -0.01, 0, 0.12)], WARMUP, {
+      ...plain,
+      strategy: "sma",
+    });
+    expect(result.finalAfterTax).toBeCloseTo(1000 * 1.01, 6);
+  });
+
+  test("REQ-011-05 the SMA signal follows the index level in the chosen currency", () => {
+    // Flat index in USD, but the dollar falls 2 % a month: in euros the index is below its SMA.
+    const path = [...inEur(WARMUP, 0, -0.02), ...inEur(1, 0, -0.02)];
+    const result = simulatePath(path, WARMUP, { ...plain, strategy: "sma" });
+    expect(result.finalAfterTax).toBeCloseTo(1000, 6);
+  });
+});

@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { type Dataset, datasetIds, datasetSchema } from "@/simulation/dataset";
+import {
+  type CurrencyData,
+  currencySchema,
+  type Dataset,
+  datasetIds,
+  datasetSchema,
+} from "@/simulation/dataset";
 
 export type DatasetLoader = (id: string) => Promise<unknown>;
 
@@ -20,5 +26,14 @@ export function useDatasets(load: DatasetLoader = fetchDataset) {
       );
       return Object.fromEntries(list.map((d) => [d.id, d])) as Record<string, Dataset>;
     },
+  });
+}
+
+/** Loads the euro exchange and short rates (REQ-011-01). */
+export function useCurrencyData(load: DatasetLoader = fetchDataset) {
+  return useQuery({
+    queryKey: ["currency", "eur"],
+    staleTime: Number.POSITIVE_INFINITY,
+    queryFn: async (): Promise<CurrencyData> => currencySchema.parse(await load("eur")),
   });
 }

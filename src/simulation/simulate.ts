@@ -65,6 +65,8 @@ export function buildPaths(dataset: Dataset, s: ScenarioParams, g: GlobalSetting
       r: dataset.returns[i] ?? 0,
       rate: dataset.rates[i] ?? 0,
       variance: dataset.variance[i] ?? 0,
+      fx: dataset.fx?.[i] ?? 0,
+      cashRate: dataset.cashRates?.[i] ?? dataset.rates[i] ?? 0,
     });
   }
   const pick = (indices: number[]) => indices.map((i) => history[i] as PathMonth);

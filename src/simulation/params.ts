@@ -7,6 +7,8 @@ export const scenarioSchema = z.object({
   etfId: z.enum(datasetIds).or(z.string()),
   fromYear: z.number().int(),
   toYear: z.number().int(),
+  /** Currency the investor holds and is taxed in (REQ-011-01). */
+  currency: z.enum(["EUR", "USD"]),
 
   monthlyContribution: z.number().min(0),
   initialInvestment: z.number().min(0),
@@ -57,6 +59,7 @@ export const defaultScenario: ScenarioParams = {
   etfId: "sp500",
   fromYear: 1871,
   toYear: 2100,
+  currency: "EUR",
   monthlyContribution: 500,
   initialInvestment: 0,
   leverage: 2,

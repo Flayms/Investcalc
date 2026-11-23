@@ -2,7 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DataBasisCard } from "@/features/data/DataBasisCard";
-import { type DatasetLoader, fetchDataset, useDatasets } from "@/features/data/useDatasets";
+import {
+  type DatasetLoader,
+  fetchDataset,
+  useCurrencyData,
+  useDatasets,
+} from "@/features/data/useDatasets";
 import { EXPLORED, isExplored } from "@/features/explorer/explored";
 import { SliderInsight } from "@/features/explorer/SliderInsight";
 import { type ExplorerView, ValueExplorer } from "@/features/explorer/ValueExplorer";
@@ -17,6 +22,8 @@ import {
 import { FactorImpactCard } from "@/features/results/AnalysisCards";
 import { FanChart } from "@/features/results/FanChart";
 import { ResultsTable } from "@/features/results/ResultsTable";
+import { FieldControl } from "@/features/scenarios/FieldControl";
+import { currencyField } from "@/features/scenarios/fields";
 import { GlobalSettingsCard } from "@/features/scenarios/GlobalSettingsCard";
 import { HistoricalPeriodField } from "@/features/scenarios/HistoricalPeriodField";
 import { ScenarioBar } from "@/features/scenarios/ScenarioBar";
@@ -63,6 +70,11 @@ function initialState(): PersistedState {
 
 export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) {
   const datasets = useDatasets(loadDataset);
+  const eur = useCurrencyData(loadDataset);
+  const simulationData = useMemo(
+    () => (datasets.data && eur.data ? { datasets: datasets.data, eur: eur.data } : undefined),
+    [datasets.data, eur.data],
+  );
   const [initial] = useState(initialState);
   const [scenarios, setScenarios] = useState<Scenario[]>(initial.scenarios);
   const [selectedKey, setSelectedKey] = useState(initial.selectedKey);
@@ -85,7 +97,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
     [selected, shared],
   );
   const { results, sweeps, factors, pending } = useSimulation(
-    datasets.data,
+    simulationData,
     resolved,
     resolvedSelected,
     global,
@@ -169,11 +181,11 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
           </div>
         </header>
 
-        {datasets.isError ? (
+        {datasets.isError || eur.isError ? (
           <p className="p-6 text-sm text-red-800 dark:text-red-300">
-            Could not load the historical data: {String(datasets.error)}
+            Could not load the historical data: {String(datasets.error ?? eur.error)}
           </p>
-        ) : !datasets.data ? (
+        ) : !datasets.data || !eur.data ? (
           <p className="p-6 text-sm text-muted-foreground">Loading historical data…</p>
         ) : (
           <>
@@ -207,6 +219,18 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
                       datasets={datasets.data}
                       value={shared}
                       onChange={(period) => setShared({ ...shared, ...period })}
+                      currencyFrom={
+                        shared.currency === "EUR"
+                          ? { currency: "euros", year: Number(eur.data.start.slice(0, 4)) }
+                          : undefined
+                      }
+                    />
+                    <FieldControl
+                      field={currencyField}
+                      value={shared.currency}
+                      onChange={(currency) =>
+                        setShared({ ...shared, currency: currency === "USD" ? "USD" : "EUR" })
+                      }
                     />
                   </GlobalSettingsCard>
                   <ScenarioEditor
@@ -264,7 +288,7 @@ export function App({ loadDataset = fetchDataset, simulationClient }: AppProps) 
             <TabsContent value="market">
               <main className="mx-auto max-w-[1500px] space-y-4 px-3 py-4 sm:space-y-6 sm:pr-6 sm:pl-16 sm:py-6">
                 <MarketView datasets={datasets.data} />
-                <DataBasisCard datasets={datasets.data} />
+                <DataBasisCard datasets={datasets.data} eur={eur.data} />
               </main>
             </TabsContent>
           </>
