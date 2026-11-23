@@ -333,6 +333,17 @@ export const currencyField: SharedField = {
   ],
 };
 
+/** Inflation adjustment of all results; shown with the currency (REQ-013-01). */
+export const inflationField: SharedField = {
+  key: "inflationAdjusted",
+  kind: "switch",
+  label: "Adjust for inflation",
+  help: "Shows all amounts in purchasing power at the start of the investment: each amount is divided by the rise in consumer prices up to its month, following the inflation of the same historical months (German prices in euros, US prices in dollars). Taxes are still computed on nominal gains.",
+  recommendation:
+    "On: over 20–30 years inflation roughly halves what a euro buys, so nominal amounts look much better than they are.",
+  isRecommended: (v) => v,
+};
+
 export const globalFields: GlobalField[] = [
   {
     key: "horizonYears",

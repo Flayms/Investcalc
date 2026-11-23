@@ -2,6 +2,7 @@ import { Area, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from 
 import { ChartTooltipBox, ChartTooltipRow } from "@/components/ChartTooltipBox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
+import { inflationNote } from "@/features/results/annualReturn";
 import { Stale, UpdatingBadge } from "@/features/results/Updating";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
 import { formatEuro, formatEuroCompact } from "@/lib/format";
@@ -37,7 +38,7 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
       if (s.key === selectedKey) {
         row.outer = [b.p10, b.p90];
         row.inner = [b.p25, b.p75];
-        row.paid = s.params.initialInvestment + s.params.monthlyContribution * m;
+        row.paid = b.paid ?? s.params.initialInvestment + s.params.monthlyContribution * m;
       }
     }
     rows.push(row);
@@ -53,7 +54,8 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
         </CardTitle>
         <CardDescription className="text-sm lg:text-xs">
           Median of every scenario. Bands for the selected scenario: P25–P75 (dark) and P10–P90
-          (light). Before the final sale's taxes.
+          (light). Before the final sale's taxes.{" "}
+          {inflationNote(scenarios[0]?.params.inflationAdjusted)}
         </CardDescription>
       </CardHeader>
       <CardContent>

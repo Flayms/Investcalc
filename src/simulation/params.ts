@@ -9,6 +9,8 @@ export const scenarioSchema = z.object({
   toYear: z.number().int(),
   /** Currency the investor holds and is taxed in (REQ-011-01). */
   currency: z.enum(["EUR", "USD"]),
+  /** Results in purchasing power at the start instead of nominal amounts (REQ-013-01). */
+  inflationAdjusted: z.boolean(),
 
   monthlyContribution: z.number().min(0),
   initialInvestment: z.number().min(0),
@@ -60,6 +62,7 @@ export const defaultScenario: ScenarioParams = {
   fromYear: 1871,
   toYear: 2100,
   currency: "EUR",
+  inflationAdjusted: true,
   monthlyContribution: 500,
   initialInvestment: 0,
   leverage: 2,

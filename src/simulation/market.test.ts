@@ -20,6 +20,7 @@ const dataset = (returns: number[]): Dataset => ({
   returns,
   rates: returns.map(() => 0.02),
   variance: returns.map(() => 0.002),
+  inflation: returns.map(() => 0.002),
 });
 
 describe("REQ-001-18 market status", () => {

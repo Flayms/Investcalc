@@ -36,9 +36,10 @@ test("REQ-001-03 historical windows on a short history explain why there is no r
   await page.getByRole("combobox", { name: "Path generation" }).click();
   await page.getByRole("option", { name: "Historical windows" }).click();
   await page.getByRole("combobox", { name: "Index" }).click();
-  await page.getByRole("option", { name: "MSCI World" }).click();
+  await page.getByRole("option", { name: "MSCI ACWI (All World)" }).click();
+  // ACWI has about 38 years of history: a 50-year horizon does not fit.
   await page.getByRole("slider", { name: "Horizon" }).focus();
-  for (let i = 0; i < 10; i++) await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("End");
   await expect(page.getByRole("table").getByText(/is shorter than the horizon/)).toBeVisible({
     timeout: 30_000,
   });

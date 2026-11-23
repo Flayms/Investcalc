@@ -20,7 +20,8 @@ export function DataBasisCard({ datasets, eur }: Props) {
         <CardTitle className="text-base">Data basis</CardTitle>
         <CardDescription className="text-sm lg:text-xs">
           Monthly total returns (dividends reinvested) in USD. Short rate (SOFR proxy): 3-month US
-          T-bill (FRED TB3MS), 1926–1933 the 1-month T-bill, before that the long-term rate.
+          T-bill (FRED TB3MS), 1926–1933 the 1-month T-bill, before that the long-term rate. US
+          inflation: Shiller's CPI until 1946, then FRED CPIAUCSL.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

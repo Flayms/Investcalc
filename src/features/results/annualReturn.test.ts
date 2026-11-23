@@ -1,4 +1,4 @@
-import { annualReturn } from "@/features/results/annualReturn";
+import { annualReturn, paymentPlan } from "@/features/results/annualReturn";
 
 const plan = (initialInvestment: number, monthlyContribution: number) => ({
   initialInvestment,
@@ -21,4 +21,19 @@ test("REQ-007-02 a higher final value means a higher yearly return", () => {
 
 test("REQ-007-02 losing everything is -100 % p.a.", () => {
   expect(annualReturn(0, plan(1000, 100), 10)).toBe(-1);
+});
+
+test("REQ-013-05 inflation-adjusted, the real amount paid in is spread over the months", () => {
+  const params = { initialInvestment: 1000, monthlyContribution: 100, inflationAdjusted: true };
+  expect(paymentPlan(params, 1000 + 90 * 120, 10)).toEqual(plan(1000, 90));
+  // Getting back the real amount paid in is a real return of about 0 % p.a.
+  expect(annualReturn(1000 + 90 * 120, paymentPlan(params, 1000 + 90 * 120, 10), 10)).toBeCloseTo(
+    0,
+    6,
+  );
+});
+
+test("REQ-013-05 nominal results keep the contributions as set", () => {
+  const params = { initialInvestment: 1000, monthlyContribution: 100, inflationAdjusted: false };
+  expect(paymentPlan(params, 99_999, 10)).toEqual(plan(1000, 100));
 });
