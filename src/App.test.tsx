@@ -362,10 +362,11 @@ test("REQ-004-01 hidden scenarios leave the chart and the results table", async 
   fireEvent.click(toggle);
   expect(toggle).toHaveAttribute("aria-pressed", "false");
 
-  await vi.waitFor(() => expect(calls.at(-1)?.map((j) => j.key)).toEqual(["s1", "s3"]));
   await vi.waitFor(() =>
     expect(within(legend).queryByText("2× buy and hold")).not.toBeInTheDocument(),
   );
+  // No hidden scenario is simulated.
+  for (const jobs of calls.slice(1)) expect(jobs.map((j) => j.key)).not.toContain("s2");
   const card = await resultsCard();
   expect(within(card).queryByRole("article", { name: "2× buy and hold" })).not.toBeInTheDocument();
   expect(within(card).getByRole("article", { name: "1× buy and hold" })).toBeInTheDocument();
@@ -377,15 +378,19 @@ test("REQ-004-01 hidden scenarios leave the chart and the results table", async 
 });
 
 test("REQ-004-02 a hidden scenario can be shown again", async () => {
-  const { client, calls } = resolvingClient();
+  const { client } = resolvingClient();
   renderApp(client);
   const legend = await screen.findByRole("list", { name: "Legend" });
   const toggle = await screen.findByRole("button", { name: "Show 1× buy and hold" });
-  fireEvent.click(toggle);
-  await vi.waitFor(() => expect(calls.at(-1)?.map((j) => j.key)).toEqual(["s2", "s3"]));
-  fireEvent.click(toggle);
-  await vi.waitFor(() => expect(calls.at(-1)?.map((j) => j.key)).toEqual(["s1", "s2", "s3"]));
   await within(legend).findByText("1× buy and hold");
+  fireEvent.click(toggle);
+  await vi.waitFor(() =>
+    expect(within(legend).queryByText("1× buy and hold")).not.toBeInTheDocument(),
+  );
+  fireEvent.click(toggle);
+  await within(legend).findByText("1× buy and hold");
+  const card = await resultsCard();
+  expect(within(card).getByRole("article", { name: "1× buy and hold" })).toBeInTheDocument();
 });
 
 test("REQ-004-03 hidden scenarios stay hidden after a reload", async () => {
@@ -675,4 +680,134 @@ test("REQ-009-02 results stay visible but marked while they are recalculated", a
   await vi.waitFor(() => expect(calls).toBe(2));
   release();
   await vi.waitFor(() => expect(within(card).queryByText("Updating")).not.toBeInTheDocument());
+});
+
+/** Records every request; runs and analyses resolve, except runs after `hangAfter` calls. */
+function recordingClient(hangAfter = Number.POSITIVE_INFINITY) {
+  const runs: string[][] = [];
+  const sweeps: SweepParam[] = [];
+  let factors = 0;
+  const client = {
+    run: (jobs: { key: string }[]) => {
+      runs.push(jobs.map((j) => j.key));
+      if (runs.length > hangAfter) return new Promise(() => {});
+      return Promise.resolve(Object.fromEntries(jobs.map((j) => [j.key, fakeResult()])));
+    },
+    sweep: (_d: unknown, _s: unknown, _g: unknown, param: SweepParam) => {
+      sweeps.push(param);
+      const points = SWEEP_VALUES[param].map((value) => ({
+        value,
+        p5: 1,
+        p10: 2,
+        p25: 3,
+        p50: 4,
+        p75: 5,
+        p90: 6,
+        p95: 7,
+        lossProbability: 0,
+      }));
+      return Promise.resolve({ param, points, invested: 1, assumed: {} });
+    },
+    factors: () => {
+      factors++;
+      return Promise.resolve({ baseline: 1, factors: [] });
+    },
+  } as unknown as SimulationApi;
+  return { client, runs, sweeps, factorCalls: () => factors };
+}
+
+const isBusy = () =>
+  screen.getAllByRole("status").some((el) => /Simulating|Analysing/.test(el.textContent ?? ""));
+
+/** The fan chart's legend (the value explorer has one, too). */
+const fanChartLegend = () => screen.getAllByRole("list", { name: "Legend" })[0] as HTMLElement;
+
+/** Renders the app and waits until the first simulation and analyses are done. */
+async function renderSettled(client: SimulationApi) {
+  renderApp(client);
+  await within(await resultsCard()).findAllByRole("article");
+  await pastDebounce();
+  await vi.waitFor(() => expect(isBusy()).toBe(false));
+}
+
+/** Longer than the debounce of simulation (250 ms) and analyses (500 ms). */
+const pastDebounce = () => new Promise((r) => setTimeout(r, 700));
+
+test("REQ-009-04 renaming a scenario re-simulates nothing and shows the new name", async () => {
+  const { client, runs, sweeps, factorCalls } = recordingClient();
+  await renderSettled(client);
+  const before = { runs: runs.length, sweeps: sweeps.length, factors: factorCalls() };
+
+  fireEvent.change(screen.getByLabelText("Name"), { target: { value: "My plan" } });
+  const legend = fanChartLegend();
+  expect(within(legend).getByText("My plan")).toBeInTheDocument();
+  expect(within(await resultsCard()).getByRole("article", { name: "My plan" })).toBeInTheDocument();
+  expect(screen.queryAllByText("Updating")).toHaveLength(0);
+  expect(isBusy()).toBe(false);
+
+  await pastDebounce();
+  // REQ-009-05: the analyses of the renamed (selected) scenario are not rerun either.
+  expect({ runs: runs.length, sweeps: sweeps.length, factors: factorCalls() }).toEqual(before);
+  expect(screen.queryAllByText("Updating")).toHaveLength(0);
+});
+
+test("REQ-009-04 editing one scenario re-simulates and marks only that scenario", async () => {
+  const { client, runs } = recordingClient(1);
+  await renderSettled(client);
+  expect(runs).toEqual([["s1", "s2", "s3"]]);
+
+  pickTab("Scenarios", /2× buy and hold/);
+  fireEvent.keyDown(leverageSlider(), { key: "ArrowRight" });
+  await vi.waitFor(() => expect(runs.at(-1)).toEqual(["s2"]));
+  expect(runs).toHaveLength(2);
+
+  const card = await resultsCard();
+  const article = (name: string) => within(card).getByRole("article", { name });
+  expect(article("2× buy and hold")).toHaveAttribute("aria-busy", "true");
+  expect(article("1× buy and hold")).not.toHaveAttribute("aria-busy", "true");
+  expect(article("2× with 10-month SMA")).not.toHaveAttribute("aria-busy", "true");
+  expect(
+    screen.getAllByRole("status").some((el) => /Simulating 1 scenario…/.test(el.textContent ?? "")),
+  ).toBe(true);
+});
+
+test("REQ-009-04 changing a shared setting still re-simulates every scenario", async () => {
+  const { client, runs } = recordingClient();
+  await renderSettled(client);
+  const shared = screen.getByText("Costs & taxes").closest("[data-slot=card]") as HTMLElement;
+  fireEvent.click(within(shared).getByRole("switch", { name: "Apply German taxes" }));
+  await vi.waitFor(() => expect(runs).toHaveLength(2));
+  expect(runs.at(-1)).toEqual(["s1", "s2", "s3"]);
+});
+
+test("REQ-009-05 renaming the selected scenario or hiding another does not rerun the analyses", async () => {
+  const { client, sweeps, factorCalls } = recordingClient();
+  await renderSettled(client);
+  const before = { sweeps: sweeps.length, factors: factorCalls() };
+  expect(before.sweeps).toBeGreaterThan(0);
+
+  fireEvent.click(screen.getByRole("button", { name: "Show 2× buy and hold" }));
+  fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Renamed" } });
+  fireEvent.click(screen.getByRole("button", { name: "Show 2× buy and hold" }));
+  expect(screen.queryAllByText("Updating")).toHaveLength(0);
+  await pastDebounce();
+  expect({ sweeps: sweeps.length, factors: factorCalls() }).toEqual(before);
+  expect(screen.queryAllByText("Updating")).toHaveLength(0);
+  expect(isBusy()).toBe(false);
+});
+
+test("REQ-009-06 a scenario shown again reuses its results", async () => {
+  const { client, runs } = recordingClient();
+  await renderSettled(client);
+  const legend = fanChartLegend();
+  const toggle = screen.getByRole("button", { name: "Show 2× buy and hold" });
+  fireEvent.click(toggle);
+  await vi.waitFor(() =>
+    expect(within(legend).queryByText("2× buy and hold")).not.toBeInTheDocument(),
+  );
+  fireEvent.click(toggle);
+  expect(within(legend).getByText("2× buy and hold")).toBeInTheDocument();
+  expect(isBusy()).toBe(false);
+  await pastDebounce();
+  expect(runs).toEqual([["s1", "s2", "s3"]]);
 });
