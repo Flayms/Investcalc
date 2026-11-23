@@ -51,3 +51,10 @@ test("REQ-014-01 the English data texts are those of the data files", () => {
     source: eur.source,
   });
 });
+
+test("REQ-015-08 the SMA window help says when the signal is checked", () => {
+  expect(en.fields.smaDays.help).toMatch(/every daily close/);
+  expect(en.fields.smaDays.help).toMatch(/next close/);
+  expect(en.fields.smaDays.help).toMatch(/once a month/);
+  expect(de.fields.smaDays.help).toMatch(/Tagesschluss/);
+});

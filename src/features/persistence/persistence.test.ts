@@ -68,3 +68,13 @@ test("REQ-013-06 state saved before the inflation setting loads with it switched
   localStorage.setItem("investcalc:state", JSON.stringify({ ...state(), version: 1, shared }));
   expect(loadState(localStorage)?.shared.inflationAdjusted).toBe(true);
 });
+
+test("REQ-015-07 an SMA window saved in months loads in trading days", () => {
+  const s = state();
+  const legacy = s.scenarios.map(({ params: { smaDays: _, ...params }, ...sc }, i) => ({
+    ...sc,
+    params: { ...params, smaMonths: [10, 2, 12][i] },
+  }));
+  localStorage.setItem("investcalc:state", JSON.stringify({ ...s, version: 1, scenarios: legacy }));
+  expect(loadState(localStorage)?.scenarios.map((sc) => sc.params.smaDays)).toEqual([210, 50, 250]);
+});

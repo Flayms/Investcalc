@@ -48,3 +48,12 @@ describe("REQ-001-06 SOFR toggle", () => {
     expect(Math.log(1 + withoutSofr) - Math.log(1 + withSofr)).toBeCloseTo(0.04 / 12, 10);
   });
 });
+
+describe("REQ-015-02 part of a month", () => {
+  test("REQ-015-02 TER and financing are charged pro rata to the part of the month", () => {
+    const costs = { leverage: 2, ter: 0.012, includeSofr: true, financingSpread: 0.006 };
+    const x = Math.log(1.02);
+    const expected = Math.exp(2 * x - 0.002 - ((0.04 + 0.006 + 0.012) / 12) * 0.25) - 1;
+    expect(leveragedReturn(month, costs, 0.25)).toBeCloseTo(expected, 10);
+  });
+});

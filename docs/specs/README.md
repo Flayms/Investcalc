@@ -20,6 +20,7 @@ One folder per feature: `docs/specs/NNN-name/` with `spec.md` and, for tier 3 wo
 | [012-msci-history](012-msci-history/spec.md)                         | Data: MSCI World from 1970, ACWI from 1988                 | Implemented |
 | [013-inflation](013-inflation/spec.md)                               | Results in purchasing power (inflation-adjusted)           | Implemented |
 | [014-ui-language](014-ui-language/spec.md)                           | UI: English / German, localised numbers                    | Implemented |
+| [015-daily-sma](015-daily-sma/spec.md)                               | Daily SMA signal (200-day line), daily data and fixings    | Implemented |
 
 ## Conventions
 

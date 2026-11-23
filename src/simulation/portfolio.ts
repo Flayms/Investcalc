@@ -1,3 +1,4 @@
+import type { MonthDays } from "@/simulation/dataset";
 import { leveragedReturn, type MonthMarket } from "@/simulation/leverage";
 import { PARTIAL_EXEMPTION_EQUITY, type ScenarioParams } from "@/simulation/params";
 import { settleTaxYear, type TaxSettings, vorabpauschale } from "@/simulation/tax";
@@ -9,6 +10,8 @@ export type PathMonth = MonthMarket & {
   cashRate?: number;
   /** Change of consumer prices in the investor's currency this month. */
   inflation?: number;
+  /** The month's trading days, if daily data exists (REQ-015-01). */
+  days?: MonthDays;
 };
 
 export type PathResult = {
@@ -23,6 +26,50 @@ export type PathResult = {
   fees: number;
   taxes: number;
 };
+
+/** Trading days a month without daily data counts as in the moving average (REQ-015-03). */
+export const DAYS_PER_MONTH = 21;
+
+/** Average of the last n daily index levels (REQ-015-01). */
+export class RollingSma {
+  readonly ring: Float64Array;
+  sum = 0;
+  count = 0;
+  /** Slot of the next level in `ring`. */
+  next = 0;
+  /** The latest level. */
+  level = 1;
+
+  constructor(readonly n: number) {
+    this.ring = new Float64Array(n);
+  }
+
+  push(level: number) {
+    const ring = this.ring;
+    if (this.count === this.n) this.sum -= ring[this.next] as number;
+    else this.count++;
+    ring[this.next] = level;
+    this.sum += level;
+    if (++this.next === this.n) this.next = 0;
+    this.level = level;
+  }
+
+  /** A month without daily data: its days grow evenly from the last level to `level` (REQ-015-03). */
+  pushMonth(level: number) {
+    const daily = (level / this.level) ** (1 / DAYS_PER_MONTH);
+    for (let j = 1; j < DAYS_PER_MONTH; j++) this.push(this.level * daily);
+    this.push(level);
+  }
+
+  get average() {
+    return this.count === 0 ? this.level : this.sum / this.count;
+  }
+
+  /** Whether the latest level is at or above the average. */
+  above() {
+    return this.count === 0 || this.level * this.count >= this.sum;
+  }
+}
 
 type Fund = {
   share: number;
@@ -85,20 +132,24 @@ export function simulatePath(
   const fundLev = newFund(p.leveragedShare);
   const funds = [fund1x, fundLev];
 
-  // Index level in the investor's currency for the SMA signal (start of path = 1, REQ-011-05).
-  const levels: number[] = [];
-  let level = 1;
-  for (const month of months) {
-    level *= (1 + month.r) * (1 + (month.fx ?? 0));
-    levels.push(level);
-  }
-  const aboveSma = (index: number) => {
-    const k = Math.max(0, index - lag);
-    const n = Math.min(p.smaMonths, k + 1);
-    let sum = 0;
-    for (let j = k - n + 1; j <= k; j++) sum += levels[j] ?? 0;
-    return (levels[k] ?? 0) >= sum / n;
+  // Index level in the investor's currency for the SMA signal (REQ-011-05). Monthly signals are
+  // kept per month so that they can be acted on `lag` months later (average prices).
+  const sma = p.strategy === "sma" ? new RollingSma(p.smaDays) : undefined;
+  const monthSignals: boolean[] = [];
+  const monthSignal = (k: number) => monthSignals[Math.max(0, k - lag)] ?? true;
+  /** Feeds a whole month into the average; returns the signal at its close. */
+  const feedMonth = (month: PathMonth) => {
+    if (!sma) return true;
+    const days = month.days;
+    if (!days) {
+      sma.pushMonth(sma.level * (1 + month.r) * (1 + (month.fx ?? 0)));
+    } else {
+      const growth = days.growth;
+      for (let j = 0; j < growth.length; j++) sma.push(sma.level * (growth[j] as number));
+    }
+    return sma.above();
   };
+  for (let k = 0; k < warmup; k++) monthSignals.push(feedMonth(months[k] as PathMonth));
 
   let cash = p.initialInvestment;
   let loan = 0;
@@ -113,7 +164,9 @@ export function simulatePath(
   let paid = p.initialInvestment;
   let yearFundGains = 0;
   let yearInterest = 0;
-  let inMarket = p.strategy === "buyAndHold" || aboveSma(warmup - 1);
+  let inMarket = p.strategy === "buyAndHold" || monthSignal(warmup - 1);
+  /** A switch signalled at a daily close, made at the next trading day's close (REQ-015-01). */
+  let pending = false;
 
   const loanMonthlyRate = p.loanRate / 12;
   if (p.borrowFromFuture && p.monthlyContribution > 0) {
@@ -185,6 +238,23 @@ export function simulatePath(
   netWorth[0] = worth();
   paidIn[0] = paid;
 
+  const grow = (f: Fund, factor: number) => {
+    f.value *= factor;
+    f.yearGrowth *= factor;
+  };
+  /**
+   * Market moves and interest for the whole month or a part of it (REQ-015-02): `market` has the
+   * return and variance of the days, `fraction` their share of the month's trading days.
+   */
+  const advance = (month: PathMonth, market: MonthMarket, currency: number, fraction: number) => {
+    // Leverage applies to the index return in USD, the currency effect once (REQ-011-02).
+    grow(fund1x, (1 + leveragedReturn(market, unleveraged, fraction)) * currency);
+    grow(fundLev, (1 + leveragedReturn(market, leveraged, fraction)) * currency);
+    const interest = ((cash * (month.cashRate ?? month.rate)) / 12) * fraction;
+    cash += interest;
+    yearInterest += interest;
+  };
+
   for (let m = 1; m <= horizon; m++) {
     const k = warmup + m - 1;
     const month = months[k];
@@ -207,25 +277,78 @@ export function simulatePath(
     if (inMarket) invest();
 
     // During the month: market moves, cash earns interest.
-    const grow = (f: Fund, factor: number) => {
-      f.value *= factor;
-      f.yearGrowth *= factor;
-    };
-    // Leverage applies to the index return in USD, the currency effect once (REQ-011-02).
-    const currency = 1 + (month.fx ?? 0);
-    grow(fund1x, (1 + leveragedReturn(month, unleveraged)) * currency);
-    grow(fundLev, (1 + leveragedReturn(month, leveraged)) * currency);
-    const interest = (cash * (month.cashRate ?? month.rate)) / 12;
-    cash += interest;
-    yearInterest += interest;
+    const days = sma ? month.days : undefined;
+    if (sma && days) {
+      // Daily signal (REQ-015-01): walk the trading days, switch at the close after a signal.
+      const n = days.r.length;
+      const growth = days.growth;
+      let from = 0;
+      /** Market moves of the days `from` … `to` − 1; the whole month earns the month's return. */
+      const advanceDays = (to: number) => {
+        if (from === 0 && to === n) {
+          advance(month, month, 1 + (month.fx ?? 0), 1);
+        } else {
+          let log = 0;
+          let variance = 0;
+          let currency = 1;
+          for (let j = from; j < to; j++) {
+            const x = Math.log1p(days.r[j] as number);
+            log += x;
+            variance += x * x;
+            currency *= 1 + (days.fx?.[j] ?? 0);
+          }
+          advance(
+            month,
+            { r: Math.expm1(log), rate: month.rate, variance },
+            currency,
+            (to - from) / n,
+          );
+        }
+        from = to;
+      };
+      // The rolling average is updated in local variables: this loop runs for every trading day.
+      const { ring, n: window } = sma;
+      let { level, sum, count, next } = sma;
+      let held: boolean = inMarket;
+      let switchNext: boolean = pending;
+      for (let j = 0; j < n; j++) {
+        level *= growth[j] as number;
+        if (count === window) sum -= ring[next] as number;
+        else count++;
+        ring[next] = level;
+        sum += level;
+        if (++next === window) next = 0;
+        if (switchNext) {
+          advanceDays(j + 1);
+          if (held) sellAll();
+          else invest();
+          held = !held;
+          switchNext = false;
+        }
+        if (level * count >= sum !== held) switchNext = true;
+      }
+      sma.level = level;
+      sma.sum = sum;
+      sma.count = count;
+      sma.next = next;
+      inMarket = held;
+      pending = switchNext;
+      if (from < n) advanceDays(n);
+      monthSignals.push(sma.above());
+    } else {
+      advance(month, month, 1 + (month.fx ?? 0), 1);
+      if (sma) {
+        // Month without daily data: checked at the month's close (REQ-015-03).
+        monthSignals.push(feedMonth(month));
+        pending = false;
+        const signal = monthSignal(k);
+        if (inMarket && !signal) sellAll();
+        inMarket = signal;
+      }
+    }
     price *= 1 + (month.inflation ?? 0);
 
-    // End of month: timing signal, year end, final liquidation.
-    if (p.strategy === "sma") {
-      const signal = aboveSma(k);
-      if (inMarket && !signal) sellAll();
-      inMarket = signal;
-    }
+    // End of month: year end, final liquidation.
     if (m === horizon) {
       // Net worth before the final sale, so the curve shows holdings, not the liquidation.
       netWorth[m] = worth();

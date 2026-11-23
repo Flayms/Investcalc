@@ -1,4 +1,4 @@
-import { inCurrency } from "@/simulation/currency";
+import { dailyFx, inCurrency } from "@/simulation/currency";
 import type { CurrencyData, Dataset } from "@/simulation/dataset";
 import { defaultGlobal, defaultScenario } from "@/simulation/params";
 import { buildPaths } from "@/simulation/simulate";
@@ -97,5 +97,47 @@ describe("REQ-013-02 inflation of the investor's currency", () => {
   test("REQ-013-02 euro paths carry German inflation, dollar paths US inflation", () => {
     expect(buildPaths(inCurrency(usd, eur), scenario, global).paths[0]?.[0]?.inflation).toBe(0.002);
     expect(buildPaths(usd, scenario, global).paths[0]?.[0]?.inflation).toBe(0.004);
+  });
+});
+
+describe("REQ-015-05 daily exchange rate", () => {
+  test("REQ-015-05 each trading day uses the last fixing on or before it", () => {
+    // Fixings on the 2nd (+1 %), 5th (+2 %) and 30th (−1 %); trading days 1, 5, 6 and 29.
+    const fx = dailyFx([1, 5, 6, 29], [2, 5, 30], [0.01, 0.02, -0.01]);
+    expect(fx[0]).toBeCloseTo(0, 12); // day 1: still the previous month's last fixing
+    expect(fx[1]).toBeCloseTo(1.01 * 1.02 - 1, 12); // day 5: fixings of the 2nd and 5th
+    expect(fx[2]).toBeCloseTo(0, 12);
+    // Last trading day of the month: up to the month's last fixing.
+    expect(fx[3]).toBeCloseTo(-0.01, 12);
+  });
+
+  test("REQ-015-05 a month's daily changes compound to the month's change", () => {
+    const changes = [0.01, -0.004, 0.02];
+    const fx = dailyFx([3, 10, 17, 24], [4, 11, 31], changes);
+    const day = fx.reduce((a, x) => a * (1 + x), 1);
+    const month = changes.reduce((a, x) => a * (1 + x), 1);
+    expect(day).toBeCloseTo(month, 12);
+  });
+
+  test("REQ-015-05 euro datasets carry the daily changes of their months", () => {
+    const daily: Dataset = {
+      ...usd,
+      daily: {
+        from: "1959-12",
+        days: n(3, () => 2),
+        dayOfMonth: n(6, (i) => (i % 2 ? 20 : 5)),
+        returns: n(6, (i) => i / 1000),
+      },
+    };
+    const withDays: CurrencyData = {
+      ...eur,
+      daily: { days: n(300, () => 1), dayOfMonth: n(300, () => 10), fx: n(300, () => 0.01) },
+    };
+    const d = inCurrency(daily, withDays);
+    expect(d.daily?.from).toBe("1960-01");
+    expect(d.daily?.days).toEqual([2, 2]);
+    expect(d.daily?.returns).toEqual([0.002, 0.003, 0.004, 0.005]);
+    expect(d.daily?.fx?.[0]).toBeCloseTo(0, 12);
+    expect(d.daily?.fx?.[1]).toBeCloseTo(0.01, 12);
   });
 });

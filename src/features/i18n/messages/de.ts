@@ -21,7 +21,7 @@ export const de: Messages = {
   scenarioNames: {
     buyAndHold: "1× Buy and Hold",
     leveraged: "2× Buy and Hold",
-    leveragedSma: "2× mit 10-Monats-SMA",
+    leveragedSma: "2× mit 200-Tage-SMA",
     numbered: (n) => `Szenario ${n}`,
     copy: (name) => `${name} (Kopie)`,
   },
@@ -52,6 +52,7 @@ export const de: Messages = {
     paidIn: "Eingezahlt",
   },
   units: {
+    days: "T.",
     months: "Mon.",
     years: "J.",
   },
@@ -140,15 +141,15 @@ export const de: Messages = {
     },
     strategy: {
       label: "Timing",
-      help: "Buy and Hold verkauft nie. SMA verkauft alles, wenn der Index einen Monat unter seinem gleitenden Durchschnitt schließt, und kauft zurück, wenn er darüber schließt.",
+      help: "Buy and Hold verkauft nie. SMA verkauft alles, wenn der Index unter seinem gleitenden Durchschnitt schließt, und kauft zurück, wenn er darüber schließt.",
       recommendation:
         "Buy and Hold für 1×. SMA kann das Crash-Risiko von Hebel-ETFs senken, löst aber Steuern und Kosten aus.",
       options: { buyAndHold: "Buy and Hold", sma: "SMA-Trendfilter" },
     },
-    smaMonths: {
+    smaDays: {
       label: "SMA-Fenster",
-      help: "Länge des gleitenden Durchschnitts in Monaten (10 Monate ≈ 200 Handelstage).",
-      recommendation: "10 Monate (klassische 200-Tage-Linie).",
+      help: "Länge des gleitenden Durchschnitts in Handelstagen. Das Signal wird an jedem Tagesschluss geprüft und zum nächsten Schlusskurs umgesetzt. Monate ohne Tagesdaten (S&P 500, MSCI vor 1990-07) werden einmal im Monat zum Monatsschluss geprüft und zählen als 21 Handelstage.",
+      recommendation: "200 Tage (die klassische 200-Tage-Linie).",
     },
     borrowFromFuture: {
       label: "Kredit bei deinem zukünftigen Ich",
@@ -282,7 +283,7 @@ export const de: Messages = {
     tradeoff: "Abwägung",
     exploredSlider: "Untersuchter Schieberegler",
     optimiseFor: "Optimieren für",
-    months: (n) => `${n} Monate`,
+    days: (n) => `${n} Tage`,
     assumeShare: (percent) => `${percent} % im Hebel-ETF`,
     assumeLeverage: (factor) => `einen ${factor}×-Hebel-ETF`,
     assumeSma: "den SMA-Trendfilter",
@@ -447,7 +448,9 @@ export const de: Messages = {
     months: "Monate",
     cagr: "CAGR",
     volatility: "Volatilität",
-    dailyFrom: "Tagesdaten ab",
+    dailyFrom: "Tägliche Varianz ab",
+    dailySignalFrom: "Tägliches SMA-Signal ab",
+    monthlySignal: "monatlich",
     source: "Quelle",
     euro: (from, to) => `Euro (${from} – ${to})`,
     euroText:
@@ -461,7 +464,7 @@ export const de: Messages = {
     assumptionsTitle: "Annahmen & Grenzen",
     assumptions: [
       "Renditen in Euro (oder US-Dollar, siehe Währungseinstellung); Hebel-ETFs sind dollarbasiert, ihr Währungseffekt wird nicht gehebelt. Inflation wird ignoriert.",
-      "Der S&P 500 nutzt monatliche Durchschnittskurse (glättet Monatsrenditen); SMA-Signale wirken einen Monat später.",
+      "Der S&P 500 nutzt monatliche Durchschnittskurse (glättet Monatsrenditen); sein SMA-Signal wird monatlich geprüft und wirkt einen Monat später. Sonst wird das SMA-Signal an jedem Tagesschluss geprüft und zum nächsten Schlusskurs umgesetzt.",
       "Hebel-ETFs: täglicher Reset, Verlust aus der realisierten Varianz der Tagesrenditen desselben Monats (geschätzt, wo keine Tagesdaten vorliegen), Finanzierung auf (L − 1).",
       "Deutsche Steuern: 26,375 %, 30 % Teilfreistellung, Sparerpauschbetrag, Vorabpauschale, Verlustvortrag.",
       "Vergangene Renditen garantieren keine zukünftigen. Keine Anlageberatung.",
@@ -479,26 +482,26 @@ export const de: Messages = {
       description:
         "Alle börsennotierten US-Aktien, nach Marktwert gewichtet (~4.000 Unternehmen, wie ein Total-Market-ETF). Monatsenddaten seit 1926.",
       source:
-        "Kenneth French Data Library (CRSP value-weighted market, Mkt-RF + RF), monatliche Gesamtrenditen; Varianz aus Tagesrenditen.",
+        "Kenneth French Data Library (CRSP value-weighted market, Mkt-RF + RF), monatliche Gesamtrenditen; Varianz und SMA-Signal aus Tagesrenditen (auf die Monatsrendite skaliert).",
     },
     "msci-world": {
       name: "MSCI World",
       description:
         "~1.400 große und mittlere Unternehmen in 23 Industrieländern. Keine Schwellenländer.",
       source:
-        "MSCI-Index 990100, USD. Ab 2001-01: Net Total Return, tägliche Stände (msci.com), Monat = letzter Stand des Monats. 1970-01 – 2000-12: MSCI Gross Total Return (monatlich, über github.com/NandayDev/MSCI-Historical-Data) abzüglich der Brutto-Netto-Differenz späterer Jahre (0,52 % p. a.); Varianz aus täglichen Renditen der Industrieländer (Kenneth French) ab 1990-07, davor geschätzt.",
+        "MSCI-Index 990100, USD. Ab 2001-01: Net Total Return, tägliche Stände (msci.com), Monat = letzter Stand des Monats. 1970-01 – 2000-12: MSCI Gross Total Return (monatlich, über github.com/NandayDev/MSCI-Historical-Data) abzüglich der Brutto-Netto-Differenz späterer Jahre (0,52 % p. a.); Varianz und SMA-Signal aus täglichen Renditen der Industrieländer (Kenneth French, auf die Monatsrendite skaliert) ab 1990-07, davor geschätzt.",
     },
     "msci-acwi": {
       name: "MSCI ACWI (All World)",
       description:
         "MSCI World plus ~24 Schwellenländer (~2.500 Aktien). Vergleichbar mit dem FTSE All-World.",
       source:
-        "MSCI-Index 892400, USD. Ab 2001-01: Net Total Return, tägliche Stände (msci.com), Monat = letzter Stand des Monats. 1988-01 – 2000-12: MSCI Gross Total Return (monatlich, über github.com/NandayDev/MSCI-Historical-Data) abzüglich der Brutto-Netto-Differenz späterer Jahre (0,51 % p. a.); Varianz aus täglichen Renditen der Industrieländer (Kenneth French) ab 1990-07, davor geschätzt.",
+        "MSCI-Index 892400, USD. Ab 2001-01: Net Total Return, tägliche Stände (msci.com), Monat = letzter Stand des Monats. 1988-01 – 2000-12: MSCI Gross Total Return (monatlich, über github.com/NandayDev/MSCI-Historical-Data) abzüglich der Brutto-Netto-Differenz späterer Jahre (0,51 % p. a.); Varianz und SMA-Signal aus täglichen Renditen der Industrieländer (Kenneth French, auf die Monatsrendite skaliert) ab 1990-07, davor geschätzt.",
     },
     eur: {
       name: "Euro",
       source:
-        "Wechselkurs: Deutsche Bundesbank, DM je US-Dollar (Frankfurter Fixing, umgerechnet mit 1,95583 DM je Euro) bis 1998, EZB-Referenzkurs ab 1999; letzter Kurs jedes Monats. Euro-Kurzfristzins: 3-Monats-Geldmarktzins für Deutschland (OECD über FRED IR3TIB01DEM156N), letzte Monate fortgeschrieben. Deutsche Inflation: OECD-Verbraucherpreisindex (FRED DEUCPIALLMINMEI), nach dessen letztem Monat der HVPI (FRED CP0000DEM086NEST).",
+        "Wechselkurs: Deutsche Bundesbank, DM je US-Dollar (Frankfurter Fixing, umgerechnet mit 1,95583 DM je Euro) bis 1998, EZB-Referenzkurs ab 1999; letzter Kurs jedes Monats, jedes Tagesfixing für das SMA-Signal. Euro-Kurzfristzins: 3-Monats-Geldmarktzins für Deutschland (OECD über FRED IR3TIB01DEM156N), letzte Monate fortgeschrieben. Deutsche Inflation: OECD-Verbraucherpreisindex (FRED DEUCPIALLMINMEI), nach dessen letztem Monat der HVPI (FRED CP0000DEM086NEST).",
     },
   },
 };

@@ -7,7 +7,7 @@ import {
   sharedSchema,
 } from "@/features/scenarios/scenario";
 import { datasetIds } from "@/simulation/dataset";
-import { type GlobalSettings, globalSchema } from "@/simulation/params";
+import { type GlobalSettings, globalSchema, SMA_DAYS } from "@/simulation/params";
 
 /** Bump when the stored shape changes incompatibly; older state is then ignored. */
 const VERSION = 1;
@@ -18,6 +18,17 @@ export type PersistedState = {
   selectedKey: string;
   global: GlobalSettings;
   shared: SharedSettings;
+};
+
+/** Trading days of an SMA window saved in months (REQ-015-07): 21 per month, rounded to 10. */
+const smaDaysFromMonths = (months: number) =>
+  Math.min(SMA_DAYS.max, Math.max(SMA_DAYS.min, Math.round((months * 21) / 10) * 10));
+
+/** Scenario choices saved before the SMA window was in trading days carry `smaMonths`. */
+const withSmaDays = (value: unknown) => {
+  if (!value || typeof value !== "object" || "smaDays" in value) return value;
+  const { smaMonths, ...rest } = value as { smaMonths?: unknown };
+  return typeof smaMonths === "number" ? { ...rest, smaDays: smaDaysFromMonths(smaMonths) } : value;
 };
 
 const stateSchema = z.object({
@@ -32,7 +43,7 @@ const stateSchema = z.object({
           .min(0)
           .max(MAX_SCENARIOS - 1),
         // Only indices that exist, so a restored scenario can always be simulated.
-        params: choicesSchema.extend({ etfId: z.enum(datasetIds) }),
+        params: z.preprocess(withSmaDays, choicesSchema.extend({ etfId: z.enum(datasetIds) })),
         // Missing in state saved before scenarios could be hidden: visible (REQ-004-03).
         hidden: z.boolean().optional(),
       }),

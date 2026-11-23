@@ -1,5 +1,6 @@
+import { toMonthDays } from "@/simulation/dataset";
 import { defaultScenario, type ScenarioParams } from "@/simulation/params";
-import { type PathMonth, type PathResult, simulatePath } from "@/simulation/portfolio";
+import { type PathMonth, type PathResult, RollingSma, simulatePath } from "@/simulation/portfolio";
 
 const w = (r: PathResult, m: number) => r.netWorth[m] ?? Number.NaN;
 
@@ -104,15 +105,15 @@ describe("REQ-001-09 / REQ-001-10 taxes in a path", () => {
   });
 });
 
-describe("REQ-001-12 SMA timing", () => {
-  test("REQ-001-12 sells below the SMA, holds cash and re-enters above it", () => {
+describe("REQ-015-03 SMA timing in months without daily data", () => {
+  test("REQ-015-03 sells below the SMA at the month's close, holds cash and re-enters above it", () => {
     const path = withWarmup([
       ...months(1, -0.1),
       ...months(3, -0.1),
       ...months(6, 0.05),
       ...months(12, 0.01),
     ]);
-    const result = simulatePath(path, WARMUP, { ...plain, strategy: "sma", smaMonths: 10 });
+    const result = simulatePath(path, WARMUP, { ...plain, strategy: "sma", smaDays: 210 });
     // After the first loss month the strategy is in cash: later crash months cost nothing.
     const afterExit = w(result, 1);
     expect(w(result, 4)).toBeCloseTo(afterExit + 3000, 6);
@@ -122,17 +123,126 @@ describe("REQ-001-12 SMA timing", () => {
     // Eventually invested again: grows in the final steady months.
     expect(w(result, 22)).toBeGreaterThan(w(result, 21) + 1000);
   });
-});
 
-describe("REQ-001-12 SMA timing on averaged prices", () => {
-  test("REQ-001-12 signals from monthly-average prices act one month later (no look-ahead)", () => {
+  test("REQ-015-03 signals from monthly-average prices act one month later (no look-ahead)", () => {
     const path = withWarmup([...months(1, -0.1), ...months(3, -0.1), ...months(18, 0.01)]);
-    const params = { ...plain, strategy: "sma" as const, smaMonths: 10 };
+    const params = { ...plain, strategy: "sma" as const, smaDays: 210 };
     const prompt = simulatePath(path, WARMUP, params);
     const lagged = simulatePath(path, WARMUP, params, { signalLagMonths: 1 });
     // The lagged strategy still holds ETFs in month 2 and suffers that crash month.
     expect(w(lagged, 2)).toBeLessThan(w(prompt, 2));
     expect(w(lagged, 4)).toBeCloseTo(w(lagged, 2) + 2000, 6);
+  });
+
+  test("REQ-015-03 a month without daily data counts as 21 days growing evenly", () => {
+    const sma = new RollingSma(21);
+    sma.pushMonth(1.21);
+    const expected = Array.from({ length: 21 }, (_, j) => 1.21 ** ((j + 1) / 21));
+    expect(sma.average).toBeCloseTo(expected.reduce((a, b) => a + b, 0) / 21, 12);
+    expect(sma.level).toBeCloseTo(1.21, 12);
+    // A longer window averages over the days pushed so far.
+    const long = new RollingSma(50);
+    long.push(1);
+    long.push(3);
+    expect(long.average).toBe(2);
+  });
+});
+
+/** A month of trading days (index returns `rs`, optional daily currency changes `fx`). */
+function dayMonth(rs: number[], extra: Partial<PathMonth> = {}, fx?: number[]): PathMonth {
+  const logs = rs.map((r) => Math.log1p(r));
+  const fxMonth = fx ? fx.reduce((a, x) => a * (1 + x), 1) - 1 : undefined;
+  return {
+    r: Math.expm1(logs.reduce((a, b) => a + b, 0)),
+    rate: 0,
+    variance: logs.reduce((a, x) => a + x * x, 0),
+    ...(fxMonth === undefined ? {} : { fx: fxMonth }),
+    ...extra,
+    days: toMonthDays(Float64Array.from(rs), fx ? Float64Array.from(fx) : undefined),
+  };
+}
+const flatDays = (n: number, r: number) => Array.from({ length: n }, () => r);
+const dayWarmup = (r: number) => Array.from({ length: WARMUP }, () => dayMonth(flatDays(20, r)));
+const lumpSum = { ...plain, initialInvestment: 10_000, monthlyContribution: 0 };
+const smaDaily = { ...lumpSum, strategy: "sma" as const, smaDays: 50 };
+
+describe("REQ-015-01 daily signal", () => {
+  test("REQ-015-01 a close below the n-day SMA sells at the next trading day's close", () => {
+    // Rising index, then a crash on day 5: the fund still takes day 6 (−10 %), not days 7–20.
+    const crash = dayMonth([0, 0, 0, 0, -0.3, -0.1, ...flatDays(14, -0.01)]);
+    const path = [...dayWarmup(0.001), crash];
+    const result = simulatePath(path, WARMUP, smaDaily);
+    expect(result.finalAfterTax).toBeCloseTo(10_000 * 0.7 * 0.9, 6);
+    const hold = simulatePath(path, WARMUP, lumpSum);
+    expect(hold.finalAfterTax).toBeCloseTo(10_000 * 0.7 * 0.9 * 0.99 ** 14, 6);
+  });
+
+  test("REQ-015-01 a close above the n-day SMA buys at the next trading day's close", () => {
+    // Falling index (out of the market), then a jump on day 3: bought at the close of day 4.
+    const jump = dayMonth([0, 0, 0.6, 0.1, ...flatDays(16, 0.01)]);
+    const result = simulatePath([...dayWarmup(-0.002), jump], WARMUP, smaDaily);
+    expect(result.finalAfterTax).toBeCloseTo(10_000 * 1.01 ** 16, 6);
+  });
+
+  test("REQ-015-01 a signal on a month's last day is acted on at the next month's first close", () => {
+    const crashAtEnd = dayMonth([...flatDays(19, 0), -0.3]);
+    const next = dayMonth([-0.05, ...flatDays(19, -0.01)]);
+    const result = simulatePath([...dayWarmup(0.001), crashAtEnd, next], WARMUP, smaDaily);
+    expect(result.finalAfterTax).toBeCloseTo(10_000 * 0.7 * 0.95, 6);
+  });
+
+  test("REQ-015-01 without a crossing the fund earns the month's return as in buy and hold", () => {
+    const path = [...dayWarmup(0.001), dayMonth(flatDays(20, 0.002))];
+    const sma = simulatePath(path, WARMUP, smaDaily);
+    const hold = simulatePath(path, WARMUP, lumpSum);
+    expect(sma.finalAfterTax).toBeCloseTo(hold.finalAfterTax, 6);
+  });
+});
+
+describe("REQ-015-02 selling or buying within a month", () => {
+  test("REQ-015-02 drag, TER and financing for the days held, interest for the days in cash", () => {
+    // Crash on day 9, sold at the close of day 10 (+1 %): held 10 of 20 days.
+    const month = dayMonth([...flatDays(8, 0), -0.4, 0.01, ...flatDays(10, 0)], { cashRate: 0.12 });
+    const params = {
+      ...smaDaily,
+      leveragedShare: 1,
+      leverage: 2,
+      terLeveraged: 0.012,
+      includeSofr: false,
+      financingSpread: 0.024,
+    };
+    const result = simulatePath([...dayWarmup(0.001), month], WARMUP, params);
+    const [a, b] = [Math.log(0.6), Math.log(1.01)];
+    const sum = a + b;
+    const squares = a ** 2 + b ** 2;
+    const held = Math.exp(2 * sum - squares - ((0.024 + 0.012) / 12) * 0.5);
+    expect(result.finalAfterTax).toBeCloseTo(10_000 * held * (1 + (0.12 / 12) * 0.5), 6);
+  });
+
+  test("REQ-015-02 the gain of a sale within a month is taxed in that year", () => {
+    // +80 % in the first month, then a crash on day 5 of the second: sold with a gain of ~8 %.
+    const rally = dayMonth(flatDays(20, 0.03));
+    const crash = dayMonth([...flatDays(4, 0), -0.4, ...flatDays(15, 0)]);
+    const taxed = { ...smaDaily, taxesEnabled: true, allowance: 0, baseRate: 0 };
+    const result = simulatePath([...dayWarmup(0.001), rally, crash], WARMUP, taxed);
+    const value = 10_000 * 1.03 ** 20 * 0.6;
+    expect(value).toBeGreaterThan(10_000);
+    const tax = (value - 10_000) * 0.26375 * 0.7;
+    expect(result.taxes).toBeCloseTo(tax, 4);
+    expect(result.finalAfterTax).toBeCloseTo(value - tax, 4);
+  });
+});
+
+describe("REQ-015-05 daily exchange rate in the signal", () => {
+  test("REQ-015-05 a fall of the dollar within the month can trigger the euro signal", () => {
+    // Index flat in USD; the dollar drops 40 % on day 5: sold at the close of day 6.
+    const fx = [0, 0, 0, 0, -0.4, -0.05, ...flatDays(14, -0.01)];
+    const month = dayMonth(flatDays(20, 0), {}, fx);
+    const result = simulatePath([...dayWarmup(0.001), month], WARMUP, smaDaily);
+    expect(result.finalAfterTax).toBeCloseTo(10_000 * 0.6 * 0.95, 6);
+    const usd = dayMonth(flatDays(20, 0));
+    const dollar = simulatePath([...dayWarmup(0.001), usd], WARMUP, smaDaily);
+    expect(dollar.finalAfterTax).toBeCloseTo(10_000, 6);
   });
 });
 

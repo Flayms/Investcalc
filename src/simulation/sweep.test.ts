@@ -21,7 +21,7 @@ const global = { ...defaultGlobal, horizonYears: 5, paths: 200, sampling: "boots
 describe("REQ-008-01 sweep of a slider", () => {
   test("REQ-008-01 covers the slider range and reports the distribution and chance of loss", () => {
     const leveraged = { ...scenario, leveragedShare: 0.5, leverage: 2 };
-    for (const param of ["leveragedShare", "leverage", "smaMonths"] as const) {
+    for (const param of ["leveragedShare", "leverage", "smaDays"] as const) {
       const sweep = sweepParameter(dataset, leveraged, global, param);
       expect(sweep.param).toBe(param);
       expect(sweep.points.map((p) => p.value)).toEqual(SWEEP_VALUES[param]);
@@ -41,7 +41,10 @@ describe("REQ-008-01 sweep of a slider", () => {
     expect(SWEEP_VALUES.leveragedShare.at(-1)).toBe(1);
     expect(SWEEP_VALUES.leverage[0]).toBe(1);
     expect(SWEEP_VALUES.leverage.at(-1)).toBe(3);
-    expect(SWEEP_VALUES.smaMonths).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  test("REQ-015-06 the SMA window is swept from 50 to 250 trading days in steps of 20", () => {
+    expect(SWEEP_VALUES.smaDays).toEqual([50, 70, 90, 110, 130, 150, 170, 190, 210, 230, 250]);
   });
 
   test("REQ-008-01 the swept value of the scenario matches a plain simulation of it", () => {
@@ -82,7 +85,7 @@ describe("REQ-008-02 sweeps that need another setting", () => {
   });
 
   test("REQ-008-02 SMA window with buy and hold assumes SMA and shows buy and hold as reference", () => {
-    const sweep = sweepParameter(dataset, scenario, global, "smaMonths");
+    const sweep = sweepParameter(dataset, scenario, global, "smaDays");
     expect(sweep.assumed).toEqual({ strategy: "sma" });
     expect(sweep.reference?.strategy).toBe("buyAndHold");
     expect(sweep.reference?.point.p50).toBeGreaterThan(0);

@@ -9,6 +9,7 @@ const SCALE: Record<Unit, number> = {
   percent: 100,
   euro: 1,
   factor: 1,
+  days: 1,
   months: 1,
   years: 1,
   count: 1,
@@ -17,6 +18,7 @@ const WHOLE: Record<Unit, boolean> = {
   percent: false,
   euro: false,
   factor: false,
+  days: true,
   months: true,
   years: true,
   count: true,
@@ -60,6 +62,7 @@ export function ValueInput({ label, unit, min, max, value, onChange, className }
     ...(language === "de" && { euro: "€" }),
     percent: "%",
     factor: "×",
+    days: t.units.days,
     months: t.units.months,
     years: t.units.years,
   };

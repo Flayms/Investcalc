@@ -1,4 +1,4 @@
-import { type Dataset, monthLabel } from "@/simulation/dataset";
+import { type Dataset, monthDays, monthLabel } from "@/simulation/dataset";
 import { type GlobalSettings, type ScenarioParams, WARMUP_MONTHS } from "@/simulation/params";
 import { type PathMonth, type PathResult, simulatePath } from "@/simulation/portfolio";
 import { createRng } from "@/simulation/rng";
@@ -75,6 +75,7 @@ export function buildPaths(dataset: Dataset, s: ScenarioParams, g: GlobalSetting
   };
 
   const history: PathMonth[] = [];
+  const days = monthDays(dataset);
   for (let i = from; i < to; i++) {
     history.push({
       r: dataset.returns[i] ?? 0,
@@ -83,6 +84,7 @@ export function buildPaths(dataset: Dataset, s: ScenarioParams, g: GlobalSetting
       fx: dataset.fx?.[i] ?? 0,
       cashRate: dataset.cashRates?.[i] ?? dataset.rates[i] ?? 0,
       inflation: dataset.inflation[i] ?? 0,
+      days: days[i],
     });
   }
   const pick = (indices: number[]) => indices.map((i) => history[i] as PathMonth);

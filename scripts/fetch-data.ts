@@ -19,6 +19,9 @@
  *   HICP (FRED CP0000DEM086NEST). Months without a value repeat the last known monthly change.
  * - Variance per month (volatility drag): realised variance of daily log returns. The S&P 500 uses
  *   the US total market's daily data; months without daily data are estimated (see daily.ts).
+ * - Daily returns for the SMA signal (REQ-015-04): US total market from 1926-07, MSCI from 2001
+ *   (own daily levels) and from 1990-07 (developed markets, scaled to the index's month), and the
+ *   daily euro/dollar fixings (REQ-015-05).
  */
 import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
@@ -26,7 +29,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import {
-  type DailyReturn,
+  type DatedReturn,
+  dailyBlock,
   estimatedVariance,
   type MonthlySeries,
   monthlyFromDaily,
@@ -119,6 +123,8 @@ type French = {
   tbill1m: Map<string, number>;
   /** Realised variance of the daily market returns per month. */
   variance: Map<string, number>;
+  /** Daily market returns. */
+  days: DatedReturn[];
 };
 
 /** Rows "date, Mkt-RF, SMB, HML, RF" (in %) whose date matches `pattern`. */
@@ -127,8 +133,19 @@ function frenchRows(csv: string, pattern: RegExp) {
     const [date = "", mktRf, , , rf] = line.split(",").map((s) => s.trim());
     if (!pattern.test(date)) return [];
     const ym = `${date.slice(0, 4)}-${date.slice(4, 6)}`;
-    return [{ ym, market: (Number(mktRf) + Number(rf)) / 100, rf: Number(rf) / 100 }];
+    const day = Number(date.slice(6, 8)) || 0;
+    return [{ ym, day, market: (Number(mktRf) + Number(rf)) / 100, rf: Number(rf) / 100 }];
   });
+}
+
+/** French daily rows as dated daily returns. */
+const frenchDays = (rows: ReturnType<typeof frenchRows>): DatedReturn[] =>
+  rows.map((d) => ({ month: d.ym, day: d.day, r: d.market }));
+
+/** A daily block with returns rounded for the JSON file. */
+function roundedBlock(days: DatedReturn[], monthReturn: (ym: string) => number | undefined) {
+  const block = dailyBlock(days, monthReturn);
+  return { ...block, returns: block.returns.map((r) => round(r, 7)) };
 }
 
 /**
@@ -140,7 +157,7 @@ async function loadFrench(): Promise<French> {
     unzipText(FRENCH_DAILY_URL),
     unzipText(FRENCH_MONTHLY_URL),
   ]);
-  const days = frenchRows(daily, /^\d{8}$/).map((d) => ({ month: d.ym, r: d.market }));
+  const days = frenchDays(frenchRows(daily, /^\d{8}$/));
   const dailySeries = monthlyFromDaily(days);
   const months = frenchRows(monthly, /^\d{6}$/);
   const variance = byMonth(dailySeries, dailySeries.variance);
@@ -151,19 +168,27 @@ async function loadFrench(): Promise<French> {
     returns: months.map((m) => m.market),
     tbill1m: new Map(months.map((m) => [m.ym, m.rf * 12])),
     variance,
+    days,
   };
 }
 
-/** Bundesbank daily series (CSV) → last quote of each month, transformed by `f`. */
-async function bundesbankMonthEnd(url: string, f: (v: number) => number) {
+/** Bundesbank daily series (CSV) → quote by date ("YYYY-MM-DD", ascending), transformed by `f`. */
+async function bundesbankDaily(url: string, f: (v: number) => number) {
   const out = new Map<string, number>();
   for (const line of (await text(url, "text/csv")).split("\n")) {
     const cols = line.split(";");
     const date = cols[7] ?? "";
     const value = Number(cols[8]);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !(value > 0)) continue;
-    out.set(month(date), f(value));
+    out.set(date, f(value));
   }
+  return out;
+}
+
+/** Last quote of each month. */
+function monthEnd(quotes: Map<string, number>): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const [date, value] of quotes) out.set(month(date), value);
   return out;
 }
 
@@ -205,13 +230,22 @@ function inflationSeries(months: string[], sources: Map<string, number>[]): numb
 /** Euro per US dollar at the end of each month and the euro short rate (REQ-011-04). */
 async function loadEuro(): Promise<CurrencyData> {
   const [dem, eur, rateCsv, deCpi, deHicp] = await Promise.all([
-    bundesbankMonthEnd(DEM_PER_USD_URL, (v) => v / DEM_PER_EUR),
-    bundesbankMonthEnd(USD_PER_EUR_URL, (v) => 1 / v),
+    bundesbankDaily(DEM_PER_USD_URL, (v) => v / DEM_PER_EUR),
+    bundesbankDaily(USD_PER_EUR_URL, (v) => 1 / v),
     text(EUR_RATE_URL),
     fredMonthly(DE_CPI_URL),
     fredMonthly(DE_HICP_URL),
   ]);
-  const eurPerUsd = new Map([...dem].filter(([ym]) => ym < "1999-01").concat([...eur]));
+  // Euro per US dollar on each fixing day: D-Mark until 1998, euro from 1999.
+  const quotes = new Map([...dem].filter(([date]) => date < "1999-01").concat([...eur]));
+  const eurPerUsd = monthEnd(quotes);
+  const quotesByMonth = new Map<string, [number, number][]>();
+  for (const [date, value] of quotes) {
+    const list = quotesByMonth.get(month(date)) ?? [];
+    list.push([Number(date.slice(8, 10)), value]);
+    quotesByMonth.set(month(date), list);
+  }
+  const daily = { days: [] as number[], dayOfMonth: [] as number[], fx: [] as number[] };
   const rates = new Map(
     rateCsv
       .trim()
@@ -233,17 +267,27 @@ async function loadEuro(): Promise<CurrencyData> {
     if (prev === undefined || cur === undefined) throw new Error(`exchange rate missing: ${ym}`);
     fx.push(round(cur / prev - 1));
     months.push(ym);
+    // Daily change of each fixing against the previous one (REQ-015-05).
+    let last = prev;
+    const fixings = quotesByMonth.get(ym) ?? [];
+    daily.days.push(fixings.length);
+    for (const [day, value] of fixings) {
+      daily.dayOfMonth.push(day);
+      daily.fx.push(round(value / last - 1, 7));
+      last = value;
+    }
     lastRate = rates.get(ym) ?? lastRate;
     shortRates.push(round(lastRate));
   }
   return {
     id: "eur",
     name: "Euro",
-    source: `Exchange rate: Deutsche Bundesbank, DM per US dollar (Frankfurt fixing, converted at ${DEM_PER_EUR} DM per euro) until 1998, ECB euro reference rate from 1999; last quote of each month. Euro short rate: 3-month money market rate for Germany (OECD via FRED IR3TIB01DEM156N), latest months carried forward. German inflation: OECD consumer price index (FRED DEUCPIALLMINMEI), after its last month the HICP (FRED CP0000DEM086NEST).`,
+    source: `Exchange rate: Deutsche Bundesbank, DM per US dollar (Frankfurt fixing, converted at ${DEM_PER_EUR} DM per euro) until 1998, ECB euro reference rate from 1999; last quote of each month, every daily fixing for the SMA signal. Euro short rate: 3-month money market rate for Germany (OECD via FRED IR3TIB01DEM156N), latest months carried forward. German inflation: OECD consumer price index (FRED DEUCPIALLMINMEI), after its last month the HICP (FRED CP0000DEM086NEST).`,
     start: EUR_START,
     fx,
     rates: shortRates,
     inflation: inflationSeries(months, [monthlyChange(deCpi), monthlyChange(deHicp)]),
+    daily,
   };
 }
 
@@ -271,14 +315,11 @@ async function loadMsciHistory(name: string): Promise<Map<string, number>> {
   return out;
 }
 
-/** Realised variance of daily developed-market returns per month (French, from 1990-07). */
-async function loadDevelopedVariance(): Promise<Map<string, number>> {
-  const days = frenchRows(await unzipText(FRENCH_DEVELOPED_DAILY_URL), /^\d{8}$/).map((d) => ({
-    month: d.ym,
-    r: d.market,
-  }));
+/** Daily developed-market returns and their realised variance per month (French, from 1990-07). */
+async function loadDeveloped() {
+  const days = frenchDays(frenchRows(await unzipText(FRENCH_DEVELOPED_DAILY_URL), /^\d{8}$/));
   const series = monthlyFromDaily(days);
-  return byMonth(series, series.variance);
+  return { days, variance: byMonth(series, series.variance) };
 }
 
 /** Month label → value of a monthly series. */
@@ -293,12 +334,12 @@ function byMonth(series: MonthlySeries, values: number[]): Map<string, number> {
 }
 
 async function main() {
-  const [shiller, tbill, french, euro, developedVariance, usCpi] = await Promise.all([
+  const [shiller, tbill, french, euro, developed, usCpi] = await Promise.all([
     loadShiller(),
     loadTbill(),
     loadFrench(),
     loadEuro(),
-    loadDevelopedVariance(),
+    loadDeveloped(),
     fredMonthly(US_CPI_URL),
   ]);
   // US inflation: CPIAUCSL from 1947, Shiller's CPI before (REQ-013-02).
@@ -307,6 +348,7 @@ async function main() {
     monthlyChange(new Map(shiller.filter((r) => r.cpi > 0).map((r) => [r.month, r.cpi]))),
   ];
   const usInflation = (months: string[]) => inflationSeries(months, usInflationSources);
+  const developedVariance = developed.variance;
   const lastTbill = [...tbill.values()].at(-1) ?? 0;
   const firstTbillMonth = [...tbill.keys()][0] ?? "";
   const dailyVariance = french.variance;
@@ -363,7 +405,7 @@ async function main() {
     description:
       "All listed US stocks, value weighted (~4,000 companies, like a total market ETF). Month-end data since 1926.",
     source:
-      "Kenneth French data library (CRSP value-weighted market, Mkt-RF + RF), monthly total returns; variance from daily returns.",
+      "Kenneth French data library (CRSP value-weighted market, Mkt-RF + RF), monthly total returns; variance and SMA signal from daily returns (scaled to the month's return).",
     currency: "USD",
     priceType: "close",
     start: french.start,
@@ -372,6 +414,10 @@ async function main() {
     inflation: usInflation(usMonths),
     variance: usMonths.map((ym) => roundVariance(french.variance.get(ym) ?? 0)),
     dailyFrom: french.start,
+    daily: roundedBlock(
+      french.days.filter((d) => d.month >= french.start),
+      (ym) => french.returns[usMonths.indexOf(ym)],
+    ),
   };
 
   const msci = async (
@@ -383,7 +429,7 @@ async function main() {
   ) => {
     const json = JSON.parse(await text(msciUrl(code)));
     const levels: { level_eod: number; calc_date: number }[] = json.indexes.INDEX_LEVELS;
-    const days: DailyReturn[] = [];
+    const days: DatedReturn[] = [];
     for (let i = 1; i < levels.length; i++) {
       const cur = levels[i];
       const prev = levels[i - 1];
@@ -391,7 +437,11 @@ async function main() {
       const date = String(cur.calc_date);
       const ym = `${date.slice(0, 4)}-${date.slice(4, 6)}`;
       if (ym === currentMonth) break; // incomplete month
-      days.push({ month: ym, r: cur.level_eod / prev.level_eod - 1 });
+      days.push({
+        month: ym,
+        day: Number(date.slice(6, 8)),
+        r: cur.level_eod / prev.level_eod - 1,
+      });
     }
     const recent = monthlyFromDaily(days);
     const recentMonths = [...byMonth(recent, recent.returns).keys()];
@@ -415,6 +465,12 @@ async function main() {
     );
     const months = [...olderMonths, ...recentMonths];
     const dailyFrom = olderMonths.find((ym) => developedVariance.has(ym)) ?? recent.start;
+    // Daily returns for the SMA signal: developed markets scaled to the index's month before the
+    // index's own daily data (REQ-015-04).
+    const returns = [...older, ...recent.returns];
+    const returnOf = new Map(months.map((ym, i) => [ym, returns[i] ?? 0]));
+    const proxyDays = developed.days.filter((d) => d.month >= dailyFrom && d.month < recent.start);
+    const daily = roundedBlock([...proxyDays, ...days], (ym) => returnOf.get(ym));
     console.log(
       `${id}: gross–net gap ${((Math.exp(gap * 12) - 1) * 100).toFixed(2)} % p.a., variance scale ${scale.toFixed(3)}`,
     );
@@ -422,7 +478,7 @@ async function main() {
       id,
       name,
       description,
-      source: `MSCI index ${code}, USD. From ${recent.start}: net total return, daily levels (msci.com), month = last level of the month. ${olderMonths[0]} – ${olderMonths.at(-1)}: MSCI gross total return (monthly, via github.com/NandayDev/MSCI-Historical-Data) minus the gross–net gap of later years (${((Math.exp(gap * 12) - 1) * 100).toFixed(2)} % p.a.); variance from daily developed-market returns (Kenneth French) from ${dailyFrom}, estimated before.`,
+      source: `MSCI index ${code}, USD. From ${recent.start}: net total return, daily levels (msci.com), month = last level of the month. ${olderMonths[0]} – ${olderMonths.at(-1)}: MSCI gross total return (monthly, via github.com/NandayDev/MSCI-Historical-Data) minus the gross–net gap of later years (${((Math.exp(gap * 12) - 1) * 100).toFixed(2)} % p.a.); variance and SMA signal from daily developed-market returns (Kenneth French, scaled to the month's return) from ${dailyFrom}, estimated before.`,
       currency: "USD",
       priceType: "close",
       start: months[0] ?? recent.start,
@@ -431,6 +487,7 @@ async function main() {
       inflation: usInflation(months),
       variance: [...olderVariance, ...recent.variance].map(roundVariance),
       dailyFrom,
+      daily,
     } satisfies Dataset;
   };
 

@@ -33,7 +33,7 @@ test.describe("REQ-001-21 readable on phones", () => {
     await expect(results).toHaveAttribute("aria-selected", "true");
     await expect(page.getByText("Scenario settings")).toBeHidden();
     // Percentiles of every scenario are visible without horizontal scrolling.
-    for (const name of ["1× buy and hold", "2× buy and hold", "2× with 10-month SMA"]) {
+    for (const name of ["1× buy and hold", "2× buy and hold", "2× with 200-day SMA"]) {
       const card = page.getByRole("article", { name });
       await expect(card.getByText("P50")).toBeVisible({ timeout: 30_000 });
       const box = await card.boundingBox();
@@ -76,7 +76,7 @@ test("REQ-005-01 / REQ-005-05 scenarios can be reordered by touch (press and hol
   await page.goto("/");
   const tabs = page.getByRole("tablist", { name: "Scenarios" });
   await page.getByRole("tab", { name: "Settings" }).tap();
-  const from = await tabs.getByRole("tab", { name: "2× with 10-month SMA" }).boundingBox();
+  const from = await tabs.getByRole("tab", { name: "2× with 200-day SMA" }).boundingBox();
   const to = await tabs.getByRole("tab", { name: "1× buy and hold" }).boundingBox();
   if (!from || !to) throw new Error("tabs not laid out");
   const cdp = await page.context().newCDPSession(page);
@@ -98,7 +98,7 @@ test("REQ-005-01 / REQ-005-05 scenarios can be reordered by touch (press and hol
   }
   await touch("touchEnd", end.x, end.y);
   await expect(tabs.getByRole("tab")).toHaveText([
-    "2× with 10-month SMA",
+    "2× with 200-day SMA",
     "1× buy and hold",
     "2× buy and hold",
   ]);

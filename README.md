@@ -12,7 +12,7 @@ Monte Carlo simulation of ETF savings plans on real market history: compare stra
 ## What it does
 
 - **History, not guesses:** S&P 500 since 1871, US total market, MSCI World and ACWI, in euros or dollars, nominal or inflation-adjusted.
-- **Products and strategies:** 1× and leveraged ETFs (with volatility drag), savings plan, SMA trend filter, investing a loan up front.
+- **Products and strategies:** 1× and leveraged ETFs (with volatility drag), savings plan, SMA trend filter (the 200-day line, checked at every daily close), investing a loan up front.
 - **Costs and German taxes:** TER, order fees, spread, Abgeltungsteuer, Teilfreistellung, Sparerpauschbetrag, Vorabpauschale.
 - **Compare scenarios:** up to 8 side by side, hide or reorder them; everything is saved in your browser.
 - **Results:** fan chart, percentiles in € or % p.a., the cost of each factor, and the best value of a slider.

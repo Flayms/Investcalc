@@ -106,7 +106,7 @@ test("REQ-012-01 MSCI World starts in 1970 and MSCI ACWI in 1988", async () => {
   const table = within(heading.closest("[data-slot=card]") as HTMLElement).getByRole("table");
   const world = within(table).getByRole("row", { name: /^MSCI World/ });
   expect(within(world).getByText(/^1970-01 –/)).toBeInTheDocument();
-  expect(within(world).getByText("1990-07")).toBeInTheDocument();
+  expect(within(world).getAllByText("1990-07").length).toBeGreaterThan(0);
   const acwi = within(table).getByRole("row", { name: /^MSCI ACWI/ });
   expect(within(acwi).getByText(/^1988-01 –/)).toBeInTheDocument();
 });
@@ -128,10 +128,27 @@ test("REQ-010-02 the data basis states from which month daily data is used", asy
   const heading = await screen.findByText("Data basis");
   const card = heading.closest("[data-slot=card]") as HTMLElement;
   const table = within(card).getByRole("table");
-  expect(within(table).getByRole("columnheader", { name: "Daily data from" })).toBeInTheDocument();
+  expect(
+    within(table).getByRole("columnheader", { name: "Daily variance from" }),
+  ).toBeInTheDocument();
   const sp = within(table).getByRole("row", { name: /^S&P 500/ });
   expect(within(sp).getByText("1926-07")).toBeInTheDocument();
-  expect(within(table).getAllByRole("cell", { name: /^\d{4}-\d{2}$/ }).length).toBe(4);
+  // Daily variance for all four indices, daily SMA signal for three (REQ-015-08).
+  expect(within(table).getAllByRole("cell", { name: /^\d{4}-\d{2}$/ }).length).toBe(7);
+});
+
+test("REQ-015-08 the data basis states from which month the SMA signal is checked daily", async () => {
+  renderApp();
+  await openMarketAndData();
+  const heading = await screen.findByText("Data basis");
+  const table = within(heading.closest("[data-slot=card]") as HTMLElement).getByRole("table");
+  expect(
+    within(table).getByRole("columnheader", { name: "Daily SMA signal from" }),
+  ).toBeInTheDocument();
+  const row = (name: RegExp) => within(table).getByRole("row", { name });
+  expect(within(row(/^US total market/)).getAllByText("1926-07")).toHaveLength(2);
+  expect(within(row(/^MSCI World/)).getAllByText("1990-07")).toHaveLength(2);
+  expect(within(row(/^S&P 500/)).getByText("monthly")).toBeInTheDocument();
 });
 
 test("REQ-001-15 scenarios can be duplicated, renamed and removed", async () => {
@@ -387,7 +404,7 @@ test("REQ-002-03 the best final value of each percentile is marked", async () =>
   // The third scenario has the highest values.
   expect(within(rows[3] as HTMLElement).getAllByLabelText("Best")).toHaveLength(6);
   // The cards for small screens mark the same scenario.
-  const thirdCard = within(card).getByRole("article", { name: "2× with 10-month SMA" });
+  const thirdCard = within(card).getByRole("article", { name: "2× with 200-day SMA" });
   expect(within(thirdCard).getAllByLabelText("Best")).toHaveLength(6);
 });
 
@@ -510,7 +527,7 @@ test("REQ-005-05 clicking a tab selects it and moves nothing", async () => {
   fireEvent.mouseUp(second);
   fireEvent.click(second);
   expect(second).toHaveAttribute("aria-selected", "true");
-  expect(tabNames()).toEqual(["1× buy and hold", "2× buy and hold", "2× with 10-month SMA"]);
+  expect(tabNames()).toEqual(["1× buy and hold", "2× buy and hold", "2× with 200-day SMA"]);
 });
 
 test("REQ-005-03 legend and results table follow the scenario order", async () => {
@@ -525,7 +542,7 @@ test("REQ-005-03 legend and results table follow the scenario order", async () =
   const { client } = resolvingClient();
   renderApp(client);
   await screen.findByRole("tablist", { name: "Scenarios" });
-  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]);
+  expect(tabNames()).toEqual(["2× buy and hold", "1× buy and hold", "2× with 200-day SMA"]);
   const legend = await screen.findByRole("list", { name: "Legend" });
   await vi.waitFor(() =>
     expect(
@@ -533,7 +550,7 @@ test("REQ-005-03 legend and results table follow the scenario order", async () =
         .getAllByRole("listitem")
         .slice(0, 3)
         .map((li) => li.textContent),
-    ).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]),
+    ).toEqual(["2× buy and hold", "1× buy and hold", "2× with 200-day SMA"]),
   );
   const card = await resultsCard();
   await vi.waitFor(() =>
@@ -541,7 +558,7 @@ test("REQ-005-03 legend and results table follow the scenario order", async () =
       within(card)
         .getAllByRole("article")
         .map((a) => within(a).getByRole("heading").textContent),
-    ).toEqual(["2× buy and hold", "1× buy and hold", "2× with 10-month SMA"]),
+    ).toEqual(["2× buy and hold", "1× buy and hold", "2× with 200-day SMA"]),
   );
 });
 
@@ -557,7 +574,7 @@ test("REQ-007-01 a chart plots the final value against the percentile for every 
       within(legend)
         .getAllByRole("listitem")
         .map((li) => li.textContent),
-    ).toEqual(["1× buy and hold", "2× buy and hold", "2× with 10-month SMA", "Paid in"]),
+    ).toEqual(["1× buy and hold", "2× buy and hold", "2× with 200-day SMA", "Paid in"]),
   );
 });
 
@@ -620,7 +637,7 @@ function sweepingClient(peaks: Record<SweepParam, number>) {
 const leverageSlider = () => screen.getByRole("slider", { name: "Leverage factor" });
 
 test("REQ-008-05 explored sliders show their goal curve and apply the best value", async () => {
-  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaDays: 8 });
   renderApp(client);
   const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
   fireEvent.click(within(tabs).getByRole("tab", { name: /2× buy and hold/ }));
@@ -632,7 +649,7 @@ test("REQ-008-05 explored sliders show their goal curve and apply the best value
   ).toBeInTheDocument();
   expect(screen.getByTestId("insight-leveragedShare")).toBeInTheDocument();
   // SMA window is hidden for buy and hold, so it has no insight here.
-  expect(screen.queryByTestId("insight-smaMonths")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("insight-smaDays")).not.toBeInTheDocument();
   // Monthly investment is not explored.
   expect(screen.getAllByTestId(/^insight-/)).toHaveLength(2);
 
@@ -642,7 +659,7 @@ test("REQ-008-05 explored sliders show their goal curve and apply the best value
 });
 
 test("REQ-008-05 Explore opens the slider's diagram in the explorer", async () => {
-  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaDays: 8 });
   renderApp(client);
   const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
   fireEvent.click(within(tabs).getByRole("tab", { name: /2× buy and hold/ }));
@@ -670,7 +687,7 @@ test("REQ-008-05 Explore opens the slider's diagram in the explorer", async () =
 });
 
 test("REQ-008-03 the goal applies to the explorer and the slider curves", async () => {
-  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaDays: 8 });
   renderApp(client);
   const tabs = await screen.findByRole("tablist", { name: "Scenarios" });
   fireEvent.click(within(tabs).getByRole("tab", { name: /2× buy and hold/ }));
@@ -692,7 +709,7 @@ test("REQ-008-03 the goal applies to the explorer and the slider curves", async 
 });
 
 test("REQ-008-04 the explorer switches between distribution and trade-off diagrams", async () => {
-  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaDays: 8 });
   renderApp(client);
   const explorer = (await screen.findByText(/Value explorer/)).closest(
     "[data-slot=card]",
@@ -721,7 +738,7 @@ test("REQ-009-01 a status that stays in view says what is running", async () => 
 });
 
 test("REQ-009-01 the status disappears when everything is up to date", async () => {
-  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaMonths: 8 });
+  const { client } = sweepingClient({ leveragedShare: 0.5, leverage: 2.5, smaDays: 8 });
   const done = { ...client, factors: () => Promise.resolve({ baseline: 1, factors: [] }) };
   renderApp(done as unknown as SimulationApi);
   // Analyses start 500 ms after the data has loaded and been validated.
@@ -845,7 +862,7 @@ test("REQ-009-04 editing one scenario re-simulates and marks only that scenario"
   const article = (name: string) => within(card).getByRole("article", { name });
   expect(article("2× buy and hold")).toHaveAttribute("aria-busy", "true");
   expect(article("1× buy and hold")).not.toHaveAttribute("aria-busy", "true");
-  expect(article("2× with 10-month SMA")).not.toHaveAttribute("aria-busy", "true");
+  expect(article("2× with 200-day SMA")).not.toHaveAttribute("aria-busy", "true");
   expect(
     screen.getAllByRole("status").some((el) => /Simulating 1 scenario…/.test(el.textContent ?? "")),
   ).toBe(true);
