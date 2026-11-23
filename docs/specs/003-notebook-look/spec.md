@@ -73,3 +73,5 @@ lets users type exact values, adds a light/dark theme switch and restyles the pa
 | REQ-003-03 | `REQ-003-03 the theme switch toggles dark mode and remembers it`                      | pass              |
 | REQ-003-04 | `REQ-003-04 without a stored choice the theme follows the system preference`          | pass              |
 | REQ-003-05 | Manual: `docs/screenshots/home.png`, `home-dark.png`, `home-mobile.png`, `market.png` | pass (screenshot) |
+| REQ-003-05 | `REQ-003-05 the market chart tooltip is legible in the dark theme` (e2e)              | pass              |
+| REQ-003-05 | `REQ-003-05 the factor impact tooltip is legible in the dark theme` (e2e)             | pass              |

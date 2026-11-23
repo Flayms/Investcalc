@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceArea, Tooltip, XAxis, YAxis } from "recharts";
+import { ChartTooltipBox, ChartTooltipRow } from "@/components/ChartTooltipBox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -266,8 +267,21 @@ export function MarketStatusCard({
                 />
               ))}
               <Tooltip
-                formatter={(v, name) => [Number(v).toFixed(1), String(name)]}
-                contentStyle={{ fontSize: 12 }}
+                content={({ active, payload, label }) =>
+                  active && payload?.length ? (
+                    <ChartTooltipBox>
+                      <div className="mb-1 font-medium">{label}</div>
+                      {payload.map((p) => (
+                        <ChartTooltipRow
+                          key={String(p.dataKey)}
+                          color={String(p.color)}
+                          name={p.name}
+                          value={Number(p.value).toFixed(1)}
+                        />
+                      ))}
+                    </ChartTooltipBox>
+                  ) : null
+                }
               />
               <Line
                 dataKey="index"

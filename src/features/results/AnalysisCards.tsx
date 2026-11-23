@@ -1,4 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
+import { ChartTooltipBox, ChartTooltipRow } from "@/components/ChartTooltipBox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { Stale, UpdatingBadge } from "@/features/results/Updating";
@@ -51,9 +52,19 @@ export function FactorImpactCard({ scenario, factors: impact, updating }: Props)
                   axisLine={false}
                 />
                 <Tooltip
-                  formatter={(v) => [formatEuro(Number(v)), "Median cost"]}
                   cursor={{ fillOpacity: 0.3 }}
-                  contentStyle={{ fontSize: 12 }}
+                  content={({ active, payload, label }) =>
+                    active && payload?.length ? (
+                      <ChartTooltipBox>
+                        <div className="mb-1 font-medium">{label}</div>
+                        <ChartTooltipRow
+                          color={scenarioColor(scenario)}
+                          name="Median cost"
+                          value={formatEuro(Number(payload[0]?.value))}
+                        />
+                      </ChartTooltipBox>
+                    ) : null
+                  }
                 />
                 <Bar
                   dataKey="cost"

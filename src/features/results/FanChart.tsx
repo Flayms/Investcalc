@@ -1,4 +1,5 @@
 import { Area, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } from "recharts";
+import { ChartTooltipBox, ChartTooltipRow } from "@/components/ChartTooltipBox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { Stale, UpdatingBadge } from "@/features/results/Updating";
@@ -108,20 +109,15 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
                   if (!active || !payload?.length) return null;
                   const row = payload[0]?.payload as Row;
                   return (
-                    <div className="rounded-md border bg-background px-3 py-2 text-sm lg:text-xs shadow-md">
+                    <ChartTooltipBox>
                       <div className="mb-1 font-medium">Year {Number(label).toFixed(1)}</div>
                       {shown.map((s) => (
-                        <div key={s.key} className="flex items-center gap-2">
-                          <span
-                            className="size-2 rounded-full"
-                            style={{ background: scenarioColor(s) }}
-                            aria-hidden
-                          />
-                          <span className="text-muted-foreground">{s.params.name}</span>
-                          <span className="ml-auto pl-3 tabular-nums">
-                            {formatEuro(row[s.key] as number)}
-                          </span>
-                        </div>
+                        <ChartTooltipRow
+                          key={s.key}
+                          color={scenarioColor(s)}
+                          name={s.params.name}
+                          value={formatEuro(row[s.key] as number)}
+                        />
                       ))}
                       {selected && Array.isArray(row.outer) && (
                         <div className="mt-1 border-t pt-1 text-muted-foreground">
@@ -131,7 +127,7 @@ export function FanChart({ scenarios, results, selectedKey, updating = false }: 
                           Paid in: {formatEuro(row.paid as number)}
                         </div>
                       )}
-                    </div>
+                    </ChartTooltipBox>
                   );
                 }}
               />

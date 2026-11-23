@@ -1,4 +1,5 @@
 import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
+import { ChartTooltipBox, ChartTooltipRow } from "@/components/ChartTooltipBox";
 import { ChartContainer } from "@/components/ui/chart";
 import { annualReturn } from "@/features/results/annualReturn";
 import { type ResolvedScenario, scenarioColor } from "@/features/scenarios/scenario";
@@ -90,25 +91,20 @@ export function DistributionChart({ scenarios, results, selectedKey, horizonYear
                 if (!active || !payload?.length) return null;
                 const row = payload[0]?.payload as Row;
                 return (
-                  <div className="rounded-md border bg-background px-3 py-2 text-sm lg:text-xs shadow-md">
+                  <ChartTooltipBox>
                     <div className="mb-1 font-medium">P{label}</div>
                     {shown.map((s) => (
-                      <div key={s.key} className="flex items-center gap-2">
-                        <span
-                          className="size-2 rounded-full"
-                          style={{ background: scenarioColor(s) }}
-                          aria-hidden
-                        />
-                        <span className="text-muted-foreground">{s.params.name}</span>
-                        <span className="ml-auto pl-3 tabular-nums">
-                          {row[s.key] === undefined ? "–" : format(row[s.key] as number)}
-                        </span>
-                      </div>
+                      <ChartTooltipRow
+                        key={s.key}
+                        color={scenarioColor(s)}
+                        name={s.params.name}
+                        value={row[s.key] === undefined ? "–" : format(row[s.key] as number)}
+                      />
                     ))}
                     <div className="mt-1 border-t pt-1 text-muted-foreground">
                       {label}% of the paths ended lower.
                     </div>
-                  </div>
+                  </ChartTooltipBox>
                 );
               }}
             />
