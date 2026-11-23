@@ -1,6 +1,6 @@
 import type { Dataset } from "@/simulation/dataset";
 import { defaultGlobal, defaultScenario } from "@/simulation/params";
-import { exploreLeverage, factorImpact, runScenario } from "@/simulation/simulate";
+import { factorImpact, runScenario } from "@/simulation/simulate";
 
 const dataset: Dataset = {
   id: "test",
@@ -74,16 +74,6 @@ describe("REQ-001-14 percentiles", () => {
     const a = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
     const b = runScenario(dataset, scenario, { ...global, sampling: "bootstrap" });
     expect(a.final).toEqual(b.final);
-  });
-});
-
-describe("REQ-001-16 best leverage factor", () => {
-  test("REQ-001-16 sweeps 1×–3× and marks the highest median", () => {
-    const sweep = exploreLeverage(dataset, scenario, { ...global, sampling: "bootstrap" });
-    expect(sweep.points[0]?.leverage).toBe(1);
-    expect(sweep.points.at(-1)?.leverage).toBe(3);
-    const best = Math.max(...sweep.points.map((p) => p.p50));
-    expect(sweep.points.find((p) => p.leverage === sweep.bestLeverage)?.p50).toBe(best);
   });
 });
 

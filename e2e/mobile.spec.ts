@@ -6,7 +6,7 @@ test.use(iPhone);
 test.describe("REQ-001-21 readable on phones", () => {
   test("REQ-001-21 no sideways scrolling and no text below 12 px", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByTestId("leverage-takeaway")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("explorer-takeaway")).toBeVisible({ timeout: 60_000 });
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
@@ -68,4 +68,38 @@ test.describe("REQ-001-21 readable on phones", () => {
     );
     expect(overflow).toBeLessThanOrEqual(0);
   });
+});
+
+test("REQ-005-01 / REQ-005-05 scenarios can be reordered by touch (press and hold)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const tabs = page.getByRole("tablist", { name: "Scenarios" });
+  await page.getByRole("tab", { name: "Settings" }).tap();
+  const from = await tabs.getByRole("tab", { name: "2× with 10-month SMA" }).boundingBox();
+  const to = await tabs.getByRole("tab", { name: "1× buy and hold" }).boundingBox();
+  if (!from || !to) throw new Error("tabs not laid out");
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: "touchStart" | "touchMove" | "touchEnd", x: number, y: number) =>
+    cdp.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: type === "touchEnd" ? [] : [{ x, y }],
+    });
+  const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+  const end = { x: to.x + 4, y: to.y + to.height / 2 };
+  await touch("touchStart", start.x, start.y);
+  await page.waitForTimeout(400);
+  for (let i = 1; i <= 15; i++) {
+    await touch(
+      "touchMove",
+      start.x + ((end.x - start.x) * i) / 15,
+      start.y + ((end.y - start.y) * i) / 15,
+    );
+  }
+  await touch("touchEnd", end.x, end.y);
+  await expect(tabs.getByRole("tab")).toHaveText([
+    "2× with 10-month SMA",
+    "1× buy and hold",
+    "2× buy and hold",
+  ]);
 });

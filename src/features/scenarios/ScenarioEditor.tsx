@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +18,11 @@ type Props = {
   scenario: Scenario;
   datasets: Record<string, Dataset>;
   onChange: (params: ScenarioChoices) => void;
+  /** Extra content under a slider, keyed by setting (REQ-008-05). */
+  sliderFooter?: (key: keyof ScenarioChoices) => ReactNode;
 };
 
-export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
+export function ScenarioEditor({ scenario, datasets, onChange, sliderFooter }: Props) {
   const p = scenario.params;
   const set = (patch: Partial<ScenarioChoices>) => onChange({ ...p, ...patch });
 
@@ -92,6 +95,7 @@ export function ScenarioEditor({ scenario, datasets, onChange }: Props) {
                   field={field}
                   value={p[field.key]}
                   onChange={(value) => set({ [field.key]: value } as Partial<ScenarioChoices>)}
+                  footer={sliderFooter?.(field.key)}
                 />
               ))}
             </section>

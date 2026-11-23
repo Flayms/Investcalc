@@ -1,5 +1,5 @@
 import { InfoIcon, TriangleAlertIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Field } from "@/features/scenarios/fields";
 import { ValueInput } from "@/features/scenarios/ValueInput";
+import { cn } from "@/lib/utils";
 
 export function HelpTooltip({
   label,
@@ -71,9 +72,11 @@ type Props<K> = {
   field: Field<K>;
   value: number | boolean | string;
   onChange: (value: number | boolean | string) => void;
+  /** Shown under a slider, e.g. how its value pays off (REQ-008-05). */
+  footer?: ReactNode;
 };
 
-export function FieldControl<K extends string>({ field, value, onChange }: Props<K>) {
+export function FieldControl<K extends string>({ field, value, onChange, footer }: Props<K>) {
   const id = useId();
   const deviates =
     (field.kind === "slider" && field.isRecommended && !field.isRecommended(value as number)) ||
@@ -105,7 +108,13 @@ export function FieldControl<K extends string>({ field, value, onChange }: Props
 
   if (field.kind === "slider") {
     return (
-      <div className="space-y-2">
+      <div
+        className={cn(
+          "space-y-2",
+          footer && "-mx-2 rounded-lg border border-dashed border-foreground/20 px-2 pt-2 pb-1.5",
+        )}
+        data-explored={footer ? "" : undefined}
+      >
         {header}
         <Slider
           id={id}
@@ -116,6 +125,7 @@ export function FieldControl<K extends string>({ field, value, onChange }: Props
           value={[value as number]}
           onValueChange={([v]) => v !== undefined && onChange(v)}
         />
+        {footer}
       </div>
     );
   }

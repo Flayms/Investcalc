@@ -39,11 +39,15 @@ export type ScenarioResult = {
   medianTaxes: number;
 };
 
-const pathOptions = (dataset: Dataset) => ({
+export const pathOptions = (dataset: Dataset) => ({
   signalLagMonths: dataset.priceType === "average" ? 1 : 0,
 });
 
-type PathSet = { paths: PathMonth[][]; period: { from: string; to: string }; error?: string };
+export type PathSet = {
+  paths: PathMonth[][];
+  period: { from: string; to: string };
+  error?: string;
+};
 
 /** Turns the selected history into the list of paths (warm-up + horizon months each). */
 export function buildPaths(dataset: Dataset, s: ScenarioParams, g: GlobalSettings): PathSet {
@@ -169,32 +173,6 @@ export function runScenario(
     medianFees: median(results.map((r) => r.fees)),
     medianTaxes: median(results.map((r) => r.taxes)),
   };
-}
-
-export type LeveragePoint = { leverage: number; p10: number; p50: number; p90: number };
-export type LeverageSweep = { points: LeveragePoint[]; bestLeverage: number; error?: string };
-
-export const LEVERAGE_STEPS = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3];
-
-/** Simulates the scenario fully in a leveraged ETF for each leverage step on the same paths. */
-export function exploreLeverage(
-  dataset: Dataset,
-  s: ScenarioParams,
-  g: GlobalSettings,
-): LeverageSweep {
-  const { paths, error } = buildPaths(dataset, s, g);
-  if (error) return { points: [], bestLeverage: 1, error };
-  const options = pathOptions(dataset);
-  const points = LEVERAGE_STEPS.map((leverage) => {
-    const params = { ...s, leverage, leveragedShare: 1 };
-    const finals = paths.map(
-      (path) => simulatePath(path, WARMUP_MONTHS, params, options).finalAfterTax,
-    );
-    const f = finalPercentiles(finals);
-    return { leverage, p10: f.p10, p50: f.p50, p90: f.p90 };
-  });
-  const best = points.reduce((a, b) => (b.p50 > a.p50 ? b : a));
-  return { points, bestLeverage: best.leverage };
 }
 
 export type FactorId = "ter" | "sofr" | "spread" | "trading" | "taxes";

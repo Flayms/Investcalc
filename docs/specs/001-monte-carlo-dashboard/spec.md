@@ -126,7 +126,9 @@ distribution of outcomes as percentiles and lets the user compare several settin
 - **When** the user adds, duplicates, renames or removes scenarios
 - **Then** all scenarios are simulated on the same horizon and seed and compared in one chart and table
 
-#### REQ-001-16 Best leverage factor
+#### REQ-001-16 Best leverage factor (deprecated)
+
+> Deprecated by REQ-008-01 – REQ-008-04: the value explorer sweeps the leverage factor with the scenario's own leveraged share.
 
 - **Given** the selected scenario
 - **When** the user runs the leverage explorer
@@ -210,7 +212,7 @@ distribution of outcomes as percentiles and lets the user compare several settin
 | REQ-001-13 | `portfolio.test.ts` › REQ-001-13 (ends like savings plan, rising markets, loan repaid incl. interest)                                               | pass   |
 | REQ-001-14 | `stats.test.ts`, `simulate.test.ts` › REQ-001-14 bands ordered; e2e `REQ-001-14 simulates the default scenarios in a worker…`                       | pass   |
 | REQ-001-15 | `App.test.tsx` › REQ-001-15 duplicate/rename/remove; `simulate.test.ts` › same seed gives identical results                                         | pass   |
-| REQ-001-16 | `simulate.test.ts` › REQ-001-16 sweeps 1×–3×; e2e `REQ-001-16 / REQ-001-20 analyses the selected scenario`                                          | pass   |
+| REQ-001-16 | deprecated → REQ-008-01                                                                                                                             | –      |
 | REQ-001-17 | `App.test.tsx` › REQ-001-17 every setting has help and deviations are flagged; e2e `mobile.spec.ts` › REQ-001-17 help opens on tap                  | pass   |
 | REQ-001-18 | `market.test.ts` › REQ-001-18 (bull, bear, correction); `App.test.tsx` › REQ-001-18                                                                 | pass   |
 | REQ-001-19 | Deploy workflow ran on `main` after PR #1; live site checked in a browser (simulation + analysis load, no page errors)                              | pass   |
