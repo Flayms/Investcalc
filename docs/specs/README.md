@@ -17,6 +17,8 @@ One folder per feature: `docs/specs/NNN-name/` with `spec.md` and, for tier 3 wo
 | [009-simulation-feedback](009-simulation-feedback/spec.md)           | UI: visible progress, stale results, skipped work          | Implemented |
 | [010-daily-volatility](010-daily-volatility/spec.md)                 | Data: daily variance for the drag, US market since 1926    | Implemented |
 | [011-eur-returns](011-eur-returns/spec.md)                           | Data: simulation in euros (exchange rate, euro short rate) | Implemented |
+| [012-msci-history](012-msci-history/spec.md)                         | Data: MSCI World from 1970, ACWI from 1988                 | Implemented |
+| [013-inflation](013-inflation/spec.md)                               | Results in purchasing power (inflation-adjusted)           | Implemented |
 
 ## Conventions
 

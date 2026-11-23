@@ -12,6 +12,8 @@ export const datasetSchema = z.object({
   start: z.string().regex(/^\d{4}-\d{2}$/),
   returns: z.array(z.number()),
   rates: z.array(z.number()),
+  /** Monthly change of consumer prices in the dataset's currency (US CPI). */
+  inflation: z.array(z.number()),
   /** Realised variance of daily log returns per month (sum of squares, not annualised). */
   variance: z.array(z.number()),
   /** "YYYY-MM" of the first month whose variance comes from daily data; earlier months are estimated. */
@@ -38,6 +40,8 @@ export const currencySchema = z.object({
   fx: z.array(z.number()),
   /** Annualised euro short rate (German 3-month money market rate). */
   rates: z.array(z.number()),
+  /** Monthly change of German consumer prices. */
+  inflation: z.array(z.number()),
 });
 
 export type CurrencyData = z.infer<typeof currencySchema>;

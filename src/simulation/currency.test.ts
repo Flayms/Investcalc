@@ -16,6 +16,7 @@ const usd: Dataset = {
   returns: n(240, (i) => i / 10_000),
   rates: n(240, () => 0.05),
   variance: n(240, () => 0.002),
+  inflation: n(240, () => 0.004),
 };
 
 const eur: CurrencyData = {
@@ -25,6 +26,7 @@ const eur: CurrencyData = {
   start: "1960-01",
   fx: n(300, (i) => -i / 100_000),
   rates: n(300, () => 0.03),
+  inflation: n(300, () => 0.002),
 };
 
 describe("REQ-011-04 history in euros", () => {
@@ -42,7 +44,13 @@ describe("REQ-011-04 history in euros", () => {
   });
 
   test("REQ-011-04 months after the last exchange rate are dropped", () => {
-    const short = { ...eur, start: "1955-01", fx: n(24, () => 0.01), rates: n(24, () => 0.03) };
+    const short = {
+      ...eur,
+      start: "1955-01",
+      fx: n(24, () => 0.01),
+      rates: n(24, () => 0.03),
+      inflation: n(24, () => 0.002),
+    };
     const d = inCurrency(usd, short);
     expect(d.start).toBe("1955-01");
     expect(d.returns).toHaveLength(24);
@@ -79,5 +87,15 @@ describe("REQ-011-01 currency setting", () => {
     );
     expect(paths[0]?.[0]?.fx).toBe(0);
     expect(paths[0]?.[0]?.cashRate).toBe(0.05);
+  });
+});
+
+describe("REQ-013-02 inflation of the investor's currency", () => {
+  const scenario = { ...defaultScenario, fromYear: 1950 };
+  const global = { ...defaultGlobal, horizonYears: 2, sampling: "rolling" as const };
+
+  test("REQ-013-02 euro paths carry German inflation, dollar paths US inflation", () => {
+    expect(buildPaths(inCurrency(usd, eur), scenario, global).paths[0]?.[0]?.inflation).toBe(0.002);
+    expect(buildPaths(usd, scenario, global).paths[0]?.[0]?.inflation).toBe(0.004);
   });
 });

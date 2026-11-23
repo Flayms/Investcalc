@@ -65,6 +65,9 @@ in euros by default, with the US dollar view still available.
 ## Out of scope
 
 - Currency-hedged ETFs, leveraged ETFs whose leverage applies to returns in euros.
+  Checked for the popular Amundi products (2026-11): the Nasdaq-100 2× fund (LQQ) tracks a USD
+  leveraged index, as modelled. The MSCI USA 2× fund (CL2) lists EUR as benchmark currency, but
+  whether its leverage applies to euro returns could not be confirmed; not modelled.
 - Market view (current market, bear/bull markets) in euros; it stays in the index currency.
 - Inflation adjustment.
 

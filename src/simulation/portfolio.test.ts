@@ -199,3 +199,40 @@ describe("REQ-011-01 currency effect", () => {
     expect(result.finalAfterTax).toBeCloseTo(1000, 6);
   });
 });
+
+describe("REQ-013-01 inflation-adjusted results", () => {
+  const inflating = (n: number, r: number, inflation: number): PathMonth[] =>
+    Array.from({ length: n }, () => ({ r, rate: 0, variance: 0, inflation }));
+  const lump = { ...plain, initialInvestment: 1000, monthlyContribution: 0 };
+
+  test("REQ-013-01 amounts are deflated with the price level of their month", () => {
+    const path = withWarmup(inflating(12, 0.01, 0.01));
+    const real = simulatePath(path, WARMUP, { ...lump, inflationAdjusted: true });
+    const nominal = simulatePath(path, WARMUP, { ...lump, inflationAdjusted: false });
+    expect(nominal.finalAfterTax).toBeCloseTo(1000 * 1.01 ** 12, 6);
+    expect(real.finalAfterTax).toBeCloseTo(1000, 6);
+    expect(w(real, 6)).toBeCloseTo(1000, 6);
+    expect(w(nominal, 6)).toBeCloseTo(1000 * 1.01 ** 6, 6);
+  });
+
+  test("REQ-013-03 each payment counts with its purchasing power when it was made", () => {
+    const path = withWarmup(inflating(3, 0, 0.01));
+    const real = simulatePath(path, WARMUP, { ...plain, inflationAdjusted: true });
+    expect(real.invested).toBeCloseTo(1000 + 1000 / 1.01 + 1000 / 1.01 ** 2, 6);
+    expect(real.paidIn[3]).toBeCloseTo(real.invested, 6);
+    const nominal = simulatePath(path, WARMUP, { ...plain, inflationAdjusted: false });
+    expect(nominal.invested).toBe(3000);
+    expect(nominal.paidIn[2]).toBe(2000);
+  });
+
+  test("REQ-013-04 taxes are computed on nominal gains", () => {
+    const path = withWarmup(inflating(12, 0.01, 0.01));
+    const taxed = { ...lump, initialInvestment: 100_000, taxesEnabled: true, baseRate: 0 };
+    const real = simulatePath(path, WARMUP, { ...taxed, inflationAdjusted: true });
+    const nominal = simulatePath(path, WARMUP, { ...taxed, inflationAdjusted: false });
+    expect(nominal.taxes).toBeGreaterThan(0);
+    expect(real.taxes).toBeCloseTo(nominal.taxes / 1.01 ** 12, 6);
+    expect(real.finalAfterTax).toBeCloseTo(nominal.finalAfterTax / 1.01 ** 12, 6);
+    expect(real.finalAfterTax).toBeLessThan(100_000);
+  });
+});
